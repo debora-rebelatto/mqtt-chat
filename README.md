@@ -22,3 +22,8 @@ chmod +x setup-gex635.sh && ./setup-gex635.sh
 
 3. A estutura inicial do projeto é configurada (aqui atualizar pra trazer tudo pro git)
 
+## Como rodar o projeto
+
+O projeto foi desenvolvido utilizando `bun`, é necessário fazer a instalação dele.
+
+`npm i -g bun`
