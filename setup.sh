@@ -1,41 +1,38 @@
-cat > setup-gex635.sh << 'EOF'
+cat > setup.sh << 'EOF'
 #!/bin/bash
 set -e
-echo "🚀 Instalando ambiente MQTT..."
+echo "🚀 Instalando ambiente MQTT"
 
-# Atualizar sistema
-sudo apt update && sudo apt upgrade -y
+sudo apt update
 
-# Instalar tudo necessário em um comando
 sudo apt install -y \
-    build-essential cmake git wget curl vim nano tree \
-    libssl-dev gcc g++ make gdb \
-    mosquitto mosquitto-clients mosquitto-dev \
-    libpaho-mqtt-dev \
-    libncurses5-dev sqlite3 libsqlite3-dev
+    curl \
+    git \
+    mosquitto \     
+    mosquitto-clients
 
-# Configurar Mosquitto
+echo "listener 1883 0.0.0.0" | sudo tee -a /etc/mosquitto/conf.d/default.conf
+echo "allow_anonymous true" | sudo tee -a /etc/mosquitto/conf.d/default.conf
+
 sudo systemctl enable mosquitto
-sudo systemctl start mosquitto
+sudo systemctl restart mosquitto
 
-# Criar projeto
-mkdir -p ~/gex635-mqtt/{src,docs,tests,examples}
+curl -fsSL https://bun.sh/install | bash
+echo 'export PATH="$HOME/.bun/bin:$PATH"' >> ~/.bashrc
+source ~/.bashrc
 
-# Exemplo básico
-cat > ~/gex635-mqtt/examples/test.c << 'EOC'
-#include <stdio.h>
-#include <MQTTClient.h>
-int main() {
-    printf("✅ Paho MQTT C instalado corretamente!\n");
-    return 0;
-}
-EOC
+echo "✅ Verificando instalações..."
+which bun
+mosquitto -v
+echo "mosquitto status: $(sudo systemctl is-active mosquitto)"
 
-# Compilar teste
-cd ~/gex635-mqtt/examples
-gcc -o test test.c -lpaho-mqtt3c && ./test
+# Teste rápido do broker MQTT
+echo "🧪 Testando broker MQTT..."
+timeout 5s mosquitto_sub -h localhost -t "test/install" -v &
+sleep 2
+mosquitto_pub -h localhost -t "test/install" -m "✅ MQTT funcionando!" || true
 
-echo "🎉 Instalação concluída! Projeto em ~/gex635-mqtt/"
+echo "🎉 Instalação concluída!"
+echo "🚀 Para começar:"
+echo "   cd ~/mqtt-project"
 EOF
-
-chmod +x setup-gex635.sh && ./setup-gex635.sh

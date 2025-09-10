@@ -6,8 +6,9 @@ export const MQTT_CONFIG = {
     USER_PRESENCE: 'users/presence',
     USER_TYPING: (userId: string) => `user/${userId}/typing`
   }
-};
+}
 
-// Estas são variáveis separadas, não parte do MQTT_CONFIG
-export const USER_ID = process.env.USER_ID || `user_${Math.random().toString(36).substr(2, 9)}`;
-export const USER_NAME = process.env.USER_NAME || `User_${USER_ID.substr(0, 5)}`;
+const uniqueId = crypto.randomUUID().replace(/-/g, '').substring(0, 9)
+
+export const USER_ID = process.env.USER_ID || `user_${uniqueId}`
+export const USER_NAME = process.env.USER_NAME || `User_${uniqueId.substring(0, 5)}`

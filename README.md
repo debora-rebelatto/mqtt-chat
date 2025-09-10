@@ -5,7 +5,7 @@ Este projeto foi desenvolvido para a matéria de Tópicos Especiais em Computaç
 Para iniciar, garanta que você tem os programas nesessários instalados. Rode `setup.sh` na sua máquina. Aqui estaremos cobrindo apenas para Linux, se você utiliza Windows, o processo pode ser diferente em algum ponto.
 
 ```sh
-chmod +x setup-gex635.sh && ./setup-gex635.sh
+chmod +x setup.sh && ./setup.sh
 ```
 
 ## O que ocorre ao executar `setup.sh`
