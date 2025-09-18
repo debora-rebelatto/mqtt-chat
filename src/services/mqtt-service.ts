@@ -14,7 +14,9 @@ export class MQTTService {
   async connect(): Promise<void> {
     return new Promise((resolve, reject) => {
       try {
-        this.client = mqtt.connect(MQTT_CONFIG.BROKER_URL);
+        this.client = mqtt.connect(MQTT_CONFIG.BROKER_URL, {
+        protocolVersion: 5
+      });
 
         this.client.on('connect', () => {
           Logger.info('Conectado ao broker MQTT');
