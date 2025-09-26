@@ -1,0 +1,13 @@
+<div class="bg-white rounded-lg shadow p-6">
+  <h2 class="text-lg font-medium mb-4">Sessões Ativas</h2>
+  <div class="space-y-2">
+    @for (session of mqttFacade.getSessions(); track session.sessionId) {
+      <div class="p-3 border rounded-lg">
+        <p class="text-sm">Com: {{ session.participant2 }}</p>
+        <p class="text-xs text-gray-400 truncate">Tópico: {{ session.topic }}</p>
+      </div>
+    } @empty {
+      <p class="text-gray-500 text-sm">Nenhuma sessão ativa</p>
+    }
+  </div>
+</div>

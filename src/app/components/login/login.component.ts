@@ -1,7 +1,7 @@
 import { Component, inject } from '@angular/core'
 import { CommonModule } from '@angular/common'
 import { FormsModule } from '@angular/forms'
-import { MqttFacadeService } from '../../services/mqtt-facade.service' // Novo serviço fachada
+import { MqttFacadeService } from '../../services/mqtt-facade.service'
 
 @Component({
   selector: 'app-login',
@@ -13,11 +13,6 @@ export class LoginComponent {
   userId: string = ''
   isConnecting: boolean = false
   mqttFacade = inject(MqttFacadeService)
-
-  get currentConnectionState(): string {
-    if (this.isConnecting) return 'Conectando...'
-    return this.isConnected ? 'Conectado' : 'Desconectado'
-  }
 
   async connect(): Promise<void> {
     if (!this.userId.trim()) {
