@@ -6,18 +6,20 @@ import { MqttConnectionService } from './connection.service'
 import { MqttUserService } from './user.service'
 import { Client, Message, ConnectionOptions } from 'paho-mqtt'
 
-
 @Injectable({ providedIn: 'root' })
 export class MqttFacadeService {
   private readonly USERS_TOPIC = 'USERS'
   private readonly GROUPS_TOPIC = 'GROUPS'
   private controlTopic = ''
   private currentUserId = ''
+  public currentUser: string = ''
+  public isConnected: boolean = false
 
   constructor(
     private mqtt: MqttConnectionService,
     private userService: MqttUserService,
-    private sessionService: ChatSessionService
+    private sessionService: ChatSessionService,
+    private connection: MqttConnectionService
   ) {}
 
   async connect(userId: string) {
@@ -42,6 +44,7 @@ export class MqttFacadeService {
   }
 
   disconnect() {
+    this.currentUser = ''
     this.publishUserStatus('offline')
     this.mqtt.disconnect()
   }
@@ -76,7 +79,6 @@ export class MqttFacadeService {
 
   private handleControlMessage(payload: any) {
     if (payload.type === 'chat_request') {
-
       console.log('Nova solicitação de chat:', payload)
     } else if (payload.type === 'chat_accepted') {
       const session: ChatSession = {
@@ -141,5 +143,9 @@ export class MqttFacadeService {
 
   getSessions(): ChatSession[] {
     return this.sessionService.getSessions()
+  }
+
+  getConnectedStatus(): boolean {
+    return this.connection.getConnectionStatus()
   }
 }

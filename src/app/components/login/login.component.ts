@@ -1,7 +1,7 @@
 import { Component, inject } from '@angular/core'
 import { CommonModule } from '@angular/common'
 import { FormsModule } from '@angular/forms'
-import { MqttService } from '../../services/mqtt.service'
+import { MqttFacadeService } from '../../services/mqtt-facade.service' // Novo serviço fachada
 
 @Component({
   selector: 'app-login',
@@ -12,10 +12,11 @@ import { MqttService } from '../../services/mqtt.service'
 export class LoginComponent {
   userId: string = ''
   isConnecting: boolean = false
-  mqttService = inject(MqttService)
+  mqttFacade = inject(MqttFacadeService)
 
   get currentConnectionState(): string {
-    return this.isConnecting ? 'Conectando' : 'Conectado'
+    if (this.isConnecting) return 'Conectando...'
+    return this.isConnected ? 'Conectado' : 'Desconectado'
   }
 
   async connect(): Promise<void> {
@@ -27,7 +28,7 @@ export class LoginComponent {
     this.isConnecting = true
 
     try {
-      await this.mqttService.connect(this.userId)
+      await this.mqttFacade.connect(this.userId)
       console.log('Conectado com sucesso!')
     } catch (error) {
       console.error('Erro na conexão:', error)
@@ -38,11 +39,10 @@ export class LoginComponent {
   }
 
   disconnect(): void {
-    this.mqttService.disconnect()
-    this.userId = ''
+    this.mqttFacade.disconnect()
   }
 
   get isConnected(): boolean {
-    return this.mqttService.getConnectedStatus()
+    return this.mqttFacade.getConnectedStatus()
   }
 }
