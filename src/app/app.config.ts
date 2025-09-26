@@ -6,11 +6,11 @@ import {
 import { provideRouter } from '@angular/router'
 
 import { routes } from './app.routes'
-import { MqttService } from './services/mqtt.service'
+import { MqttFacadeService } from './services/mqtt-facade.service'
 
 export const appConfig: ApplicationConfig = {
   providers: [
-    MqttService,
+    MqttFacadeService,
     provideBrowserGlobalErrorListeners(),
     provideZoneChangeDetection({ eventCoalescing: true }),
     provideRouter(routes)

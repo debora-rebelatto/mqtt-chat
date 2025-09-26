@@ -6,14 +6,25 @@ import { MqttConnectionService } from './connection.service'
 import { MqttUserService } from './user.service'
 import { Client, Message, ConnectionOptions } from 'paho-mqtt'
 
+interface ChatRequest {
+  id: string
+  from: string
+  to: string
+  proposedSessionId: string
+  timestamp: Date
+}
+
 @Injectable({ providedIn: 'root' })
 export class MqttFacadeService {
   private readonly USERS_TOPIC = 'USERS'
   private readonly GROUPS_TOPIC = 'GROUPS'
   private controlTopic = ''
   private currentUserId = ''
+
   public currentUser: string = ''
   public isConnected: boolean = false
+  public pendingRequests: ChatRequest[] = []
+  public chatSessions: ChatSession[] = []
 
   constructor(
     private mqtt: MqttConnectionService,
@@ -34,19 +45,30 @@ export class MqttFacadeService {
 
     this.mqtt.onMessageArrived = this.handleMessage.bind(this)
 
-    await this.mqtt.connect({ useSSL: false })
+    try {
+      await this.mqtt.connect({ useSSL: false })
+      this.isConnected = true
 
-    this.mqtt.subscribe(this.USERS_TOPIC)
-    this.mqtt.subscribe(this.GROUPS_TOPIC)
-    this.mqtt.subscribe(this.controlTopic)
+      this.mqtt.subscribe(this.USERS_TOPIC)
+      this.mqtt.subscribe(this.GROUPS_TOPIC)
+      this.mqtt.subscribe(this.controlTopic)
 
-    this.publishUserStatus('online')
+      this.publishUserStatus('online')
+    } catch (error) {
+      console.error('Erro ao conectar:', error)
+      this.isConnected = false
+    }
   }
 
   disconnect() {
-    this.currentUser = ''
-    this.publishUserStatus('offline')
-    this.mqtt.disconnect()
+    if (this.isConnected) {
+      this.publishUserStatus('offline')
+      this.mqtt.disconnect()
+      this.isConnected = false
+    }
+
+    this.pendingRequests = []
+    this.currentUserId = ''
   }
 
   private publishUserStatus(status: 'online' | 'offline') {
@@ -62,24 +84,41 @@ export class MqttFacadeService {
 
   private handleMessage(message: Message) {
     const topic = message.destinationName
-    const payload = JSON.parse(message.payloadString)
 
-    if (topic === this.USERS_TOPIC) {
-      this.userService.addOrUpdateUser({
-        id: payload.userId,
-        status: payload.status,
-        lastSeen: new Date(payload.timestamp)
-      })
-    } else if (topic === this.controlTopic) {
-      this.handleControlMessage(payload)
-    } else if (topic.includes('_')) {
-      this.handleChatMessage(topic, payload)
+    try {
+      const payload = JSON.parse(message.payloadString)
+
+      if (topic === this.USERS_TOPIC) {
+        this.userService.addOrUpdateUser({
+          id: payload.id || payload.userId,
+          status: payload.status,
+          lastSeen: new Date(payload.lastSeen || payload.timestamp)
+        })
+      } else if (topic === this.controlTopic) {
+        this.handleControlMessage(payload)
+      } else if (topic.includes('_')) {
+        this.handleChatMessage(topic, payload)
+      }
+    } catch (error) {
+      console.error('Erro ao processar mensagem:', error)
     }
   }
 
   private handleControlMessage(payload: any) {
     if (payload.type === 'chat_request') {
       console.log('Nova solicitação de chat:', payload)
+
+      const request: ChatRequest = {
+        id: payload.proposedSessionId,
+        from: payload.from,
+        to: payload.to,
+        proposedSessionId: payload.proposedSessionId,
+        timestamp: new Date(payload.timestamp)
+      }
+
+      if (!this.pendingRequests.some((r) => r.id === request.id)) {
+        this.pendingRequests.push(request)
+      }
     } else if (payload.type === 'chat_accepted') {
       const session: ChatSession = {
         sessionId: payload.sessionId,
@@ -91,6 +130,7 @@ export class MqttFacadeService {
 
       this.sessionService.addSession(session)
       this.mqtt.subscribe(session.topic)
+      this.updateChatSessions()
     }
   }
 
@@ -99,6 +139,11 @@ export class MqttFacadeService {
   }
 
   requestChat(toUserId: string) {
+    if (!this.isConnected) {
+      console.warn('Não conectado ao MQTT')
+      return
+    }
+
     const sessionId = `${this.currentUserId}_${toUserId}_${Date.now()}`
     const topic = `${toUserId}_Control`
 
@@ -113,7 +158,12 @@ export class MqttFacadeService {
     this.mqtt.publish(topic, message)
   }
 
-  acceptChatRequest(request: any) {
+  acceptChatRequest(request: ChatRequest) {
+    if (!this.isConnected) {
+      console.warn('Não conectado ao MQTT')
+      return
+    }
+
     const topic = request.proposedSessionId
 
     const message = {
@@ -133,8 +183,24 @@ export class MqttFacadeService {
       timestamp: new Date()
     })
 
+    this.updateChatSessions()
+
     this.mqtt.publish(`${request.from}_Control`, message)
     this.mqtt.subscribe(topic)
+
+    this.rejectChatRequest(request.id)
+  }
+
+  rejectChatRequest(requestId: string) {
+    this.pendingRequests = this.pendingRequests.filter((r) => r.id !== requestId)
+  }
+
+  getCurrentUserId(): string {
+    return this.currentUserId
+  }
+
+  private updateChatSessions() {
+    this.chatSessions = this.sessionService.getSessions()
   }
 
   getUsers(): User[] {
@@ -146,6 +212,6 @@ export class MqttFacadeService {
   }
 
   getConnectedStatus(): boolean {
-    return this.connection.getConnectionStatus()
+    return this.isConnected
   }
 }
