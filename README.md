@@ -1,29 +1,59 @@
-# MQTT Chat
+# MqttChatApp
 
-Este projeto foi desenvolvido para a matéria de Tópicos Especiais em Computação XIII.
+This project was generated using [Angular CLI](https://github.com/angular/angular-cli) version 20.3.3.
 
-Para iniciar, garanta que você tem os programas nesessários instalados. Rode `setup.sh` na sua máquina. Aqui estaremos cobrindo apenas para Linux, se você utiliza Windows, o processo pode ser diferente em algum ponto.
+## Development server
 
-```sh
-chmod +x setup.sh && ./setup.sh
+To start a local development server, run:
+
+```bash
+ng serve
 ```
 
-## O que ocorre ao executar `setup.sh`
+Once the server is running, open your browser and navigate to `http://localhost:4200/`. The application will automatically reload whenever you modify any of the source files.
 
-1. São instaladas as seguintes ferramentas:
+## Code scaffolding
 
-- **Desenvolvimento:** build-essential, cmake, gcc, g++, make, gdb
-- **Editores:** vim, nano
-- **Utilitários:** git, wget, curl, tree
-- **MQTT:** mosquitto (broker), mosquitto-clients, libpaho-mqtt-dev
-- **Bibliotecas:** libssl-dev, libncurses5-dev, libsqlite3-dev
+Angular CLI includes powerful code scaffolding tools. To generate a new component, run:
 
-2. O broker mosquitto é configurado
+```bash
+ng generate component component-name
+```
 
-3. A estutura inicial do projeto é configurada (aqui atualizar pra trazer tudo pro git)
+For a complete list of available schematics (such as `components`, `directives`, or `pipes`), run:
 
-## Como rodar o projeto
+```bash
+ng generate --help
+```
 
-O projeto foi desenvolvido utilizando `bun`, é necessário fazer a instalação dele.
+## Building
 
-`npm i -g bun`
+To build the project run:
+
+```bash
+ng build
+```
+
+This will compile your project and store the build artifacts in the `dist/` directory. By default, the production build optimizes your application for performance and speed.
+
+## Running unit tests
+
+To execute unit tests with the [Karma](https://karma-runner.github.io) test runner, use the following command:
+
+```bash
+ng test
+```
+
+## Running end-to-end tests
+
+For end-to-end (e2e) testing, run:
+
+```bash
+ng e2e
+```
+
+Angular CLI does not come with an end-to-end testing framework by default. You can choose one that suits your needs.
+
+## Additional Resources
+
+For more information on using the Angular CLI, including detailed command references, visit the [Angular CLI Overview and Command Reference](https://angular.dev/tools/cli) page.

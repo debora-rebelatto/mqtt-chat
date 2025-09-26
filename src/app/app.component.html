@@ -1,0 +1,88 @@
+<div class="min-h-screen bg-gray-50">
+  <header class="bg-white shadow-sm">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+      <div class="flex justify-between items-center">
+        <h1 class="text-xl font-semibold text-gray-900">Chat MQTT</h1>
+        <div class="flex items-center space-x-4">
+          <div class="flex items-center">
+            <div
+              [class]="mqttService.getConnectedStatus() ? 'bg-green-400' : 'bg-red-400'"
+              class="w-3 h-3 rounded-full mr-2"
+            ></div>
+            <span class="text-sm text-gray-600">
+              {{ mqttService.getConnectedStatus() ? 'Conectado' : 'Desconectado' }}
+            </span>
+          </div>
+          @if (mqttService.currentUser) {
+            <span class="text-sm text-gray-600"> Usuário: {{ mqttService.currentUser }} </span>
+          }
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    @if (!mqttService.getConnectedStatus()) {
+      <app-login />
+    } @else {
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div class="bg-white rounded-lg shadow p-6">
+            <h2 class="text-lg font-medium mb-4">Usuários Online</h2>
+            <div class="space-y-2">
+              @for (request of mqttService.pendingRequests; track request.timestamp) {
+                <div class="p-3 border rounded-lg">
+                  <p class="text-sm">De: {{ request.from }}</p>
+                  <p class="text-xs text-gray-500">{{ request.timestamp | dateShort }}</p>
+                  <button
+                    (click)="mqttService.acceptChatRequest(request)"
+                    class="mt-2 bg-blue-500 text-white px-3 py-1 rounded text-sm hover:bg-blue-600"
+                  >
+                    Aceitar
+                  </button>
+                </div>
+              } @empty {
+                <p class="text-gray-500 text-sm">Nenhuma solicitação pendente</p>
+              }
+            </div>
+          </div>
+
+          <!-- Solicitações Pendentes -->
+          <div class="bg-white rounded-lg shadow p-6">
+            <h2 class="text-lg font-medium mb-4">Solicitações de Chat</h2>
+            <div class="space-y-2">
+              <!-- @for (request of mqttService.pendingRequests; track request.) {
+                <div class="p-3 border rounded-lg">
+                  <p class="text-sm">De: {{ request.from }}</p>
+                  <p class="text-xs text-gray-500">{{ request.timestamp | dateTransform }}</p>
+                  <button
+                    (click)="mqttService.acceptChatRequest(request)"
+                    class="mt-2 bg-blue-500 text-white px-3 py-1 rounded text-sm hover:bg-blue-600"
+                  >
+                    Aceitar
+                  </button>
+                </div>
+              } -->
+            </div>
+          </div>
+
+          <!-- Sessões Ativas -->
+          <div class="bg-white rounded-lg shadow p-6">
+            <h2 class="text-lg font-medium mb-4">Sessões Ativas</h2>
+            <div class="space-y-2">
+              @for (session of mqttService.chatSessions; track session.sessionId) {
+                <div class="p-3 border rounded-lg">
+                  <p class="text-sm">Com: {{ session.participant2 }}</p>
+                  <!-- <p class="text-xs text-gray-500">{{ session.timestamp | dateTransform }}</p> -->
+                  <p class="text-xs text-gray-400 truncate">Tópico: {{ session.topic }}</p>
+                </div>
+              } @empty {
+                <p class="text-gray-500 text-sm">Nenhuma sessão ativa</p>
+              }
+            </div>
+          </div>
+        </div>
+      </div>
+    }
+  </main>
+</div>
