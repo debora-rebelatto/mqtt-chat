@@ -1,11 +1,11 @@
-<div class="min-h-screen bg-gray-100 flex items-center justify-center">
-  <div class="bg-white p-8 rounded-lg shadow-md w-96">
-    <h1 class="text-2xl font-bold mb-6 text-gray-800">Chat MQTT</h1>
+<div class="min-h-screen bg-gray-800 flex items-center justify-center">
+  <div class="bg-gray-500 p-8 rounded-lg shadow-md w-96">
+    <h1 class="text-2xl font-bold mb-6 text-white">Chat MQTT</h1>
 
     @if (!isConnected) {
       <div>
         <div class="mb-4">
-          <label for="userId" class="block text-sm font-medium text-gray-700 mb-2">
+          <label for="userId" class="block text-sm font-medium text-white mb-2">
             ID do Usuário
           </label>
           <input
@@ -34,7 +34,7 @@
             <div class="w-3 h-3 bg-green-500 rounded-full mr-2"></div>
             <span class="text-green-600 font-medium">Conectado</span>
           </div>
-          <p class="text-gray-600">
+          <p class="text-white">
             Usuário: <strong>{{ mqttFacade.currentUser }}</strong>
           </p>
         </div>
