@@ -64,10 +64,12 @@ export class AppComponent {
 
   private processHistoryMessage(historyData: string) {
     if (historyData && historyData !== 'REQUEST_HISTORY') {
-      const historyMessages = JSON.parse(historyData)
-      if (Array.isArray(historyMessages)) {
-        this.messages = historyMessages
-      }
+      try {
+        const historyMessages = JSON.parse(historyData)
+        if (Array.isArray(historyMessages)) {
+          this.messages = historyMessages // Substitui completamente
+        }
+      } 
     }
   }
 
