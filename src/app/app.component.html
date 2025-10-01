@@ -1,69 +1,126 @@
-<div class="min-h-screen bg-gray-50 p-4">
-  <div class="max-w-2xl mx-auto bg-white rounded-lg shadow-sm border">
-    <div class="p-6 border-b">
-      <h1 class="text-2xl font-bold text-gray-800">MQTT Chat</h1>
-    </div>
-
-    @if (!connected) {
-      <div class="p-6 space-y-4">
-        <label class="block text-sm font-medium text-gray-700">Seu nome:</label>
-        <div class="flex gap-2">
+<div class="min-h-screen bg-gray-100 p-4">
+  <div class="max-w-6xl mx-auto bg-white rounded-lg shadow-lg overflow-hidden">
+    <div class="bg-blue-600 text-white p-4">
+      <h1 class="text-2xl font-bold">💬 Chat MQTT</h1>
+      @if (connected) {
+        <button
+          (click)="clearHistory()"
+          class="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg font-semibold"
+        >
+          🗑️ Limpar Histórico
+        </button>
+      }
+      @if (!connected) {
+        <div class="mt-4 flex items-center space-x-2">
           <input
-            type="text"
             [(ngModel)]="username"
             placeholder="Digite seu nome"
-            (keypress)="onKeyPress($event)"
-            class="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            class="px-3 py-2 border rounded-lg text-black flex-1"
           />
           <button
             (click)="connect()"
-            class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+            class="bg-green-500 hover:bg-green-600 px-4 py-2 rounded-lg font-semibold"
           >
             Conectar
           </button>
         </div>
-      </div>
-    }
+      }
 
-    <!-- Chat Section -->
-    @if (connected) {
-      <div class="flex flex-col h-[500px]">
-        <!-- User Info -->
-        <div class="p-4 border-b bg-gray-50">
-          <p class="text-sm text-gray-600">
-            <strong>Conectado como:</strong>
-            <span class="text-blue-600 font-medium">{{ username }}</span>
-          </p>
-        </div>
-
-        <div class="flex-1 p-4 overflow-y-auto bg-gray-25">
-          <div class="space-y-2">
-            @for (message of messages; track $index) {
-              <div class="text-sm text-gray-700 p-2 rounded bg-white border">
-                {{ message }}
-              </div>
-            }
+      @if (connected) {
+        <div class="mt-4 flex justify-between items-center">
+          <div class="flex items-center space-x-2">
+            <div class="w-3 h-3 bg-green-400 rounded-full animate-pulse"></div>
+            <span class="font-semibold">Conectado como: {{ username }}</span>
           </div>
+          <button
+            (click)="disconnect()"
+            class="bg-red-500 hover:bg-red-600 px-4 py-2 rounded-lg font-semibold"
+          >
+            Sair
+          </button>
         </div>
+      }
+    </div>
 
-        <div class="p-4 border-t bg-white">
-          <div class="flex gap-2">
-            <input
-              type="text"
-              [(ngModel)]="inputMensagem"
-              placeholder="Digite sua mensagem..."
-              (keypress)="onKeyPress($event)"
-              class="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            />
-            <button
-              (click)="sendMessage()"
-              class="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2"
+    <div class="flex h-[600px]">
+      <div class="w-64 bg-gray-50 border-r border-gray-200 p-4">
+        <h3 class="font-bold text-gray-700 mb-4 flex items-center">
+          👥 Usuários Online
+          <span class="ml-2 bg-blue-500 text-white px-2 py-1 rounded-full text-sm">
+            {{ onlineUsersCount }}
+          </span>
+        </h3>
+
+        <div class="space-y-2 max-h-[500px] overflow-y-auto">
+          @for (user of onlineUsers; track user.clientId) {
+            <div
+              class="p-3 rounded-lg border transition-colors"
+              [class]="user.online ? 'bg-green-50 border-green-200' : 'bg-gray-100 border-gray-300'"
             >
-              Enviar
-            </button>
-          </div>
+              <div class="flex items-center justify-between">
+                <div class="flex items-center space-x-2">
+                  <div
+                    class="w-2 h-2 rounded-full"
+                    [class]="user.online ? 'bg-green-500' : 'bg-red-500'"
+                  ></div>
+                  <span class="font-medium">{{ user.username }}</span>
+                </div>
+                <span
+                  class="text-xs px-2 py-1 rounded-full"
+                  [class]="
+                    user.online ? 'bg-green-100 text-green-800' : 'bg-gray-200 text-gray-600'
+                  "
+                >
+                  {{ user.online ? 'Online' : 'Offline' }}
+                </span>
+              </div>
+              @if (!user.online) {
+                <div class="text-xs text-gray-500 mt-1">Visto {{ user.lastSeen | dateFormat }}</div>
+              }
+            </div>
+          }
         </div>
       </div>
-    }
+
+      <div class="flex-1 flex flex-col">
+        <div
+          #messagesContainer
+          class="flex-1 p-4 overflow-y-auto bg-white"
+          (scroll)="onMessagesScroll()"
+        >
+          @for (msg of messages; track $index) {
+            <div
+              class="mb-3 p-3 rounded-lg max-w-2xl"
+              [class]="
+                msg.startsWith('💚') || msg.startsWith('💔')
+                  ? 'bg-yellow-100 border border-yellow-200 mx-auto text-center'
+                  : 'bg-blue-50 border border-blue-200'
+              "
+            >
+              {{ msg }}
+            </div>
+          }
+        </div>
+
+        @if (connected) {
+          <div class="p-4 border-t border-gray-200 bg-gray-50">
+            <div class="flex space-x-2">
+              <input
+                [(ngModel)]="inputMensagem"
+                placeholder="Digite sua mensagem..."
+                (keypress)="onKeyPress($event)"
+                class="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+              <button
+                (click)="sendMessage()"
+                class="bg-blue-500 hover:bg-blue-600 text-white px-6 py-2 rounded-lg font-semibold transition-colors"
+              >
+                Enviar
+              </button>
+            </div>
+          </div>
+        }
+      </div>
+    </div>
   </div>
 </div>
