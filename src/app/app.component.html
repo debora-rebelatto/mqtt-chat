@@ -1,16 +1,69 @@
-<div class="min-h-screen bg-slate-800">
-  <app-header />
+<div class="min-h-screen bg-gray-50 p-4">
+  <div class="max-w-2xl mx-auto bg-white rounded-lg shadow-sm border">
+    <div class="p-6 border-b">
+      <h1 class="text-2xl font-bold text-gray-800">MQTT Chat</h1>
+    </div>
 
-  <main>
-    @if (!mqttFacade.getConnectedStatus()) {
-      <app-login />
-    } @else {
-      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <pending-requests />
-          <active-sessions />
+    @if (!connected) {
+      <div class="p-6 space-y-4">
+        <label class="block text-sm font-medium text-gray-700">Seu nome:</label>
+        <div class="flex gap-2">
+          <input
+            type="text"
+            [(ngModel)]="username"
+            placeholder="Digite seu nome"
+            (keypress)="onKeyPress($event)"
+            class="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+          />
+          <button
+            (click)="connect()"
+            class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+          >
+            Conectar
+          </button>
         </div>
       </div>
     }
-  </main>
+
+    <!-- Chat Section -->
+    @if (connected) {
+      <div class="flex flex-col h-[500px]">
+        <!-- User Info -->
+        <div class="p-4 border-b bg-gray-50">
+          <p class="text-sm text-gray-600">
+            <strong>Conectado como:</strong>
+            <span class="text-blue-600 font-medium">{{ username }}</span>
+          </p>
+        </div>
+
+        <div class="flex-1 p-4 overflow-y-auto bg-gray-25">
+          <div class="space-y-2">
+            @for (message of messages; track $index) {
+              <div class="text-sm text-gray-700 p-2 rounded bg-white border">
+                {{ message }}
+              </div>
+            }
+          </div>
+        </div>
+
+        <div class="p-4 border-t bg-white">
+          <div class="flex gap-2">
+            <input
+              type="text"
+              [(ngModel)]="inputMensagem"
+              placeholder="Digite sua mensagem..."
+              (keypress)="onKeyPress($event)"
+              class="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            />
+            <button
+              (click)="sendMessage()"
+              class="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2"
+            >
+              Enviar
+            </button>
+          </div>
+        </div>
+      </div>
+    }
+  </div>
 </div>
