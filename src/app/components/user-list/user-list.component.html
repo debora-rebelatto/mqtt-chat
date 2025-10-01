@@ -1,0 +1,36 @@
+<div class="mb-6">
+  <h3 class="font-bold text-gray-700 mb-4 flex items-center">
+    👥 Usuários Online
+    <span class="ml-2 bg-blue-500 text-white px-2 py-1 rounded-full text-sm">
+      {{ onlineUsersCount }}
+    </span>
+  </h3>
+
+  <div class="space-y-2 max-h-40 overflow-y-auto">
+    @for (user of users; track user.clientId) {
+      <div
+        class="p-3 rounded-lg border transition-colors"
+        [class]="user.online ? 'bg-green-50 border-green-200' : 'bg-gray-100 border-gray-300'"
+      >
+        <div class="flex items-center justify-between">
+          <div class="flex items-center space-x-2">
+            <div
+              class="w-2 h-2 rounded-full"
+              [class]="user.online ? 'bg-green-500' : 'bg-red-500'"
+            ></div>
+            <span class="font-medium">{{ user.username }}</span>
+          </div>
+          <span
+            class="text-xs px-2 py-1 rounded-full"
+            [class]="user.online ? 'bg-green-100 text-green-800' : 'bg-gray-200 text-gray-600'"
+          >
+            {{ user.online ? 'Online' : 'Offline' }}
+          </span>
+        </div>
+        @if (!user.online) {
+          <div class="text-xs text-gray-500 mt-1">Visto {{ user.lastSeen | dateFormat }}</div>
+        }
+      </div>
+    }
+  </div>
+</div>
