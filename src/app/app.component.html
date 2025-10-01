@@ -1,16 +1,38 @@
-<div class="min-h-screen bg-slate-800">
-  <app-header />
+<div class="chat-container">
+  <h1>MQTT Chat</h1>
 
-  <main>
-    @if (!mqttFacade.getConnectedStatus()) {
-      <app-login />
-    } @else {
-      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <pending-requests />
-          <active-sessions />
-        </div>
+  @if (!conectado) {
+    <div class="login-section">
+      <label>Seu nome:</label>
+      <input
+        type="text"
+        [(ngModel)]="username"
+        placeholder="Digite seu nome"
+        (keypress)="onKeyPress($event)"
+      />
+      <button (click)="conectar()">Conectar</button>
+    </div>
+  }
+
+  @if (conectado) {
+    <div class="chat-section">
+      <p><strong>Conectado como:</strong> {{ username }}</p>
+
+      <div class="mensagens-container">
+        @for (mensagem of mensagens; track $index) {
+          {{ mensagem }}
+        }
       </div>
-    }
-  </main>
+
+      <div class="input-section">
+        <input
+          type="text"
+          [(ngModel)]="inputMensagem"
+          placeholder="Digite sua mensagem"
+          (keypress)="onKeyPress($event)"
+        />
+        <button (click)="enviarMensagem()">Enviar</button>
+      </div>
+    </div>
+  }
 </div>
