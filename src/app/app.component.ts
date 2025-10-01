@@ -15,11 +15,11 @@ export class AppComponent {
 
   private client: Paho.Client | null = null
   username: string = ''
-  mensagens: string[] = []
+  messages: string[] = []
   inputMensagem: string = ''
-  conectado: boolean = false
+  connected: boolean = false
 
-  conectar() {
+  connect() {
     if (!this.username.trim()) {
       alert('Digite um nome!')
       return
@@ -30,29 +30,24 @@ export class AppComponent {
 
     this.client.onConnectionLost = (response: Paho.MQTTError) => {
       if (response.errorCode !== 0) {
-        console.log('Conexão perdida:', response.errorMessage)
-        this.conectado = false
+        this.connected = false
       }
     }
 
     this.client.onMessageArrived = (message: Paho.Message) => {
-      this.mensagens.push(message.payloadString)
+      this.messages.push(message.payloadString)
     }
 
     this.client.connect({
       onSuccess: () => {
-        console.log('Conectado!')
         this.client!.subscribe(this.CHAT_TOPIC)
-        this.conectado = true
-      },
-      onFailure: (error: Paho.MQTTError) => {
-        alert('Falha na conexão: ' + error.errorMessage)
+        this.connected = true
       }
     })
   }
 
-  enviarMensagem() {
-    if (!this.client || !this.conectado) {
+  sendMessage() {
+    if (!this.client || !this.connected) {
       alert('Não conectado ao chat!')
       return
     }
@@ -60,8 +55,8 @@ export class AppComponent {
     const texto = this.inputMensagem.trim()
     if (!texto) return
 
-    const mensagemFormatada = `${this.username}: ${texto}`
-    const message = new Paho.Message(mensagemFormatada)
+    const formattedMessage = `${this.username}: ${texto}`
+    const message = new Paho.Message(formattedMessage)
     message.destinationName = this.CHAT_TOPIC
     this.client.send(message)
 
@@ -70,7 +65,7 @@ export class AppComponent {
 
   onKeyPress(event: KeyboardEvent) {
     if (event.key === 'Enter') {
-      this.enviarMensagem()
+      this.sendMessage()
     }
   }
 }
