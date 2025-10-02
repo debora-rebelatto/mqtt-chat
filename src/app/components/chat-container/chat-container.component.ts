@@ -78,7 +78,7 @@ export class ChatContainerComponent implements AfterViewChecked, OnInit, OnDestr
     }
 
     this.clientId = `chat_${this.username}_${Math.random().toString(16).substring(2, 8)}`
-    await this.mqttService.connect('test.mosquitto.org', 8080, this.clientId)
+    await this.mqttService.connect('localhost', 8081, this.clientId)
 
     this.connected = true
     this.userService.initialize(this.clientId, this.username)
