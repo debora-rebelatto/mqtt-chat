@@ -12,8 +12,11 @@ export class UserService {
 
   private lastSeenMap: Map<string, number> = new Map()
   private clientId: string = ''
+  private readonly STORAGE_KEY = 'mqtt-chat-users'
 
-  constructor(private mqttService: MqttService) {}
+  constructor(private mqttService: MqttService) {
+    this.loadUsersFromStorage()
+  }
 
   initialize(clientId: string, username: string) {
     this.clientId = clientId
@@ -22,11 +25,11 @@ export class UserService {
 
   private setupSubscriptions(username: string) {
     this.mqttService.subscribe('meu-chat-mqtt/status', (message) => {
-      this.handleStatusMessage(message, username)
+      this.handleStatusMessage(message)
     })
 
     this.mqttService.subscribe('meu-chat-mqtt/status/disconnected', (message) => {
-      this.handleDisconnectMessage(message, username)
+      this.handleDisconnectMessage(message)
     })
 
     this.mqttService.subscribe('meu-chat-mqtt/heartbeat', (message) => {
@@ -74,7 +77,7 @@ export class UserService {
     this.mqttService.publish('meu-chat-mqtt/sync', JSON.stringify(syncMessage))
   }
 
-  private handleStatusMessage(message: string, currentUsername: string) {
+  private handleStatusMessage(message: string) {
     const status = JSON.parse(message)
 
     if (status.type === 'online') {
@@ -94,7 +97,7 @@ export class UserService {
     }
   }
 
-  private handleDisconnectMessage(message: string, currentUsername: string) {
+  private handleDisconnectMessage(message: string) {
     const disconnect = JSON.parse(message)
 
     this.addOrUpdateUser({
@@ -121,7 +124,7 @@ export class UserService {
   }
 
   private handleSyncMessage(message: string, currentUsername: string) {
-    const sync = JSON.parse(message) // CORREÇÃO: mudado de syncData para message
+    const sync = JSON.parse(message)
     if (sync.type === 'sync_request' && sync.from !== currentUsername) {
       this.publishOnlineStatus(currentUsername)
     }
@@ -151,9 +154,25 @@ export class UserService {
     })
 
     this.usersSubject.next(updatedUsers)
+    this.saveUsersToStorage(updatedUsers)
   }
 
   getOnlineUsersCount(): number {
     return this.usersSubject.value.filter((u) => u.online).length
+  }
+
+  private loadUsersFromStorage() {
+    const stored = localStorage.getItem(this.STORAGE_KEY)
+    if (stored) {
+      const users = JSON.parse(stored).map((user: UserStatus & { lastSeen: string }) => ({
+        ...user,
+        lastSeen: new Date(user.lastSeen)
+      }))
+      this.usersSubject.next(users)
+    }
+  }
+
+  private saveUsersToStorage(users: UserStatus[]) {
+    localStorage.setItem(this.STORAGE_KEY, JSON.stringify(users))
   }
 }

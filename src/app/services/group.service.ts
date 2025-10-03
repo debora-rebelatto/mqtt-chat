@@ -9,8 +9,11 @@ import { MqttService } from './mqtt.service'
 export class GroupService {
   private groupsSubject = new BehaviorSubject<Group[]>([])
   public groups$ = this.groupsSubject.asObservable()
+  private readonly STORAGE_KEY = 'mqtt-chat-groups'
 
-  constructor(private mqttService: MqttService) {}
+  constructor(private mqttService: MqttService) {
+    this.loadGroupsFromStorage()
+  }
 
   initialize() {
     this.mqttService.subscribe('meu-chat-mqtt/groups', (message) => {
@@ -33,7 +36,9 @@ export class GroupService {
     this.mqttService.publish('meu-chat-mqtt/groups', JSON.stringify(newGroup), true)
 
     const currentGroups = this.groupsSubject.value
-    this.groupsSubject.next([...currentGroups, newGroup])
+    const updatedGroups = [...currentGroups, newGroup]
+    this.groupsSubject.next(updatedGroups)
+    this.saveGroupsToStorage(updatedGroups)
 
     return newGroup
   }
@@ -60,6 +65,22 @@ export class GroupService {
       }
 
       this.groupsSubject.next(updatedGroups)
+      this.saveGroupsToStorage(updatedGroups)
     }
+  }
+
+  private loadGroupsFromStorage() {
+    const stored = localStorage.getItem(this.STORAGE_KEY)
+    if (stored) {
+      const groups = JSON.parse(stored).map((group: Group & { createdAt: string }) => ({
+        ...group,
+        createdAt: new Date(group.createdAt)
+      }))
+      this.groupsSubject.next(groups)
+    }
+  }
+
+  private saveGroupsToStorage(groups: Group[]) {
+    localStorage.setItem(this.STORAGE_KEY, JSON.stringify(groups))
   }
 }

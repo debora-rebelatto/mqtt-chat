@@ -1,42 +1,42 @@
-<div class="min-h-screen bg-gray-900 p-4">
-  <div class="max-w-7xl mx-auto bg-gray-800 rounded-lg shadow-2xl overflow-hidden">
-    <app-page-header 
-      (usernameChange)="onUsernameChange($event)"
-      (connectionChange)="onConnectionChange($event)"
-    />
+<div class="h-screen w-screen bg-gray-900 flex flex-col overflow-hidden">
+  <app-page-header 
+    (usernameChange)="onUsernameChange($event)"
+    (connectionChange)="onConnectionChange($event)"
+  />
 
-    <app-notifications-banner
-      [notifications]="notifications"
-      [showNotifications]="showNotifications"
-      (acceptInvite)="acceptInvite($event)"
-      (rejectInvite)="rejectInvite($event)"
-    />
+  <app-notifications-banner
+    [notifications]="notifications"
+    [showNotifications]="showNotifications"
+    (acceptInvite)="acceptInvite($event)"
+    (rejectInvite)="rejectInvite($event)"
+  />
 
-    @if (connected) {
-      <div class="flex h-96">
-        <app-sidebar
-          [activeView]="activeView"
-          [userChats]="userChats"
-          [groupChats]="groupChats"
-          [availableGroups]="availableGroups"
-          [username]="username"
-          [selectedChat]="selectedChat"
-          (chatSelect)="onChatSelect($event)"
-          (groupCreate)="onGroupCreate($event)"
-          (joinGroup)="onJoinGroup($event)"
-        />
+  @if (connected) {
+    <div class="flex flex-1 overflow-hidden">
+      <app-sidebar
+        class="h-full"
+        [activeView]="activeView"
+        [userChats]="userChats"
+        [groupChats]="groupChats"
+        [availableGroups]="availableGroups"
+        [username]="username"
+        [selectedChat]="selectedChat"
+        (chatSelect)="onChatSelect($event)"
+        (viewChange)="onViewChange($event)"
+        (groupCreate)="onGroupCreate($event)"
+        (joinGroup)="onJoinGroup($event)"
+      />
 
-        <app-chat-area
-          class="flex-1"
-          [selectedChat]="selectedChat"
-          [messages]="messages"
-          [inputMensagem]="inputMensagem"
-          [userStatus]="getSelectedUserStatus()"
-          (messageSend)="onMessageSend()"
-          (messageInputChange)="onMessageInputChange($event)"
-          (keyPress)="onKeyPress($event)"
-        />
-      </div>
-    }
-  </div>
+      <app-chat-area
+        class="flex-1 h-full"
+        [selectedChat]="selectedChat"
+        [messages]="messages"
+        [inputMensagem]="inputMensagem"
+        [userStatus]="getSelectedUserStatus()"
+        (messageSend)="onMessageSend()"
+        (messageInputChange)="onMessageInputChange($event)"
+        (keyPress)="onKeyPress($event)"
+      />
+    </div>
+  }
 </div>

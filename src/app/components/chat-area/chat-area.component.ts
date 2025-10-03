@@ -1,14 +1,18 @@
 import { Component, Input, Output, EventEmitter, ViewChild, ElementRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { LucideAngularModule, MessageCircle } from 'lucide-angular';
+import { TranslatePipe } from '../../pipes/translate.pipe';
 
 @Component({
   selector: 'app-chat-area',
   templateUrl: 'chat-area.component.html',
   standalone: true,
-  imports: [CommonModule, FormsModule]
+  imports: [CommonModule, FormsModule, LucideAngularModule, TranslatePipe]
 })
 export class ChatAreaComponent {
+  readonly MessageCircle = MessageCircle;
+  
   @ViewChild('messagesContainer') messagesContainer!: ElementRef;
   
   @Input() selectedChat: { type: string; id: string; name: string } | null = null;
@@ -25,7 +29,6 @@ export class ChatAreaComponent {
   @Output() messageSend = new EventEmitter<void>();
   @Output() messageInputChange = new EventEmitter<string>();
   @Output() keyPress = new EventEmitter<KeyboardEvent>();
-  @Output() scroll = new EventEmitter<void>();
 
   onSendMessage() {
     this.messageSend.emit();
@@ -37,10 +40,6 @@ export class ChatAreaComponent {
 
   onKeyPress(event: KeyboardEvent) {
     this.keyPress.emit(event);
-  }
-
-  onScroll() {
-    this.scroll.emit();
   }
 
   scrollToBottom() {

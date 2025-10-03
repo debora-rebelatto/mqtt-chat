@@ -1,19 +1,22 @@
 <div class="bg-gray-950 text-white p-4 border-b border-gray-700">
   <div class="flex justify-between items-center">
-    <h1 class="text-2xl font-bold flex items-center gap-2">💬 Chat MQTT</h1>
+    <h1 class="text-2xl font-bold flex items-center gap-2">
+      <lucide-icon [img]="MessageCircle" class="w-6 h-6"></lucide-icon>
+      {{ 'CHAT_TITLE' | translate }}
+    </h1>
 
     @if (!connected && !isConnecting) {
       <div class="flex items-center gap-2">
         <input
           [(ngModel)]="username"
-          placeholder="Digite seu nome"
+          [placeholder]="'USERNAME' | translate"
           class="px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white"
         />
         <button
           (click)="connect()"
           class="bg-green-600 hover:bg-green-700 px-4 py-2 rounded-lg font-semibold transition-colors"
         >
-          Conectar
+          {{ 'CONNECT' | translate }}
         </button>
       </div>
     }
@@ -23,13 +26,12 @@
         <div
           class="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"
         ></div>
-        <span class="text-gray-300">Conectando...</span>
+        <span class="text-gray-300">{{ 'CONNECTING' | translate }}</span>
       </div>
     }
 
     @if (connected) {
       <div class="flex items-center gap-4">
-        <!-- Componente de Notificações -->
         <app-notifications-panel
           [notifications]="notifications"
           [showNotifications]="showNotifications"
@@ -47,7 +49,7 @@
           (click)="disconnect()"
           class="bg-red-600 hover:bg-red-700 px-4 py-2 rounded-lg font-semibold transition-colors"
         >
-          Sair
+          {{ 'DISCONNECT' | translate }}
         </button>
       </div>
     }

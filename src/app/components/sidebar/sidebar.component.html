@@ -1,4 +1,4 @@
-<div class="w-80 bg-gray-900 border-r border-gray-700 overflow-y-auto">
+<div class="w-80 h-full bg-gray-900 border-r border-gray-700 flex flex-col">
   <div class="p-4 border-b border-gray-700">
     <div class="flex gap-2">
       <button
@@ -9,7 +9,7 @@
             : 'flex-1 py-2 px-3 rounded-lg font-medium transition-colors bg-gray-800 text-gray-300 hover:bg-gray-700'
         "
       >
-        Minhas Conversas
+        {{ 'CONVERSATIONS' | translate }}
       </button>
       <button
         (click)="onViewChange('available-groups')"
@@ -19,17 +19,18 @@
             : 'flex-1 py-2 px-3 rounded-lg font-medium transition-colors bg-gray-800 text-gray-300 hover:bg-gray-700'
         "
       >
-        🔍 Encontrar
+        {{ 'SEARCH' | translate }}
       </button>
     </div>
   </div>
 
-  <!-- Chat View -->
   @if (activeView === 'chat') {
-    <div class="p-4">
-      <!-- User Chats -->
+    <div class="flex-1 overflow-y-auto p-4">
       <div class="mb-6">
-        <h3 class="font-bold text-gray-300 mb-3 flex items-center gap-2">💬 Conversas Diretas</h3>
+        <h3 class="font-bold text-gray-300 mb-3 flex items-center gap-2">
+          <lucide-icon [img]="MessageCircle" class="w-4 h-4"></lucide-icon>
+          {{ 'DIRECT_CONVERSATIONS' | translate }}
+        </h3>
         <div class="space-y-2">
           @for (chat of userChats; track chat.id) {
             <div
@@ -60,25 +61,27 @@
                 }
               </div>
               @if (!chat.online) {
-                <div class="text-xs text-gray-400 mt-1 ml-4">Visto {{ chat.lastSeen }}</div>
+                <div class="text-xs text-gray-400 mt-1 ml-4">{{ 'LAST_SEEN' | translate:{ time: (chat.lastSeen | timeFormat) } }}</div>
               }
             </div>
           }
           @if (userChats.length === 0) {
-            <div class="text-center text-gray-500 text-sm py-4">Nenhum usuário online ainda</div>
+            <div class="text-center text-gray-500 text-sm py-4">{{ 'NO_USERS_ONLINE' | translate }}</div>
           }
         </div>
       </div>
 
-      <!-- Group Chats -->
       <div>
         <div class="flex justify-between items-center mb-3">
-          <h3 class="font-bold text-gray-300 flex items-center gap-2">👥 Meus Grupos</h3>
+          <h3 class="font-bold text-gray-300 flex items-center gap-2">
+            <lucide-icon [img]="Users" class="w-4 h-4"></lucide-icon>
+            {{ 'MY_GROUPS' | translate }}
+          </h3>
           <button
             (click)="onCreateGroup()"
             class="bg-green-600 hover:bg-green-700 text-white px-3 py-1 rounded-lg text-sm font-semibold transition-colors"
           >
-            + Novo
+            + {{ 'NEW' | translate }}
           </button>
         </div>
         <div class="space-y-2">
@@ -94,8 +97,8 @@
               <div class="flex justify-between items-start">
                 <div class="flex-1">
                   <div class="font-medium text-white">{{ group.name }}</div>
-                  <div class="text-xs text-gray-400">Líder: {{ group.leader }}</div>
-                  <div class="text-xs text-gray-500">{{ group.members }} membros</div>
+                  <div class="text-xs text-gray-400">{{ 'LEADER' | translate }}: {{ group.leader }}</div>
+                  <div class="text-xs text-gray-500">{{ group.members | memberCount }}</div>
                 </div>
                 <div class="flex flex-col items-end gap-1">
                   <span
@@ -105,7 +108,7 @@
                         : 'text-xs px-2 py-1 rounded-full bg-blue-900 text-blue-300'
                     "
                   >
-                    {{ group.leader === username ? 'Líder' : 'Membro' }}
+                    {{ group.leader === username ? ('LEADER' | translate) : ('MEMBER' | translate) }}
                   </span>
                   @if (group.unread > 0) {
                     <span
@@ -119,17 +122,19 @@
             </div>
           }
           @if (groupChats.length === 0) {
-            <div class="text-center text-gray-500 text-sm py-4">Nenhum grupo criado ainda</div>
+            <div class="text-center text-gray-500 text-sm py-4">{{ 'NO_GROUPS_CREATED' | translate }}</div>
           }
         </div>
       </div>
     </div>
   }
 
-  <!-- Available Groups View -->
   @if (activeView === 'available-groups') {
-    <div class="p-4">
-      <h3 class="font-bold text-gray-300 mb-3 flex items-center gap-2">🔍 Grupos Disponíveis</h3>
+    <div class="flex-1 overflow-y-auto p-4">
+      <h3 class="font-bold text-gray-300 mb-3 flex items-center gap-2">
+        <lucide-icon [img]="Search" class="w-4 h-4"></lucide-icon>
+        {{ 'AVAILABLE_GROUPS' | translate }}
+      </h3>
       <div class="space-y-3">
         @for (group of availableGroups; track group.id) {
           <div class="p-4 rounded-lg bg-gray-800 border border-gray-700">
@@ -137,28 +142,27 @@
             <div class="text-xs text-gray-400 mb-2">{{ group.description }}</div>
             <div class="flex justify-between items-center">
               <div class="text-xs text-gray-500">
-                <div>Líder: {{ group.leader }}</div>
-                <div>{{ group.members }} membros</div>
+                <div>{{ 'LEADER' | translate }}: {{ group.leader }}</div>
+                <div>{{ group.members | memberCount }}</div>
               </div>
               <button
                 (click)="onJoinGroup(group.id)"
                 class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded-lg text-sm font-semibold transition-colors"
               >
-                Entrar
+                {{ 'JOIN' | translate }}
               </button>
             </div>
           </div>
         }
         @if (availableGroups.length === 0) {
           <div class="text-center text-gray-500 text-sm py-4">
-            Nenhum grupo disponível no momento
+            {{ 'NO_GROUPS_AVAILABLE' | translate }}
           </div>
         }
       </div>
     </div>
   }
 
-  <!-- Modal de Criar Grupo - AGORA DENTRO DA SIDEBAR -->
   <app-group-modal
     [showModal]="showCreateGroupModal"
     [newGroupName]="newGroupName"

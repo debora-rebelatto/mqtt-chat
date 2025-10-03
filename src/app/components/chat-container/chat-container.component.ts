@@ -112,7 +112,6 @@ export class ChatContainerComponent implements OnInit, OnDestroy {
 
   onUsernameChange(username: string) {
     this.username = username
-    this.chatService.initialize(username)
   }
 
   onConnectionChange(connected: boolean) {
@@ -127,7 +126,6 @@ export class ChatContainerComponent implements OnInit, OnDestroy {
     this.joinGroup(groupId)
   }
 
-  // Métodos para ChatAreaComponent
   onMessageSend() {
     this.sendMessage()
   }
@@ -141,7 +139,6 @@ export class ChatContainerComponent implements OnInit, OnDestroy {
       this.sendMessage()
     }
   }
-
 
   scrollToBottom() {
     setTimeout(() => {
@@ -166,7 +163,7 @@ export class ChatContainerComponent implements OnInit, OnDestroy {
         name: u.username,
         online: u.online,
         lastSeen: u.online ? null : this.formatLastSeen(u.lastSeen),
-        unread: this.getUnreadCount()
+        unread: 0
       }))
   }
 
@@ -177,8 +174,8 @@ export class ChatContainerComponent implements OnInit, OnDestroy {
         id: g.id,
         name: g.name,
         leader: g.leader,
-        members: g.members,
-        unread: this.getUnreadCount(),
+        members: g.members.length,
+        unread: 0,
         createdAt: new Date()
       }))
 
@@ -214,7 +211,6 @@ export class ChatContainerComponent implements OnInit, OnDestroy {
 
     this.scrollToBottom()
   }
-
 
   getSelectedUserStatus(): string {
     if (this.selectedChat?.type === 'user') {

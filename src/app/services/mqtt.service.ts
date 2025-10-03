@@ -12,10 +12,6 @@ export class MqttService {
     return new Promise((resolve, reject) => {
       this.client = new Paho.Client(host, port, clientId)
 
-      this.client.onConnectionLost = (response: Paho.MQTTError) => {
-        console.log('Conexão perdida:', response.errorMessage)
-      }
-
       this.client.onMessageArrived = (message: Paho.Message) => {
         this.handleMessage(message)
       }

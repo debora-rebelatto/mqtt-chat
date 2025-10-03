@@ -1,25 +1,28 @@
 <div class="p-4">
-  <h3 class="font-bold text-gray-300 mb-3 flex items-center gap-2">🔍 Grupos Disponíveis</h3>
+  <h3 class="font-bold text-gray-300 mb-3 flex items-center gap-2">
+    <lucide-icon [img]="Search" class="w-4 h-4"></lucide-icon>
+    {{ 'AVAILABLE_GROUPS' | translate }}
+  </h3>
   <div class="space-y-3">
     @for (group of groups; track group.id) {
       <div class="p-4 rounded-lg bg-gray-800 border border-gray-700">
         <div class="font-medium text-white mb-1">{{ group.name }}</div>
         <div class="flex justify-between items-center">
           <div class="text-xs text-gray-500">
-            <div>Líder: {{ group.leader }}</div>
-            <div>{{ group.members }} membros</div>
+            <div>{{ 'LEADER' | translate }}: {{ group.leader }}</div>
+            <div>{{ group.members.length | memberCount }}</div>
           </div>
           <button
             (click)="groupJoined.emit(group.id)"
             class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded-lg text-sm font-semibold transition-colors"
           >
-            Entrar
+            {{ 'JOIN' | translate }}
           </button>
         </div>
       </div>
     }
     @if (groups.length === 0) {
-      <div class="text-center text-gray-500 text-sm py-4">Nenhum grupo disponível no momento</div>
+      <div class="text-center text-gray-500 text-sm py-4">{{ 'NO_GROUPS_AVAILABLE' | translate }}</div>
     }
   </div>
 </div>

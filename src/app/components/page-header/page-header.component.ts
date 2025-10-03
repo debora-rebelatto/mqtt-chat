@@ -2,21 +2,26 @@ import { Component, OnInit, OnDestroy, Output, EventEmitter } from '@angular/cor
 import { CommonModule } from '@angular/common'
 import { FormsModule } from '@angular/forms'
 import { Subject, takeUntil } from 'rxjs'
+import { LucideAngularModule, MessageCircle } from 'lucide-angular'
 import { MqttService } from '../../services/mqtt.service'
 import { UserService } from '../../services/user.service'
+import { GroupService } from '../../services/group.service'
+import { ChatService } from '../../services/chat.service'
 import { InvitationService } from '../../services/invitation.service'
 import { ConnectionManagerService } from '../../services/connection-manager.service'
 import { GroupInvitation } from '../../models/group-invitation.model'
 import { NotificationsPanelComponent } from '../notifications-panel/notifications-panel.component'
+import { TranslatePipe } from '../../pipes/translate.pipe'
 
 @Component({
   selector: 'app-page-header',
   templateUrl: './page-header.component.html',
   standalone: true,
-  imports: [CommonModule, FormsModule, NotificationsPanelComponent]
+  imports: [CommonModule, FormsModule, NotificationsPanelComponent, LucideAngularModule, TranslatePipe]
 })
 export class PageHeaderComponent implements OnInit, OnDestroy {
   private destroy$ = new Subject<void>()
+  readonly MessageCircle = MessageCircle
 
   connected = false
   username = ''
@@ -30,6 +35,8 @@ export class PageHeaderComponent implements OnInit, OnDestroy {
   constructor(
     private mqttService: MqttService,
     private userService: UserService,
+    private groupService: GroupService,
+    private chatService: ChatService,
     private invitationService: InvitationService,
     private connectionManager: ConnectionManagerService
   ) {}
@@ -65,9 +72,10 @@ export class PageHeaderComponent implements OnInit, OnDestroy {
 
       this.connectionManager.setConnected(true, clientId)
       this.userService.initialize(clientId, this.username)
+      this.groupService.initialize()
+      this.chatService.initialize(this.username)
       this.invitationService.initialize(this.username)
       
-      // Emit username and connection status
       this.usernameChange.emit(this.username)
       this.connectionChange.emit(true)
 
@@ -94,7 +102,6 @@ export class PageHeaderComponent implements OnInit, OnDestroy {
     this.invitationService.clearInvitations()
     this.isConnecting = false
     
-    // Emit connection status
     this.connectionChange.emit(false)
   }
 

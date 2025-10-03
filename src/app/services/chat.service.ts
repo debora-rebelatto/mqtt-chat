@@ -1,6 +1,5 @@
-// services/chat.service.ts
 import { Injectable } from '@angular/core'
-import { BehaviorSubject, Observable } from 'rxjs'
+import { BehaviorSubject } from 'rxjs'
 import { ChatMessage } from '../models/chat-message.model'
 import { MqttService } from './mqtt.service'
 
@@ -13,8 +12,12 @@ export class ChatService {
 
   private currentChatSubject = new BehaviorSubject<{ type: string; id: string } | null>(null)
   public currentChat$ = this.currentChatSubject.asObservable()
+  
+  private readonly STORAGE_KEY = 'mqtt-chat-messages'
 
-  constructor(private mqttService: MqttService) {}
+  constructor(private mqttService: MqttService) {
+    this.loadMessagesFromStorage()
+  }
 
   initialize(username: string) {
     this.mqttService.subscribe(`meu-chat-mqtt/messages/${username}`, (message) => {
@@ -79,7 +82,6 @@ export class ChatService {
 
   private handleUserMessage(message: string, currentUsername: string) {
     const data = JSON.parse(message)
-    console.log('📬 Processando mensagem:', data)
 
     const chatMessage: ChatMessage = {
       id: data.messageId || `msg_${Date.now()}`,
@@ -88,7 +90,7 @@ export class ChatService {
       timestamp: new Date(data.timestamp),
       fromCurrentUser: data.from === currentUsername,
       chatType: 'user',
-      chatId: data.from
+      chatId: data.from === currentUsername ? data.to : data.from
     }
 
     this.addMessage(chatMessage)
@@ -115,19 +117,35 @@ export class ChatService {
     const exists = messages.some((m) => m.id === message.id)
 
     if (!exists) {
-      this.messagesSubject.next([...messages, message])
+      const updatedMessages = [...messages, message]
+      this.messagesSubject.next(updatedMessages)
+      this.saveMessagesToStorage(updatedMessages)
     }
   }
 
   getMessagesForChat(type: string, chatId: string): ChatMessage[] {
-    const filtered = this.messagesSubject.value.filter(
+    return this.messagesSubject.value.filter(
       (m) => m.chatType === type && m.chatId === chatId
     )
-    console.log(`📋 Mensagens filtradas para ${type}/${chatId}:`, filtered.length)
-    return filtered
   }
 
   clearMessages() {
     this.messagesSubject.next([])
+    this.saveMessagesToStorage([])
+  }
+
+  private loadMessagesFromStorage() {
+    const stored = localStorage.getItem(this.STORAGE_KEY)
+    if (stored) {
+      const messages = JSON.parse(stored).map((msg: ChatMessage & { timestamp: string }) => ({
+        ...msg,
+        timestamp: new Date(msg.timestamp)
+      }))
+      this.messagesSubject.next(messages)
+    }
+  }
+
+  private saveMessagesToStorage(messages: ChatMessage[]) {
+    localStorage.setItem(this.STORAGE_KEY, JSON.stringify(messages))
   }
 }
