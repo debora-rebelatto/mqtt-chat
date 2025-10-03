@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms'
 import { LucideAngularModule, MessageCircle } from 'lucide-angular'
 import { TranslatePipe } from '../../pipes/translate.pipe'
 import { Messages } from '../../models/messages.model'
+import { SelectedChat } from '../../models/selected-chat.models'
 
 @Component({
   selector: 'chat-area',
@@ -16,7 +17,7 @@ export class ChatAreaComponent implements AfterViewInit, OnChanges {
 
   @ViewChild('messagesContainer') messagesContainer!: ElementRef
 
-  @Input() selectedChat: { type: string; id: string; name: string } | null = null
+  @Input() selectedChat: SelectedChat | null = null
   @Input() messages: Messages[] = []
   @Input() inputMensagem = ''
   @Input() userStatus = ''

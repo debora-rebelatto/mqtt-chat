@@ -38,11 +38,11 @@ export class AppStateService {
     this.selectedChatSubject.next(chat)
   }
 
-  selectChat(type: string, id: string, name: string) {
-    this.setSelectedChat({ type, id, name })
+  selectChat(type: 'user' | 'group', id: string, name: string) {
+    this.setSelectedChat(new SelectedChat(type, id, name))
   }
 
-  isSelectedChat(type: string, id: string): boolean {
+  isSelectedChat(type: 'user' | 'group', id: string): boolean {
     const selected = this.selectedChat
     return selected?.type === type && selected?.id === id
   }

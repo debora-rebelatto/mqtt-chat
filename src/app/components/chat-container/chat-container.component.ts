@@ -8,7 +8,6 @@ import { UserService } from '../../services/user.service'
 import { GroupService } from '../../services/group.service'
 import { ChatService } from '../../services/chat.service'
 import { InvitationService } from '../../services/invitation.service'
-import { ConnectionManagerService } from '../../services/connection-manager.service'
 import { AppStateService } from '../../services/app-state.service'
 
 import { UserStatus } from '../../models/user-status.model'
@@ -24,6 +23,7 @@ import { Group } from '../../models/group.model'
 import { Messages } from '../../models/messages.model'
 import { UserChats } from '../../models/user-chat.model'
 import { GroupChat } from '../../models/group-chat.model'
+import { SelectedChat } from '../../models/selected-chat.models'
 
 @Component({
   selector: 'app-chat-container',
@@ -39,7 +39,6 @@ import { GroupChat } from '../../models/group-chat.model'
   ]
 })
 export class ChatContainerComponent implements OnInit, OnDestroy {
-
   private destroy$ = new Subject<void>()
 
   inputMensagem = ''
@@ -62,7 +61,6 @@ export class ChatContainerComponent implements OnInit, OnDestroy {
     private groupService: GroupService,
     private chatService: ChatService,
     private invitationService: InvitationService,
-    private connectionManager: ConnectionManagerService,
     public appState: AppStateService
   ) {}
 
@@ -105,7 +103,7 @@ export class ChatContainerComponent implements OnInit, OnDestroy {
     this.activeView = view
   }
 
-  onChatSelect(chat: { type: string; id: string; name: string }) {
+  onChatSelect(chat: SelectedChat) {
     this.selectChat(chat.type, chat.id, chat.name)
   }
 
@@ -139,15 +137,24 @@ export class ChatContainerComponent implements OnInit, OnDestroy {
     }
   }
 
-  selectChat(type: string, id: string, name: string) {
+  selectChat(type: 'user' | 'group', id: string, name: string) {
     this.appState.selectChat(type, id, name)
     this.chatService.setCurrentChat(type, id)
   }
 
   private updateUserChats() {
-    // Pega usuários online
-    const onlineUsers = this.users
-      .filter((u) => u.username !== this.appState.username)
+    const currentUser = this.appState.username
+    const onlineUsers = this.getOnlineUsers(currentUser)
+    const offlineUsersWithChats = this.getOfflineUsersWithChats(currentUser, onlineUsers)
+
+    this.userChats = [...onlineUsers, ...offlineUsersWithChats].sort((a, b) =>
+      this.sortUserChats(a, b)
+    )
+  }
+
+  private getOnlineUsers(currentUser: string): UserChats[] {
+    return this.users
+      .filter((u) => u.username !== currentUser)
       .map((u) => ({
         id: u.username,
         name: u.username,
@@ -155,75 +162,69 @@ export class ChatContainerComponent implements OnInit, OnDestroy {
         lastSeen: u.online ? null : this.formatLastSeen(u.lastSeen),
         unread: 0
       }))
+  }
 
-    // Pega usuários com conversas ativas (mesmo offline)
+  private getOfflineUsersWithChats(currentUser: string, onlineUsers: UserChats[]): UserChats[] {
+    const usersWithMessages = this.getUsersWithMessages(currentUser)
+    const onlineUserIds = new Set(onlineUsers.map((u) => u.id))
+
+    return Array.from(usersWithMessages)
+      .filter((username) => !onlineUserIds.has(username))
+      .map((username) => ({
+        id: username,
+        name: username,
+        online: false,
+        lastSeen: this.getLastSeenForUser(username),
+        unread: 0
+      }))
+  }
+
+  private getUsersWithMessages(currentUser: string): Set<string> {
     const usersWithMessages = new Set<string>()
-    this.allMessages.forEach(msg => {
-      if (msg.chatType === 'user') {
-        // Para mensagens de usuário, o chatId é sempre o outro usuário na conversa
-        if (msg.chatId !== this.appState.username) {
-          usersWithMessages.add(msg.chatId)
-        }
-        // Se eu enviei a mensagem, o destinatário é o chatId
-        // Se recebi a mensagem, o remetente é quem aparece na lista
-        if (msg.fromCurrentUser) {
-          usersWithMessages.add(msg.chatId)
-        } else {
-          usersWithMessages.add(msg.sender)
-        }
-      }
-    })
 
-    // Adiciona usuários offline que têm conversas
-    const offlineUsersWithChats = Array.from(usersWithMessages)
-      .filter(username => 
-        username !== this.appState.username && 
-        !onlineUsers.some(u => u.id === username)
-      )
-      .map(username => {
-        // Encontra a mensagem mais recente com este usuário
-        const lastMessage = this.allMessages
-          .filter(msg => 
-            msg.chatType === 'user' && 
-            (msg.chatId === username || msg.sender === username)
-          )
-          .sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime())[0]
-        
-        return {
-          id: username,
-          name: username,
-          online: false,
-          lastSeen: lastMessage ? this.formatLastSeen(lastMessage.timestamp) : 'Offline',
-          unread: 0
+    this.allMessages
+      .filter((msg) => msg.chatType === 'user')
+      .forEach((msg) => {
+        if (msg.fromCurrentUser && msg.chatId !== currentUser) {
+          usersWithMessages.add(msg.chatId)
+        } else if (!msg.fromCurrentUser && msg.sender !== currentUser) {
+          usersWithMessages.add(msg.sender)
         }
       })
 
-    // Ordena por atividade: online primeiro, depois por última mensagem
-    const allUsers = [...onlineUsers, ...offlineUsersWithChats]
-    this.userChats = allUsers.sort((a, b) => {
-      if (a.online && !b.online) return -1
-      if (!a.online && b.online) return 1
-      
-      // Se ambos têm o mesmo status online, ordena por última atividade
-      const aLastMsg = this.allMessages
-        .filter(msg => msg.chatType === 'user' && (msg.chatId === a.id || msg.sender === a.id))
-        .sort((x, y) => y.timestamp.getTime() - x.timestamp.getTime())[0]
-      
-      const bLastMsg = this.allMessages
-        .filter(msg => msg.chatType === 'user' && (msg.chatId === b.id || msg.sender === b.id))
-        .sort((x, y) => y.timestamp.getTime() - x.timestamp.getTime())[0]
-      
-      if (!aLastMsg && !bLastMsg) return 0
-      if (!aLastMsg) return 1
-      if (!bLastMsg) return -1
-      
-      return bLastMsg.timestamp.getTime() - aLastMsg.timestamp.getTime()
-    })
+    return usersWithMessages
+  }
+
+  private getLastSeenForUser(username: string): string {
+    const lastMessage = this.getLastMessageForUser(username)
+    return lastMessage ? this.formatLastSeen(lastMessage.timestamp) : 'Offline'
+  }
+
+  private getLastMessageForUser(username: string): ChatMessage | undefined {
+    return this.allMessages
+      .filter(
+        (msg) => msg.chatType === 'user' && (msg.chatId === username || msg.sender === username)
+      )
+      .sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime())[0]
+  }
+
+  private sortUserChats(a: UserChats, b: UserChats): number {
+    if (a.online && !b.online) return -1
+    if (!a.online && b.online) return 1
+
+    const aLastMsg = this.getLastMessageForUser(a.id)
+    const bLastMsg = this.getLastMessageForUser(b.id)
+
+    if (!aLastMsg && !bLastMsg) return 0
+    if (!aLastMsg) return 1
+    if (!bLastMsg) return -1
+
+    return bLastMsg.timestamp.getTime() - aLastMsg.timestamp.getTime()
   }
 
   private updateGroupChats() {
     const userGroups = this.groups.filter((g) => g.members.includes(this.appState.username))
-    
+
     this.groupChats = userGroups.map((g) => ({
       id: g.id,
       name: g.name,
@@ -233,7 +234,7 @@ export class ChatContainerComponent implements OnInit, OnDestroy {
       createdAt: new Date()
     }))
 
-    userGroups.forEach(group => {
+    userGroups.forEach((group) => {
       this.chatService.subscribeToGroup(group.id, this.appState.username)
     })
 
@@ -266,11 +267,10 @@ export class ChatContainerComponent implements OnInit, OnDestroy {
       timestamp: this.formatTime(m.timestamp),
       fromCurrentUser: m.fromCurrentUser
     }))
-
   }
 
   getSelectedUserStatus(): string {
-    if (this.appState.selectedChat?.type === 'user') {
+    if (this.appState.selectedChat?.isUser()) {
       const user = this.userChats.find((u) => u.id === this.appState.selectedChat?.id)
       return user?.online ? 'Online' : `Visto ${user?.lastSeen}`
     }
@@ -280,10 +280,18 @@ export class ChatContainerComponent implements OnInit, OnDestroy {
   sendMessage() {
     if (!this.inputMensagem.trim() || !this.appState.selectedChat) return
 
-    if (this.appState.selectedChat.type === 'user') {
-      this.chatService.sendUserMessage(this.appState.username, this.appState.selectedChat.id, this.inputMensagem)
-    } else if (this.appState.selectedChat.type === 'group') {
-      this.chatService.sendGroupMessage(this.appState.selectedChat.id, this.appState.username, this.inputMensagem)
+    if (this.appState.selectedChat.isUser()) {
+      this.chatService.sendUserMessage(
+        this.appState.username,
+        this.appState.selectedChat.id,
+        this.inputMensagem
+      )
+    } else if (this.appState.selectedChat.isGroup()) {
+      this.chatService.sendGroupMessage(
+        this.appState.selectedChat.id,
+        this.appState.username,
+        this.inputMensagem
+      )
     }
 
     this.inputMensagem = ''

@@ -21,15 +21,22 @@ import { ChatMessage } from '../../models/chat-message.model'
   selector: 'app-sidebar',
   templateUrl: './sidebar.component.html',
   standalone: true,
-  imports: [CommonModule, FormsModule, GroupModalComponent, LucideAngularModule, TranslatePipe, MemberCountPipe]
+  imports: [
+    CommonModule,
+    FormsModule,
+    GroupModalComponent,
+    LucideAngularModule,
+    TranslatePipe,
+    MemberCountPipe
+  ]
 })
 export class SidebarComponent implements OnInit, OnDestroy {
   readonly MessageCircle = MessageCircle
   readonly Users = Users
   readonly Search = Search
-  
+
   private destroy$ = new Subject<void>()
-  
+
   activeView = 'chat'
   userChats: UserChats[] = []
   groupChats: GroupChat[] = []
@@ -79,7 +86,7 @@ export class SidebarComponent implements OnInit, OnDestroy {
     this.activeView = view
   }
 
-  onChatSelect(type: string, id: string, name: string) {
+  onChatSelect(type: 'user' | 'group', id: string, name: string) {
     this.appState.selectChat(type, id, name)
     this.chatService.setCurrentChat(type, id)
   }
@@ -93,9 +100,7 @@ export class SidebarComponent implements OnInit, OnDestroy {
     if (!group) return
 
     group.members.push(this.appState.username)
-    // Publish group update via MQTT
-    const mqttService = (this.groupService as any).mqttService
-    mqttService.publish('meu-chat-mqtt/groups', JSON.stringify(group), true)
+    this.groupService.updateGroup(group)
   }
 
   onModalClose() {
@@ -123,7 +128,7 @@ export class SidebarComponent implements OnInit, OnDestroy {
       }))
 
     const usersWithMessages = new Set<string>()
-    this.allMessages.forEach(msg => {
+    this.allMessages.forEach((msg) => {
       if (msg.chatType === 'user') {
         if (msg.fromCurrentUser) {
           usersWithMessages.add(msg.chatId)
@@ -134,18 +139,17 @@ export class SidebarComponent implements OnInit, OnDestroy {
     })
 
     const offlineUsersWithChats = Array.from(usersWithMessages)
-      .filter(username => 
-        username !== this.appState.username && 
-        !onlineUsers.some(u => u.id === username)
+      .filter(
+        (username) =>
+          username !== this.appState.username && !onlineUsers.some((u) => u.id === username)
       )
-      .map(username => {
+      .map((username) => {
         const lastMessage = this.allMessages
-          .filter(msg => 
-            msg.chatType === 'user' && 
-            (msg.chatId === username || msg.sender === username)
+          .filter(
+            (msg) => msg.chatType === 'user' && (msg.chatId === username || msg.sender === username)
           )
           .sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime())[0]
-        
+
         return {
           id: username,
           name: username,
@@ -159,26 +163,26 @@ export class SidebarComponent implements OnInit, OnDestroy {
     this.userChats = allUsers.sort((a, b) => {
       if (a.online && !b.online) return -1
       if (!a.online && b.online) return 1
-      
+
       const aLastMsg = this.allMessages
-        .filter(msg => msg.chatType === 'user' && (msg.chatId === a.id || msg.sender === a.id))
+        .filter((msg) => msg.chatType === 'user' && (msg.chatId === a.id || msg.sender === a.id))
         .sort((x, y) => y.timestamp.getTime() - x.timestamp.getTime())[0]
-      
+
       const bLastMsg = this.allMessages
-        .filter(msg => msg.chatType === 'user' && (msg.chatId === b.id || msg.sender === b.id))
+        .filter((msg) => msg.chatType === 'user' && (msg.chatId === b.id || msg.sender === b.id))
         .sort((x, y) => y.timestamp.getTime() - x.timestamp.getTime())[0]
-      
+
       if (!aLastMsg && !bLastMsg) return 0
       if (!aLastMsg) return 1
       if (!bLastMsg) return -1
-      
+
       return bLastMsg.timestamp.getTime() - aLastMsg.timestamp.getTime()
     })
   }
 
   private updateGroupChats() {
     const userGroups = this.groups.filter((g) => g.members.includes(this.appState.username))
-    
+
     this.groupChats = userGroups.map((g) => ({
       id: g.id,
       name: g.name,
@@ -188,7 +192,7 @@ export class SidebarComponent implements OnInit, OnDestroy {
       createdAt: new Date()
     }))
 
-    userGroups.forEach(group => {
+    userGroups.forEach((group) => {
       this.chatService.subscribeToGroup(group.id, this.appState.username)
     })
 
@@ -228,7 +232,7 @@ export class SidebarComponent implements OnInit, OnDestroy {
     }
   }
 
-  isSelected(type: string, id: string): boolean {
+  isSelected(type: 'user' | 'group', id: string): boolean {
     return this.appState.isSelectedChat(type, id)
   }
 

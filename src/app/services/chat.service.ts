@@ -10,7 +10,7 @@ export class ChatService {
   private messagesSubject = new BehaviorSubject<ChatMessage[]>([])
   public messages$ = this.messagesSubject.asObservable()
 
-  private currentChatSubject = new BehaviorSubject<{ type: string; id: string } | null>(null)
+  private currentChatSubject = new BehaviorSubject<{ type: 'user' | 'group'; id: string } | null>(null)
   public currentChat$ = this.currentChatSubject.asObservable()
   
   private readonly STORAGE_KEY = 'mqtt-chat-messages'
@@ -42,7 +42,7 @@ export class ChatService {
     })
   }
 
-  setCurrentChat(type: string, id: string) {
+  setCurrentChat(type: 'user' | 'group', id: string) {
     this.currentChatSubject.next({ type, id })
   }
 
@@ -147,7 +147,7 @@ export class ChatService {
     }
   }
 
-  getMessagesForChat(type: string, chatId: string): ChatMessage[] {
+  getMessagesForChat(type: 'user' | 'group', chatId: string): ChatMessage[] {
     return this.messagesSubject.value.filter(
       (m) => m.chatType === type && m.chatId === chatId
     )
