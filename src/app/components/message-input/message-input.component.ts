@@ -10,6 +10,8 @@ import { TranslatePipe } from "../../pipes/translate.pipe";
   imports: [CommonModule, FormsModule, TranslatePipe]
 })
 export class MessageInputComponent {
+  @ViewChild('messageInput') messageInput!: ElementRef<HTMLInputElement>
+
   @Output() messageSent = new EventEmitter<string>()
 
   message = ''
