@@ -1,13 +1,11 @@
-export class SelectedChat {
-  type: 'user' | 'group'
-  id: string
-  name: string
+export type ChatType = 'user' | 'group'
 
-  constructor(type: 'user' | 'group', id: string, name: string) {
-    this.type = type
-    this.id = id
-    this.name = name
-  }
+export class SelectedChat {
+  constructor(
+    public type: ChatType,
+    public id: string,
+    public name: string
+  ) {}
 
   isUser(): boolean {
     return this.type === 'user'
