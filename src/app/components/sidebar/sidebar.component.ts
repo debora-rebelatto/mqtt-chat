@@ -7,14 +7,14 @@ import { AvailableGroup } from '../../models/available-group.model'
 import { GroupChat } from '../../models/group-chat.model'
 import { UserChats } from '../../models/user-chat.model'
 import { TranslatePipe } from '../../pipes/translate.pipe'
-import { TimeFormatPipe } from '../../pipes/time-format.pipe'
 import { MemberCountPipe } from '../../pipes/member-count.pipe'
+import { AppStateService } from '../../services/app-state.service'
 
 @Component({
   selector: 'app-sidebar',
   templateUrl: './sidebar.component.html',
   standalone: true,
-  imports: [CommonModule, FormsModule, GroupModalComponent, LucideAngularModule, TranslatePipe, TimeFormatPipe, MemberCountPipe]
+  imports: [CommonModule, FormsModule, GroupModalComponent, LucideAngularModule, TranslatePipe, MemberCountPipe]
 })
 export class SidebarComponent {
   readonly MessageCircle = MessageCircle
@@ -25,8 +25,6 @@ export class SidebarComponent {
   @Input() userChats: UserChats[] = []
   @Input() groupChats: GroupChat[] = []
   @Input() availableGroups: AvailableGroup[] = []
-  @Input() username = ''
-  @Input() selectedChat: { type: string; id: string; name: string } | null = null
 
   showCreateGroupModal = false
   newGroupName = ''
@@ -35,6 +33,8 @@ export class SidebarComponent {
   @Output() chatSelect = new EventEmitter<{ type: string; id: string; name: string }>()
   @Output() groupCreate = new EventEmitter<string>()
   @Output() joinGroup = new EventEmitter<string>()
+
+  constructor(private appState: AppStateService) {}
 
   onViewChange(view: string) {
     this.viewChange.emit(view)
@@ -76,6 +76,10 @@ export class SidebarComponent {
   }
 
   isSelected(type: string, id: string): boolean {
-    return this.selectedChat?.type === type && this.selectedChat?.id === id
+    return this.appState.isSelectedChat(type, id)
+  }
+
+  get currentUsername(): string {
+    return this.appState.username
   }
 }

@@ -14,9 +14,12 @@ export class ChatService {
   public currentChat$ = this.currentChatSubject.asObservable()
   
   private readonly STORAGE_KEY = 'mqtt-chat-messages'
+  private readonly PENDING_MESSAGES_KEY = 'mqtt-chat-pending-messages'
+  private pendingMessages: { [username: string]: ChatMessage[] } = {}
 
   constructor(private mqttService: MqttService) {
     this.loadMessagesFromStorage()
+    this.loadPendingMessages()
   }
 
   initialize(username: string) {
@@ -25,6 +28,16 @@ export class ChatService {
     })
 
     this.mqttService.subscribe('meu-chat-mqtt/groups/+/messages', (message) => {
+      this.handleGroupMessage(message, username)
+    })
+
+    this.mqttService.subscribe(`meu-chat-mqtt/sync/pending/${username}`, (message) => {
+      this.handlePendingSync(message, username)
+    })
+  }
+
+  subscribeToGroup(groupId: string, username: string) {
+    this.mqttService.subscribe(`meu-chat-mqtt/groups/${groupId}/messages`, (message) => {
       this.handleGroupMessage(message, username)
     })
   }
@@ -53,7 +66,7 @@ export class ChatService {
     }
 
     this.mqttService.publish(`meu-chat-mqtt/messages/${to}`, JSON.stringify(payload))
-
+    this.addPendingMessage(to, message)
     this.addMessage(message)
   }
 
@@ -112,6 +125,17 @@ export class ChatService {
     this.addMessage(chatMessage)
   }
 
+  private handlePendingSync(message: string, currentUsername: string) {
+    const data = JSON.parse(message)
+    
+    if (data.type === 'request_pending') {
+      const pendingMessages = this.getPendingMessages(currentUsername)
+      pendingMessages.forEach(msg => {
+        this.addMessage(msg)
+      })
+    }
+  }
+
   private addMessage(message: ChatMessage) {
     const messages = this.messagesSubject.value
     const exists = messages.some((m) => m.id === message.id)
@@ -147,5 +171,47 @@ export class ChatService {
 
   private saveMessagesToStorage(messages: ChatMessage[]) {
     localStorage.setItem(this.STORAGE_KEY, JSON.stringify(messages))
+  }
+
+  forceSave() {
+    this.saveMessagesToStorage(this.messagesSubject.value)
+  }
+
+  forceLoad() {
+    this.loadMessagesFromStorage()
+  }
+
+  getStoredMessagesCount(): number {
+    return this.messagesSubject.value.length
+  }
+
+  private loadPendingMessages() {
+    const stored = localStorage.getItem(this.PENDING_MESSAGES_KEY)
+    if (stored) {
+      this.pendingMessages = JSON.parse(stored)
+    }
+  }
+
+  private savePendingMessages() {
+    localStorage.setItem(this.PENDING_MESSAGES_KEY, JSON.stringify(this.pendingMessages))
+  }
+
+  addPendingMessage(username: string, message: ChatMessage) {
+    if (!this.pendingMessages[username]) {
+      this.pendingMessages[username] = []
+    }
+    this.pendingMessages[username].push(message)
+    this.savePendingMessages()
+  }
+
+  getPendingMessages(username: string): ChatMessage[] {
+    const pending = this.pendingMessages[username] || []
+    delete this.pendingMessages[username]
+    this.savePendingMessages()
+    return pending
+  }
+
+  hasPendingMessages(username: string): boolean {
+    return !!(this.pendingMessages[username] && this.pendingMessages[username].length > 0)
   }
 }
