@@ -1,13 +1,20 @@
 import { Component, Input, Output, EventEmitter } from '@angular/core'
+import { CommonModule } from '@angular/common'
+import { LucideAngularModule, Search } from 'lucide-angular'
 import { Group } from '../../models/group.model'
+import { TranslatePipe } from '../../pipes/translate.pipe'
+import { MemberCountPipe } from '../../pipes/member-count.pipe'
 
 @Component({
   selector: 'app-group-list',
+  templateUrl: './group-list.component.html',
   standalone: true,
-  templateUrl: './group-list.component.html'
+  imports: [CommonModule, LucideAngularModule, TranslatePipe, MemberCountPipe]
 })
 export class GroupListComponent {
+  readonly Search = Search
+  
   @Input() groups: Group[] = []
-  @Input() currentUsername: string = ''
-  @Output() createGroup = new EventEmitter<void>()
+
+  @Output() groupJoined = new EventEmitter<string>()
 }

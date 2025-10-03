@@ -45,6 +45,6 @@ export class MessageManagerService {
   }
 
   formatSystemMessage(username: string, action: string): string {
-    return `💬 ${username} ${action}`
+    return `${username} ${action}`
   }
 }

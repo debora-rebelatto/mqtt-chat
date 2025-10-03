@@ -1,0 +1,34 @@
+@if (showModal) {
+  <div
+    class="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50"
+    (click)="onClose()"
+  >
+    <div
+      class="bg-gray-800 p-6 rounded-lg w-96 border border-gray-700"
+      (click)="onModalClick($event)"
+    >
+      <h3 class="text-lg font-bold mb-4 text-white">{{ 'CREATE_GROUP' | translate }}</h3>
+      <input
+        [ngModel]="newGroupName"
+        (ngModelChange)="onGroupNameChange($event)"
+        (keypress)="onKeyPress($event)"
+        [placeholder]="'GROUP_NAME' | translate"
+        class="w-full px-3 py-2 bg-gray-900 border border-gray-700 rounded-lg mb-4 focus:outline-none focus:ring-2 focus:ring-blue-500 text-white placeholder-gray-400"
+      />
+      <div class="flex justify-end gap-2">
+        <button
+          (click)="onClose()"
+          class="px-4 py-2 text-gray-400 hover:text-gray-200 font-medium transition-colors"
+        >
+          {{ 'CANCEL' | translate }}
+        </button>
+        <button
+          (click)="onCreate()"
+          class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-semibold transition-colors"
+        >
+          {{ 'CREATE' | translate }}
+        </button>
+      </div>
+    </div>
+  </div>
+}

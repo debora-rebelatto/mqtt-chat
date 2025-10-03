@@ -1,36 +1,96 @@
-<div class="mb-6">
-  <h3 class="font-bold text-gray-700 mb-4 flex items-center">
-    👥 Usuários Online
-    <span class="ml-2 bg-blue-500 text-white px-2 py-1 rounded-full text-sm">
-      {{ onlineUsersCount }}
-    </span>
-  </h3>
-
-  <div class="space-y-2 max-h-40 overflow-y-auto">
-    @for (user of users; track user.clientId) {
-      <div
-        class="p-3 rounded-lg border transition-colors"
-        [class]="user.online ? 'bg-green-50 border-green-200' : 'bg-gray-100 border-gray-300'"
-      >
-        <div class="flex items-center justify-between">
-          <div class="flex items-center space-x-2">
-            <div
-              class="w-2 h-2 rounded-full"
-              [class]="user.online ? 'bg-green-500' : 'bg-red-500'"
-            ></div>
-            <span class="font-medium">{{ user.username }}</span>
+<div class="p-4">
+  <div class="mb-6">
+    <h3 class="font-bold text-gray-300 mb-3 flex items-center gap-2">💬 Conversas Diretas</h3>
+    <div class="space-y-2">
+      @for (user of users; track user.id) {
+        <div
+          (click)="chatSelected.emit({ type: 'user', id: user.id, name: user.name })"
+          [class]="
+            selectedChat?.type === 'user' && selectedChat?.id === user.id
+              ? 'p-3 rounded-lg cursor-pointer transition-colors bg-blue-600'
+              : 'p-3 rounded-lg cursor-pointer transition-colors bg-gray-800 hover:bg-gray-750'
+          "
+        >
+          <div class="flex items-center justify-between">
+            <div class="flex items-center gap-2">
+              <div
+                [class]="
+                  user.online
+                    ? 'w-2 h-2 rounded-full bg-green-500'
+                    : 'w-2 h-2 rounded-full bg-gray-500'
+                "
+              ></div>
+              <span class="font-medium text-white">{{ user.name }}</span>
+            </div>
+            @if (user.unread > 0) {
+              <span
+                class="bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center"
+              >
+                {{ user.unread }}
+              </span>
+            }
           </div>
-          <span
-            class="text-xs px-2 py-1 rounded-full"
-            [class]="user.online ? 'bg-green-100 text-green-800' : 'bg-gray-200 text-gray-600'"
-          >
-            {{ user.online ? 'Online' : 'Offline' }}
-          </span>
+          @if (!user.online) {
+            <div class="text-xs text-gray-400 mt-1 ml-4">Visto {{ user.lastSeen }}</div>
+          }
         </div>
-        @if (!user.online) {
-          <div class="text-xs text-gray-500 mt-1">Visto {{ user.lastSeen | dateFormat }}</div>
-        }
-      </div>
-    }
+      }
+      @if (users.length === 0) {
+        <div class="text-center text-gray-500 text-sm py-4">Nenhum usuário online ainda</div>
+      }
+    </div>
+  </div>
+
+  <div>
+    <div class="flex justify-between items-center mb-3">
+      <h3 class="font-bold text-gray-300 flex items-center gap-2">👥 Meus Grupos</h3>
+      <button
+        (click)="createGroup.emit()"
+        class="bg-green-600 hover:bg-green-700 text-white px-3 py-1 rounded-lg text-sm font-semibold transition-colors"
+      >
+        + Novo
+      </button>
+    </div>
+    <div class="space-y-2">
+      @for (group of groups; track group.id) {
+        <div
+          (click)="chatSelected.emit({ type: 'group', id: group.id, name: group.name })"
+          [class]="
+            selectedChat?.type === 'group' && selectedChat?.id === group.id
+              ? 'p-3 rounded-lg cursor-pointer transition-colors bg-blue-600'
+              : 'p-3 rounded-lg cursor-pointer transition-colors bg-gray-800 hover:bg-gray-750'
+          "
+        >
+          <div class="flex justify-between items-start">
+            <div class="flex-1">
+              <div class="font-medium text-white">{{ group.name }}</div>
+              <div class="text-xs text-gray-400">Líder: {{ group.leader }}</div>
+              <div class="text-xs text-gray-500">{{ group.members }} membros</div>
+            </div>
+            <div class="flex flex-col items-end gap-1">
+              <span
+                [class]="
+                  group.leader === username
+                    ? 'text-xs px-2 py-1 rounded-full bg-green-900 text-green-300'
+                    : 'text-xs px-2 py-1 rounded-full bg-blue-900 text-blue-300'
+                "
+              >
+                {{ group.leader === username ? 'Líder' : 'Membro' }}
+              </span>
+              @if (group.unread > 0) {
+                <span
+                  class="bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center"
+                >
+                  {{ group.unread }}
+                </span>
+              }
+            </div>
+          </div>
+        </div>
+      }
+      @if (groups.length === 0) {
+        <div class="text-center text-gray-500 text-sm py-4">Nenhum grupo criado ainda</div>
+      }
+    </div>
   </div>
 </div>
