@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core'
 import { BehaviorSubject } from 'rxjs'
-import { UserStatus } from '../models/user-status.model'
 import { MqttService } from './mqtt.service'
+import { UserStatus } from '../models/user-status.model'
 
 @Injectable({
   providedIn: 'root'
@@ -13,16 +13,16 @@ export class UserService {
   private lastSeenMap: Map<string, number> = new Map()
   private clientId: string = ''
   private readonly STORAGE_KEY = 'mqtt-chat-users'
-
   constructor(private mqttService: MqttService) {
     this.loadUsersFromStorage()
+    this.startHeartbeatMonitor()
   }
 
   initialize(clientId: string, username: string) {
     this.clientId = clientId
     this.setupSubscriptions(username)
+    this.publishOnlineStatus(username)
   }
-
   private setupSubscriptions(username: string) {
     this.mqttService.subscribe('meu-chat-mqtt/status', (message) => {
       this.handleStatusMessage(message)
@@ -42,13 +42,14 @@ export class UserService {
   }
 
   publishOnlineStatus(username: string) {
-    this.lastSeenMap.set(username, Date.now())
+    const now = Date.now()
+    this.lastSeenMap.set(username, now)
 
     const statusMessage = {
       type: 'online',
       username: username,
       clientId: this.clientId,
-      timestamp: new Date()
+      timestamp: new Date(now)
     }
 
     this.mqttService.publish('meu-chat-mqtt/status', JSON.stringify(statusMessage))
@@ -81,13 +82,21 @@ export class UserService {
     const status = JSON.parse(message)
 
     if (status.type === 'online') {
+      this.lastSeenMap.set(status.username, Date.now())
       this.addOrUpdateUser({
         username: status.username,
         online: true,
         lastSeen: new Date(status.timestamp),
         clientId: status.clientId
       })
+      
+      this.mqttService.publish(`meu-chat-mqtt/sync/pending/${status.username}`, JSON.stringify({
+        type: 'request_pending',
+        username: status.username,
+        timestamp: new Date()
+      }))
     } else if (status.type === 'offline') {
+      this.lastSeenMap.delete(status.username)
       this.addOrUpdateUser({
         username: status.username,
         online: false,
@@ -144,7 +153,7 @@ export class UserService {
 
     const now = new Date().getTime()
     updatedUsers = updatedUsers.filter(
-      (user) => user.online || now - user.lastSeen.getTime() < 120000
+      (user) => user.online || now - user.lastSeen.getTime() < 7 * 24 * 60 * 60 * 1000
     )
 
     updatedUsers.sort((a, b) => {
@@ -174,5 +183,40 @@ export class UserService {
 
   private saveUsersToStorage(users: UserStatus[]) {
     localStorage.setItem(this.STORAGE_KEY, JSON.stringify(users))
+  }
+
+  private startHeartbeatMonitor() {
+    setInterval(() => {
+      this.checkOfflineUsers()
+    }, 15000)
+  }
+
+  private checkOfflineUsers() {
+    const now = Date.now()
+    const currentUsers = this.usersSubject.value
+    let hasChanges = false
+
+    const updatedUsers = currentUsers.map(user => {
+      if (user.online) {
+        const lastHeartbeat = this.lastSeenMap.get(user.username)
+        const timeSinceHeartbeat = lastHeartbeat ? now - lastHeartbeat : 999999
+        
+        if (!lastHeartbeat || timeSinceHeartbeat > 60000) {
+          console.log(`User ${user.username} going offline - last heartbeat: ${timeSinceHeartbeat}ms ago`)
+          hasChanges = true
+          return {
+            ...user,
+            online: false,
+            lastSeen: new Date(lastHeartbeat || now)
+          }
+        }
+      }
+      return user
+    })
+
+    if (hasChanges) {
+      this.usersSubject.next(updatedUsers)
+      this.saveUsersToStorage(updatedUsers)
+    }
   }
 }

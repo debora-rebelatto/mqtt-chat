@@ -1,5 +1,5 @@
 <div class="h-screen w-screen bg-gray-900 flex flex-col overflow-hidden">
-  <app-page-header 
+  <app-page-header
     (usernameChange)="onUsernameChange($event)"
     (connectionChange)="onConnectionChange($event)"
   />
@@ -11,28 +11,15 @@
     (rejectInvite)="rejectInvite($event)"
   />
 
-  @if (connected) {
+  @if (appState.connected) {
     <div class="flex flex-1 overflow-hidden">
-      <app-sidebar
-        class="h-full"
-        [activeView]="activeView"
-        [userChats]="userChats"
-        [groupChats]="groupChats"
-        [availableGroups]="availableGroups"
-        [username]="username"
-        [selectedChat]="selectedChat"
-        (chatSelect)="onChatSelect($event)"
-        (viewChange)="onViewChange($event)"
-        (groupCreate)="onGroupCreate($event)"
-        (joinGroup)="onJoinGroup($event)"
-      />
+      <app-sidebar class="h-full" />
 
-      <app-chat-area
+      <chat-area
         class="flex-1 h-full"
-        [selectedChat]="selectedChat"
+        [selectedChat]="appState.selectedChat"
         [messages]="messages"
         [inputMensagem]="inputMensagem"
-        [userStatus]="getSelectedUserStatus()"
         (messageSend)="onMessageSend()"
         (messageInputChange)="onMessageInputChange($event)"
         (keyPress)="onKeyPress($event)"

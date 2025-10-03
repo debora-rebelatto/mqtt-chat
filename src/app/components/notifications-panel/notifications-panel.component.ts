@@ -1,12 +1,14 @@
 import { Component, Input, Output, EventEmitter } from '@angular/core'
 import { CommonModule } from '@angular/common'
 import { GroupInvitation } from '../../models/group-invitation.model'
+import { formatInvitationTime } from '../../utils/format-time'
+import { TranslatePipe } from "../../pipes/translate.pipe";
 
 @Component({
   selector: 'app-notifications-panel',
   templateUrl: './notifications-panel.component.html',
   standalone: true,
-  imports: [CommonModule]
+  imports: [CommonModule, TranslatePipe]
 })
 export class NotificationsPanelComponent {
   @Input() notifications: GroupInvitation[] = []
@@ -15,21 +17,6 @@ export class NotificationsPanelComponent {
   @Output() acceptInvite = new EventEmitter<GroupInvitation>()
   @Output() rejectInvite = new EventEmitter<GroupInvitation>()
   @Output() toggleNotifications = new EventEmitter<void>()
-
-  formatInvitationTime(date: Date): string {
-    const now = new Date()
-    const diff = now.getTime() - date.getTime()
-    const minutes = Math.floor(diff / 60000)
-
-    if (minutes < 1) return 'agora'
-    if (minutes < 60) return `${minutes} min atrás`
-
-    const hours = Math.floor(minutes / 60)
-    if (hours < 24) return `${hours}h atrás`
-
-    const days = Math.floor(hours / 24)
-    return `${days}d atrás`
-  }
 
   onAcceptInvite(invitation: GroupInvitation) {
     this.acceptInvite.emit(invitation)
@@ -41,5 +28,9 @@ export class NotificationsPanelComponent {
 
   onToggleNotifications() {
     this.toggleNotifications.emit()
+  }
+
+  invitationTime(date: Date): string {
+    return formatInvitationTime(date)
   }
 }

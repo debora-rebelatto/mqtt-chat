@@ -43,6 +43,10 @@ export class GroupService {
     return newGroup
   }
 
+  updateGroup(group: Group) {
+    this.mqttService.publish('meu-chat-mqtt/groups', JSON.stringify(group), true)
+  }
+
   private requestGroups() {
     this.mqttService.publish('meu-chat-mqtt/groups', 'REQUEST_GROUPS')
   }

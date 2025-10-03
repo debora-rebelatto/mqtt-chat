@@ -1,4 +1,4 @@
-import { Component, ViewChild, ElementRef, OnInit, OnDestroy } from '@angular/core'
+import { Component, OnInit, OnDestroy } from '@angular/core'
 import { FormsModule } from '@angular/forms'
 import { CommonModule } from '@angular/common'
 import { Subject, takeUntil } from 'rxjs'
@@ -8,21 +8,21 @@ import { UserService } from '../../services/user.service'
 import { GroupService } from '../../services/group.service'
 import { ChatService } from '../../services/chat.service'
 import { InvitationService } from '../../services/invitation.service'
-import { ConnectionManagerService } from '../../services/connection-manager.service'
+import { AppStateService } from '../../services/app-state.service'
 
 import { UserStatus } from '../../models/user-status.model'
 import { ChatMessage } from '../../models/chat-message.model'
 import { GroupInvitation } from '../../models/group-invitation.model'
 
 import { PageHeaderComponent } from '../page-header/page-header.component'
-import { NotificationsBannerComponent } from '../notifications-banner/notifications-banner.component'
 import { SidebarComponent } from '../sidebar/sidebar.component'
 import { ChatAreaComponent } from '../chat-area/chat-area.component'
 import { AvailableGroup } from '../../models/available-group.model'
 import { Group } from '../../models/group.model'
-import { Messages } from '../../models/messages.model'
 import { UserChats } from '../../models/user-chat.model'
 import { GroupChat } from '../../models/group-chat.model'
+import { Messages } from '../../models/messages.model'
+import { NotificationsBannerComponent } from '../notifications-banner/notifications-banner.component'
 
 @Component({
   selector: 'app-chat-container',
@@ -38,16 +38,10 @@ import { GroupChat } from '../../models/group-chat.model'
   ]
 })
 export class ChatContainerComponent implements OnInit, OnDestroy {
-  @ViewChild('messagesContainer') messagesContainer!: ElementRef
-
   private destroy$ = new Subject<void>()
 
-  connected = false
-  username = ''
   inputMensagem = ''
   showNotifications = true
-  activeView = 'chat'
-  selectedChat: { type: string; id: string; name: string } | null = null
 
   notifications: GroupInvitation[] = []
   userChats: UserChats[] = []
@@ -65,7 +59,7 @@ export class ChatContainerComponent implements OnInit, OnDestroy {
     private groupService: GroupService,
     private chatService: ChatService,
     private invitationService: InvitationService,
-    private connectionManager: ConnectionManagerService
+    public appState: AppStateService
   ) {}
 
   ngOnInit() {
@@ -90,6 +84,7 @@ export class ChatContainerComponent implements OnInit, OnDestroy {
 
     this.chatService.messages$.pipe(takeUntil(this.destroy$)).subscribe((messages) => {
       this.allMessages = messages
+      this.updateUserChats()
       this.updateCurrentChatMessages()
     })
 
@@ -97,29 +92,21 @@ export class ChatContainerComponent implements OnInit, OnDestroy {
       this.notifications = invitations
     })
 
-    this.connectionManager.connected$.pipe(takeUntil(this.destroy$)).subscribe((connected) => {
-      this.connected = connected
+    this.appState.selectedChat$.pipe(takeUntil(this.destroy$)).subscribe(() => {
+      this.updateCurrentChatMessages()
     })
   }
 
-  onViewChange(view: string) {
-    this.activeView = view
-  }
-
-  onChatSelect(chat: { type: string; id: string; name: string }) {
-    this.selectChat(chat.type, chat.id, chat.name)
-  }
-
   onUsernameChange(username: string) {
-    this.username = username
+    this.appState.setUsername(username)
   }
 
   onConnectionChange(connected: boolean) {
-    this.connected = connected
+    this.appState.setConnected(connected)
   }
 
   onGroupCreate(groupName: string) {
-    this.groupService.createGroup(groupName, this.username)
+    this.groupService.createGroup(groupName, this.appState.username)
   }
 
   onJoinGroup(groupId: string) {
@@ -140,24 +127,24 @@ export class ChatContainerComponent implements OnInit, OnDestroy {
     }
   }
 
-  scrollToBottom() {
-    setTimeout(() => {
-      if (this.messagesContainer) {
-        this.messagesContainer.nativeElement.scrollTop =
-          this.messagesContainer.nativeElement.scrollHeight;
-      }
-    }, 100);
-  }
-
-  selectChat(type: string, id: string, name: string) {
-    this.selectedChat = { type, id, name }
+  selectChat(type: 'user' | 'group', id: string, name: string) {
+    this.appState.selectChat(type, id, name)
     this.chatService.setCurrentChat(type, id)
-    this.updateCurrentChatMessages()
   }
 
   private updateUserChats() {
-    this.userChats = this.users
-      .filter((u) => u.username !== this.username)
+    const currentUser = this.appState.username
+    const onlineUsers = this.getOnlineUsers(currentUser)
+    const offlineUsersWithChats = this.getOfflineUsersWithChats(currentUser, onlineUsers)
+
+    this.userChats = [...onlineUsers, ...offlineUsersWithChats].sort((a, b) =>
+      this.sortUserChats(a, b)
+    )
+  }
+
+  private getOnlineUsers(currentUser: string): UserChats[] {
+    return this.users
+      .filter((u) => u.username !== currentUser)
       .map((u) => ({
         id: u.username,
         name: u.username,
@@ -167,20 +154,82 @@ export class ChatContainerComponent implements OnInit, OnDestroy {
       }))
   }
 
-  private updateGroupChats() {
-    this.groupChats = this.groups
-      .filter((g) => g.members.includes(this.username))
-      .map((g) => ({
-        id: g.id,
-        name: g.name,
-        leader: g.leader,
-        members: g.members.length,
-        unread: 0,
-        createdAt: new Date()
+  private getOfflineUsersWithChats(currentUser: string, onlineUsers: UserChats[]): UserChats[] {
+    const usersWithMessages = this.getUsersWithMessages(currentUser)
+    const onlineUserIds = new Set(onlineUsers.map((u) => u.id))
+
+    return Array.from(usersWithMessages)
+      .filter((username) => !onlineUserIds.has(username))
+      .map((username) => ({
+        id: username,
+        name: username,
+        online: false,
+        lastSeen: this.getLastSeenForUser(username),
+        unread: 0
       }))
+  }
+
+  private getUsersWithMessages(currentUser: string): Set<string> {
+    const usersWithMessages = new Set<string>()
+
+    this.allMessages
+      .filter((msg) => msg.chatType === 'user')
+      .forEach((msg) => {
+        if (msg.fromCurrentUser && msg.chatId !== currentUser) {
+          usersWithMessages.add(msg.chatId)
+        } else if (!msg.fromCurrentUser && msg.sender !== currentUser) {
+          usersWithMessages.add(msg.sender)
+        }
+      })
+
+    return usersWithMessages
+  }
+
+  private getLastSeenForUser(username: string): string {
+    const lastMessage = this.getLastMessageForUser(username)
+    return lastMessage ? this.formatLastSeen(lastMessage.timestamp) : 'Offline'
+  }
+
+  private getLastMessageForUser(username: string): ChatMessage | undefined {
+    return this.allMessages
+      .filter(
+        (msg) => msg.chatType === 'user' && (msg.chatId === username || msg.sender === username)
+      )
+      .sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime())[0]
+  }
+
+  private sortUserChats(a: UserChats, b: UserChats): number {
+    if (a.online && !b.online) return -1
+    if (!a.online && b.online) return 1
+
+    const aLastMsg = this.getLastMessageForUser(a.id)
+    const bLastMsg = this.getLastMessageForUser(b.id)
+
+    if (!aLastMsg && !bLastMsg) return 0
+    if (!aLastMsg) return 1
+    if (!bLastMsg) return -1
+
+    return bLastMsg.timestamp.getTime() - aLastMsg.timestamp.getTime()
+  }
+
+  private updateGroupChats() {
+    const userGroups = this.groups.filter((g) => g.members.includes(this.appState.username))
+
+    this.groupChats = userGroups.map((g) => ({
+      id: g.id,
+      name: g.name,
+      leader: g.leader,
+      members: g.members.length,
+      unread: 0,
+      createdAt: new Date()
+    }))
+
+    userGroups.forEach((group) => {
+      this.chatService.subscribeToGroup(group.id, this.appState.username)
+    })
 
     this.availableGroups = this.groups
-      .filter((g) => !g.members.includes(this.username))
+      .filter((g) => !g.members.includes(this.appState.username))
       .map((g) => ({
         id: g.id,
         name: g.name,
@@ -191,14 +240,14 @@ export class ChatContainerComponent implements OnInit, OnDestroy {
   }
 
   private updateCurrentChatMessages() {
-    if (!this.selectedChat) {
+    if (!this.appState.selectedChat) {
       this.messages = []
       return
     }
 
     const chatMessages = this.chatService.getMessagesForChat(
-      this.selectedChat.type,
-      this.selectedChat.id
+      this.appState.selectedChat.type,
+      this.appState.selectedChat.id
     )
 
     this.messages = chatMessages.map((m) => ({
@@ -208,43 +257,41 @@ export class ChatContainerComponent implements OnInit, OnDestroy {
       timestamp: this.formatTime(m.timestamp),
       fromCurrentUser: m.fromCurrentUser
     }))
-
-    this.scrollToBottom()
-  }
-
-  getSelectedUserStatus(): string {
-    if (this.selectedChat?.type === 'user') {
-      const user = this.userChats.find((u) => u.id === this.selectedChat?.id)
-      return user?.online ? 'Online' : `Visto ${user?.lastSeen}`
-    }
-    return ''
   }
 
   sendMessage() {
-    if (!this.inputMensagem.trim() || !this.selectedChat) return
+    if (!this.inputMensagem.trim() || !this.appState.selectedChat) return
 
-    if (this.selectedChat.type === 'user') {
-      this.chatService.sendUserMessage(this.username, this.selectedChat.id, this.inputMensagem)
-    } else if (this.selectedChat.type === 'group') {
-      this.chatService.sendGroupMessage(this.selectedChat.id, this.username, this.inputMensagem)
+    if (this.appState.selectedChat.isUser()) {
+      this.chatService.sendUserMessage(
+        this.appState.username,
+        this.appState.selectedChat.id,
+        this.inputMensagem
+      )
+    } else if (this.appState.selectedChat.isGroup()) {
+      this.chatService.sendGroupMessage(
+        this.appState.selectedChat.id,
+        this.appState.username,
+        this.inputMensagem
+      )
     }
 
     this.inputMensagem = ''
   }
 
   acceptInvite(invitation: GroupInvitation) {
-    this.invitationService.acceptInvitation(invitation, this.username)
+    this.invitationService.acceptInvitation(invitation, this.appState.username)
   }
 
   rejectInvite(invitation: GroupInvitation) {
-    this.invitationService.rejectInvitation(invitation, this.username)
+    this.invitationService.rejectInvitation(invitation, this.appState.username)
   }
 
   joinGroup(groupId: string) {
     const group = this.groups.find((g) => g.id === groupId)
     if (!group) return
 
-    group.members.push(this.username)
+    group.members.push(this.appState.username)
     this.mqttService.publish('meu-chat-mqtt/groups', JSON.stringify(group), true)
   }
 

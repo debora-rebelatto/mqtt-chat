@@ -16,23 +16,6 @@ export class GroupModalComponent {
   @Output() modalClose = new EventEmitter<void>()
   @Output() groupCreate = new EventEmitter<void>()
   @Output() groupNameChange = new EventEmitter<string>()
-  @Output() modalKeyPress = new EventEmitter<KeyboardEvent>()
-
-  onClose() {
-    this.modalClose.emit()
-  }
-
-  onCreate() {
-    this.groupCreate.emit()
-  }
-
-  onGroupNameChange(value: string) {
-    this.groupNameChange.emit(value)
-  }
-
-  onKeyPress(event: KeyboardEvent) {
-    this.modalKeyPress.emit(event)
-  }
 
   onModalClick(event: Event) {
     event.stopPropagation()
