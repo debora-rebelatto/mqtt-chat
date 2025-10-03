@@ -1,10 +1,20 @@
-import { Component, Input, Output, EventEmitter, ViewChild, ElementRef, AfterViewInit, OnChanges } from '@angular/core'
+import {
+  Component,
+  Input,
+  Output,
+  EventEmitter,
+  ViewChild,
+  ElementRef,
+  AfterViewInit,
+  OnChanges
+} from '@angular/core'
 import { CommonModule } from '@angular/common'
 import { FormsModule } from '@angular/forms'
 import { LucideAngularModule, MessageCircle } from 'lucide-angular'
 import { TranslatePipe } from '../../pipes/translate.pipe'
 import { Messages } from '../../models/messages.model'
 import { SelectedChat } from '../../models/selected-chat.models'
+import { AppStateService } from '../../services/app-state.service'
 
 @Component({
   selector: 'chat-area',
@@ -25,6 +35,8 @@ export class ChatAreaComponent implements AfterViewInit, OnChanges {
   @Output() messageSend = new EventEmitter<void>()
   @Output() messageInputChange = new EventEmitter<string>()
   @Output() keyPress = new EventEmitter<KeyboardEvent>()
+
+  constructor(private appState: AppStateService) {}
 
   onSendMessage() {
     this.messageSend.emit()
@@ -56,4 +68,12 @@ export class ChatAreaComponent implements AfterViewInit, OnChanges {
       setTimeout(() => this.scrollToBottom(), 150)
     }
   }
+
+  // getSelectedUserStatus(): string {
+  //   if (this.appState.selectedChat?.isUser()) {
+  //     const user = this.userChats.find((u) => u.id === this.appState.selectedChat?.id)
+  //     return user?.online ? 'Online' : `Visto ${user?.lastSeen}`
+  //   }
+  //   return ''
+  // }
 }

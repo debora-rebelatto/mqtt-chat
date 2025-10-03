@@ -32,5 +32,10 @@
   "CREATE": "Criar",
   "TYPE_MESSAGE": "Digite sua mensagem...",
   "SEND": "Enviar",
-  "DISCONNECT": "Sair"
+  "DISCONNECT": "Sair",
+  "GROUP-INVITE": "Convite para grupo",
+  "ACCEPT": "Aceitar",
+  "REJECT": "Rejeitar",
+  "NO-NOTIFICATION": "Nenhuma notificação",
+  "NOTIFICATIONS": "Notificações"
 }

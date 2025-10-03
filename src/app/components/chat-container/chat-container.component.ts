@@ -15,15 +15,14 @@ import { ChatMessage } from '../../models/chat-message.model'
 import { GroupInvitation } from '../../models/group-invitation.model'
 
 import { PageHeaderComponent } from '../page-header/page-header.component'
-import { NotificationsBannerComponent } from '../notifications-banner/notifications-banner.component'
 import { SidebarComponent } from '../sidebar/sidebar.component'
 import { ChatAreaComponent } from '../chat-area/chat-area.component'
 import { AvailableGroup } from '../../models/available-group.model'
 import { Group } from '../../models/group.model'
-import { Messages } from '../../models/messages.model'
 import { UserChats } from '../../models/user-chat.model'
 import { GroupChat } from '../../models/group-chat.model'
-import { SelectedChat } from '../../models/selected-chat.models'
+import { Messages } from '../../models/messages.model'
+import { NotificationsBannerComponent } from '../notifications-banner/notifications-banner.component'
 
 @Component({
   selector: 'app-chat-container',
@@ -43,7 +42,6 @@ export class ChatContainerComponent implements OnInit, OnDestroy {
 
   inputMensagem = ''
   showNotifications = true
-  activeView = 'chat'
 
   notifications: GroupInvitation[] = []
   userChats: UserChats[] = []
@@ -86,7 +84,7 @@ export class ChatContainerComponent implements OnInit, OnDestroy {
 
     this.chatService.messages$.pipe(takeUntil(this.destroy$)).subscribe((messages) => {
       this.allMessages = messages
-      this.updateUserChats() // Atualiza lista de usuários quando mensagens mudam
+      this.updateUserChats()
       this.updateCurrentChatMessages()
     })
 
@@ -97,14 +95,6 @@ export class ChatContainerComponent implements OnInit, OnDestroy {
     this.appState.selectedChat$.pipe(takeUntil(this.destroy$)).subscribe(() => {
       this.updateCurrentChatMessages()
     })
-  }
-
-  onViewChange(view: string) {
-    this.activeView = view
-  }
-
-  onChatSelect(chat: SelectedChat) {
-    this.selectChat(chat.type, chat.id, chat.name)
   }
 
   onUsernameChange(username: string) {
@@ -267,14 +257,6 @@ export class ChatContainerComponent implements OnInit, OnDestroy {
       timestamp: this.formatTime(m.timestamp),
       fromCurrentUser: m.fromCurrentUser
     }))
-  }
-
-  getSelectedUserStatus(): string {
-    if (this.appState.selectedChat?.isUser()) {
-      const user = this.userChats.find((u) => u.id === this.appState.selectedChat?.id)
-      return user?.online ? 'Online' : `Visto ${user?.lastSeen}`
-    }
-    return ''
   }
 
   sendMessage() {

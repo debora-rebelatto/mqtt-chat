@@ -14,20 +14,22 @@
   </button>
 
   @if (showNotifications) {
-    <div class="absolute right-0 mt-2 w-80 bg-gray-800 border border-gray-700 rounded-lg shadow-lg z-10">
+    <div
+      class="absolute right-0 mt-2 w-80 bg-gray-800 border border-gray-700 rounded-lg shadow-lg z-10"
+    >
       <div class="p-3 border-b border-gray-700">
-        <h3 class="font-semibold">Notificações</h3>
+        <h3 class="font-semibold">{{ 'NOTIFICATIONS' | translate }}</h3>
       </div>
       <div class="max-h-60 overflow-y-auto">
         @for (invitation of notifications; track invitation.id) {
           <div class="p-3 border-b border-gray-700 last:border-b-0">
             <div class="flex justify-between items-start">
               <div>
-                <p class="font-medium">Convite para grupo</p>
+                <p class="font-medium">{{ 'GROUP-INVITE' | translate }}</p>
                 <p class="text-sm text-gray-300">{{ invitation.groupName }}</p>
                 <p class="text-xs text-gray-400">
-                  De: {{ invitation.invitedBy }} • 
-                  {{ formatInvitationTime(invitation.timestamp) }}
+                  De: {{ invitation.invitedBy }} •
+                  {{ invitationTime(invitation.timestamp) }}
                 </p>
               </div>
               <div class="flex gap-2">
@@ -35,22 +37,20 @@
                   (click)="onAcceptInvite(invitation)"
                   class="bg-green-600 hover:bg-green-700 px-2 py-1 rounded text-xs"
                 >
-                  Aceitar
+                  {{ 'ACCEPT' | translate }}
                 </button>
                 <button
                   (click)="onRejectInvite(invitation)"
                   class="bg-red-600 hover:bg-red-700 px-2 py-1 rounded text-xs"
                 >
-                  Recusar
+                  {{ 'REJECT' | translate }}
                 </button>
               </div>
             </div>
           </div>
         }
         @if (notifications.length === 0) {
-          <div class="p-4 text-center text-gray-400">
-            Nenhuma notificação
-          </div>
+          <div class="p-4 text-center text-gray-400">{{ 'NO-NOTIFICATION' | translate }}</div>
         }
       </div>
     </div>

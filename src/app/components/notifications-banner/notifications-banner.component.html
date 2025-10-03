@@ -15,7 +15,7 @@
               <span class="font-medium text-white">{{ notif.groupName }}</span>
             </p>
             <p class="text-gray-500 text-xs mt-1">
-              {{ formatInvitationTime(notif.timestamp) }}
+              {{ invitationTime(notif.timestamp) }}
             </p>
           </div>
           <div class="flex gap-2 ml-4">
@@ -23,13 +23,13 @@
               (click)="onAcceptInvite(notif)"
               class="bg-green-600 hover:bg-green-700 text-white px-3 py-2 rounded-lg transition-colors font-medium"
             >
-              ✓ Aceitar
+              {{ 'ACCEPT' | translate }}
             </button>
             <button
               (click)="onRejectInvite(notif)"
               class="bg-red-600 hover:bg-red-700 text-white px-3 py-2 rounded-lg transition-colors font-medium"
             >
-              ✗ Rejeitar
+              {{ 'REJECT' | translate }}
             </button>
           </div>
         </div>

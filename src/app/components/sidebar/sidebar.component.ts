@@ -226,12 +226,6 @@ export class SidebarComponent implements OnInit, OnDestroy {
     this.newGroupName = value
   }
 
-  onModalKeyPress(event: KeyboardEvent) {
-    if (event.key === 'Enter') {
-      this.onModalGroupCreate()
-    }
-  }
-
   isSelected(type: 'user' | 'group', id: string): boolean {
     return this.appState.isSelectedChat(type, id)
   }
