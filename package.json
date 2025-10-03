@@ -29,12 +29,17 @@
     "@angular/build": "^20.3.3",
     "@angular/cli": "^20.3.3",
     "@angular/compiler-cli": "^20.3.0",
+    "@eslint/js": "^9.36.0",
     "@tailwindcss/postcss": "^4.1.13",
     "@types/mqtt": "^0.0.34",
     "autoprefixer": "^10.4.21",
+    "eslint": "^9.36.0",
+    "globals": "^16.4.0",
     "jest": "^30.2.0",
+    "jiti": "^2.6.1",
     "postcss": "^8.5.6",
     "prettier": "^3.6.2",
-    "typescript": "~5.9.2"
+    "typescript": "~5.9.2",
+    "typescript-eslint": "^8.45.0"
   }
 }
