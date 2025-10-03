@@ -1,13 +1,15 @@
 import { Component, Input, Output, EventEmitter } from '@angular/core'
+import { CommonModule } from '@angular/common'
 import { Group } from '../../models/group.model'
 
 @Component({
   selector: 'app-group-list',
+  templateUrl: './group-list.component.html',
   standalone: true,
-  templateUrl: './group-list.component.html'
+  imports: [CommonModule]
 })
 export class GroupListComponent {
   @Input() groups: Group[] = []
-  @Input() currentUsername: string = ''
-  @Output() createGroup = new EventEmitter<void>()
+
+  @Output() groupJoined = new EventEmitter<string>()
 }

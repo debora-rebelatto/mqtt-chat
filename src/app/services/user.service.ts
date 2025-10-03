@@ -75,71 +75,55 @@ export class UserService {
   }
 
   private handleStatusMessage(message: string, currentUsername: string) {
-    try {
-      const status = JSON.parse(message)
+    const status = JSON.parse(message)
 
-      if (status.type === 'online') {
-        this.addOrUpdateUser({
-          username: status.username,
-          online: true,
-          lastSeen: new Date(status.timestamp),
-          clientId: status.clientId
-        })
-      } else if (status.type === 'offline') {
-        this.addOrUpdateUser({
-          username: status.username,
-          online: false,
-          lastSeen: new Date(status.timestamp),
-          clientId: status.clientId
-        })
-      }
-    } catch (e) {
-      console.error('Erro ao processar status:', e)
+    if (status.type === 'online') {
+      this.addOrUpdateUser({
+        username: status.username,
+        online: true,
+        lastSeen: new Date(status.timestamp),
+        clientId: status.clientId
+      })
+    } else if (status.type === 'offline') {
+      this.addOrUpdateUser({
+        username: status.username,
+        online: false,
+        lastSeen: new Date(status.timestamp),
+        clientId: status.clientId
+      })
     }
   }
 
   private handleDisconnectMessage(message: string, currentUsername: string) {
-    try {
-      const disconnect = JSON.parse(message)
+    const disconnect = JSON.parse(message)
 
-      this.addOrUpdateUser({
-        username: disconnect.username,
-        online: false,
-        lastSeen: new Date(disconnect.timestamp),
-        clientId: disconnect.clientId
-      })
-    } catch (e) {
-      console.error('Erro ao processar desconexão:', e)
-    }
+    this.addOrUpdateUser({
+      username: disconnect.username,
+      online: false,
+      lastSeen: new Date(disconnect.timestamp),
+      clientId: disconnect.clientId
+    })
   }
 
   private handleHeartbeatMessage(message: string) {
-    try {
-      const heartbeat = JSON.parse(message)
+    const heartbeat = JSON.parse(message)
 
-      if (heartbeat.type === 'heartbeat') {
-        this.lastSeenMap.set(heartbeat.username, heartbeat.timestamp)
+    if (heartbeat.type === 'heartbeat') {
+      this.lastSeenMap.set(heartbeat.username, heartbeat.timestamp)
 
-        this.addOrUpdateUser({
-          username: heartbeat.username,
-          online: true,
-          lastSeen: new Date(heartbeat.timestamp),
-          clientId: heartbeat.clientId
-        })
-      }
-    } catch (e) {
-      console.error('Erro ao processar heartbeat:', e)
+      this.addOrUpdateUser({
+        username: heartbeat.username,
+        online: true,
+        lastSeen: new Date(heartbeat.timestamp),
+        clientId: heartbeat.clientId
+      })
     }
   }
 
   private handleSyncMessage(message: string, currentUsername: string) {
-    try {
-      const sync = JSON.parse(message) // CORREÇÃO: mudado de syncData para message
-      if (sync.type === 'sync_request' && sync.from !== currentUsername) {
-        this.publishOnlineStatus(currentUsername)
-      }
-    } catch (e) {
-      console.error('Erro ao processar sync:', e)
+    const sync = JSON.parse(message) // CORREÇÃO: mudado de syncData para message
+    if (sync.type === 'sync_request' && sync.from !== currentUsername) {
+      this.publishOnlineStatus(currentUsername)
     }
   }
 
@@ -155,13 +139,11 @@ export class UserService {
       updatedUsers = [...currentUsers, userStatus]
     }
 
-    // Limpa usuários offline antigos
     const now = new Date().getTime()
     updatedUsers = updatedUsers.filter(
       (user) => user.online || now - user.lastSeen.getTime() < 120000
     )
 
-    // Ordena
     updatedUsers.sort((a, b) => {
       if (a.online && !b.online) return -1
       if (!a.online && b.online) return 1

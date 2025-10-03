@@ -45,23 +45,21 @@ export class GroupService {
   private handleGroupMessage(message: string) {
     if (message === 'REQUEST_GROUPS') return
 
-    try {
-      const groupData = JSON.parse(message)
+    const groupData = JSON.parse(message)
 
-      if (groupData.id && groupData.name && groupData.leader && groupData.members) {
-        const currentGroups = this.groupsSubject.value
-        const existingIndex = currentGroups.findIndex((g) => g.id === groupData.id)
+    if (groupData.id && groupData.name && groupData.leader && groupData.members) {
+      const currentGroups = this.groupsSubject.value
+      const existingIndex = currentGroups.findIndex((g) => g.id === groupData.id)
 
-        let updatedGroups: Group[]
-        if (existingIndex >= 0) {
-          updatedGroups = [...currentGroups]
-          updatedGroups[existingIndex] = groupData
-        } else {
-          updatedGroups = [...currentGroups, groupData]
-        }
-
-        this.groupsSubject.next(updatedGroups)
+      let updatedGroups: Group[]
+      if (existingIndex >= 0) {
+        updatedGroups = [...currentGroups]
+        updatedGroups[existingIndex] = groupData
+      } else {
+        updatedGroups = [...currentGroups, groupData]
       }
-    } catch (e) {}
+
+      this.groupsSubject.next(updatedGroups)
+    }
   }
 }
