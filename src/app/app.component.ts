@@ -5,6 +5,6 @@ import { ChatContainerComponent } from './components/chat-container/chat-contain
   selector: 'app-root',
   standalone: true,
   imports: [ChatContainerComponent],
-  template: '<app-chat-container></app-chat-container>'
+  template: '<app-chat-container/>'
 })
 export class AppComponent {}

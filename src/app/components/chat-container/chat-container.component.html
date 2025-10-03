@@ -13,17 +13,7 @@
 
   @if (appState.connected) {
     <div class="flex flex-1 overflow-hidden">
-      <app-sidebar
-        class="h-full"
-        [activeView]="activeView"
-        [userChats]="userChats"
-        [groupChats]="groupChats"
-        [availableGroups]="availableGroups"
-        (chatSelect)="onChatSelect($event)"
-        (viewChange)="onViewChange($event)"
-        (groupCreate)="onGroupCreate($event)"
-        (joinGroup)="onJoinGroup($event)"
-      />
+      <app-sidebar class="h-full" />
 
       <chat-area
         class="flex-1 h-full"
