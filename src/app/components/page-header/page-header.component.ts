@@ -18,7 +18,13 @@ import { TranslatePipe } from '../../pipes/translate.pipe'
   selector: 'app-page-header',
   templateUrl: './page-header.component.html',
   standalone: true,
-  imports: [CommonModule, FormsModule, NotificationsPanelComponent, LucideAngularModule, TranslatePipe]
+  imports: [
+    CommonModule,
+    FormsModule,
+    NotificationsPanelComponent,
+    LucideAngularModule,
+    TranslatePipe
+  ]
 })
 export class PageHeaderComponent implements OnInit, OnDestroy {
   private destroy$ = new Subject<void>()
@@ -67,7 +73,7 @@ export class PageHeaderComponent implements OnInit, OnDestroy {
 
     try {
       const clientId = this.connectionManager.generateClientId(this.appState.username)
-      await this.mqttService.connect('broker.hivemq.com', 8000, clientId)
+      await this.mqttService.connect('localhost', 8000, clientId)
 
       this.connectionManager.setConnected(true, clientId)
       this.userService.initialize(clientId, this.appState.username)
@@ -75,9 +81,9 @@ export class PageHeaderComponent implements OnInit, OnDestroy {
       this.chatService.initialize(this.appState.username)
       this.chatService.forceLoad()
       this.invitationService.initialize(this.appState.username)
-      
+
       this.appState.setConnected(true)
-      
+
       this.usernameChange.emit(this.appState.username)
       this.connectionChange.emit(true)
 

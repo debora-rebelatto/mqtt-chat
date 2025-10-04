@@ -1,7 +1,7 @@
 import { Input, Component } from '@angular/core'
-import { Group } from '../../../../models/group.model'
-import { MemberCountPipe } from '../../../../pipes/member-count.pipe'
-import { TranslatePipe } from '../../../../pipes/translate.pipe'
+import { Group } from '../../../models/group.model'
+import { MemberCountPipe } from '../../../pipes/member-count.pipe'
+import { TranslatePipe } from '../../../pipes/translate.pipe'
 
 @Component({
   selector: 'group-card',

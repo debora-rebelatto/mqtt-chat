@@ -3,7 +3,6 @@ import { CommonModule } from '@angular/common'
 import { FormsModule } from '@angular/forms'
 import { Subject, takeUntil } from 'rxjs'
 import { LucideAngularModule, MessageCircle, Users, Search } from 'lucide-angular'
-import { GroupModalComponent } from '../group-modal/group-modal.component'
 import { AvailableGroup } from '../../models/available-group.model'
 import { GroupChat } from '../../models/group-chat.model'
 import { UserChats } from '../../models/user-chat.model'
@@ -16,6 +15,7 @@ import { ChatService } from '../../services/chat.service'
 import { UserStatus } from '../../models/user-status.model'
 import { Group } from '../../models/group.model'
 import { ChatMessage } from '../../models/chat-message.model'
+import { GroupModalComponent } from '../../features/groups/group-modal/group-modal.component'
 
 @Component({
   selector: 'app-sidebar',

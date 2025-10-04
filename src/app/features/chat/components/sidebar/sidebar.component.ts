@@ -15,7 +15,7 @@ import { AppStateService } from '../../../../services/app-state.service'
 import { ChatService } from '../../../../services/chat.service'
 import { GroupService } from '../../../../services/group.service'
 import { UserService } from '../../../../services/user.service'
-import { GroupModalComponent } from '../../../groups/components/group-modal/group-modal.component'
+import { GroupModalComponent } from '../../../groups/group-modal/group-modal.component'
 
 @Component({
   selector: 'app-sidebar',
