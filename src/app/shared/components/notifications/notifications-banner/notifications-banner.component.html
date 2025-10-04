@@ -1,0 +1,39 @@
+@if (showNotifications && notifications.length > 0) {
+  <div class="bg-gray-900 border-b border-gray-700 p-4">
+    <div class="space-y-3">
+      @for (notif of notifications; track notif.id) {
+        <div
+          class="bg-gray-800 border border-blue-500 rounded-lg p-4 flex items-center justify-between"
+        >
+          <div class="flex-1">
+            <div class="flex items-center gap-2 mb-1">
+              <span class="text-blue-400">👥</span>
+              <span class="font-semibold text-white">Convite para grupo</span>
+            </div>
+            <p class="text-gray-300 text-sm">
+              <span class="text-blue-400">{{ notif.invitedBy }}</span> convidou você para
+              <span class="font-medium text-white">{{ notif.groupName }}</span>
+            </p>
+            <p class="text-gray-500 text-xs mt-1">
+              {{ invitationTime(notif.timestamp) }}
+            </p>
+          </div>
+          <div class="flex gap-2 ml-4">
+            <button
+              (click)="onAcceptInvite(notif)"
+              class="bg-green-600 hover:bg-green-700 text-white px-3 py-2 rounded-lg transition-colors font-medium"
+            >
+              {{ 'ACCEPT' | translate }}
+            </button>
+            <button
+              (click)="onRejectInvite(notif)"
+              class="bg-red-600 hover:bg-red-700 text-white px-3 py-2 rounded-lg transition-colors font-medium"
+            >
+              {{ 'REJECT' | translate }}
+            </button>
+          </div>
+        </div>
+      }
+    </div>
+  </div>
+}

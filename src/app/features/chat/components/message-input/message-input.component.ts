@@ -1,7 +1,7 @@
 import { Component, Output, EventEmitter } from '@angular/core'
 import { CommonModule } from '@angular/common'
 import { FormsModule } from '@angular/forms'
-import { TranslatePipe } from "../../pipes/translate.pipe";
+import { TranslatePipe } from '../../../../pipes/translate.pipe'
 
 @Component({
   selector: 'app-message-input',
@@ -10,8 +10,6 @@ import { TranslatePipe } from "../../pipes/translate.pipe";
   imports: [CommonModule, FormsModule, TranslatePipe]
 })
 export class MessageInputComponent {
-  @ViewChild('messageInput') messageInput!: ElementRef<HTMLInputElement>
-
   @Output() messageSent = new EventEmitter<string>()
 
   message = ''
