@@ -4,7 +4,7 @@ import { FormsModule } from '@angular/forms'
 import { TranslatePipe } from '../../../pipes/translate.pipe'
 
 @Component({
-  selector: 'app-group-modal',
+  selector: 'group-modal',
   templateUrl: './group-modal.component.html',
   standalone: true,
   imports: [CommonModule, FormsModule, TranslatePipe]

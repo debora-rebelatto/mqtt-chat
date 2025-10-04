@@ -1,0 +1,11 @@
+<button
+  (click)="onClick.emit()"
+  [class]="
+    isActive
+      ? 'flex-1 py-2 px-3 rounded-lg font-medium transition-colors bg-blue-600 text-white'
+      : 'flex-1 py-2 px-3 rounded-lg font-medium transition-colors bg-gray-800 text-gray-300 hover:bg-gray-700'
+  "
+  [disabled]="disabled"
+>
+  <ng-content></ng-content>
+</button>

@@ -15,20 +15,14 @@ import { ChatService } from '../../services/chat.service'
 import { UserStatus } from '../../models/user-status.model'
 import { Group } from '../../models/group.model'
 import { ChatMessage } from '../../models/chat-message.model'
-import { GroupModalComponent } from '../../features/groups/group-modal/group-modal.component'
+import { GroupModalComponent } from "../../features/groups/group-modal/group-modal.component";
+import { ToggleButtonComponent } from "./toggle-button/toggle-button.component";
 
 @Component({
   selector: 'app-sidebar',
   templateUrl: './sidebar.component.html',
   standalone: true,
-  imports: [
-    CommonModule,
-    FormsModule,
-    GroupModalComponent,
-    LucideAngularModule,
-    TranslatePipe,
-    MemberCountPipe
-  ]
+  imports: [CommonModule, FormsModule, LucideAngularModule, TranslatePipe, MemberCountPipe, GroupModalComponent, ToggleButtonComponent]
 })
 export class SidebarComponent implements OnInit, OnDestroy {
   readonly MessageCircle = MessageCircle
