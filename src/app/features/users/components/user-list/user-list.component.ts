@@ -1,9 +1,9 @@
 import { Component, Input, Output, EventEmitter } from '@angular/core'
 import { CommonModule } from '@angular/common'
-import { User } from '../../models/user.model'
-import { SelectedChat } from '../../models/selected-chat.models'
-import { ListContainerComponent } from '../list-container/list-container.component'
 import { UserListItemComponent } from '../user-list-item/user-list-item.component'
+import { SelectedChat } from '../../../../models/selected-chat.models'
+import { User } from '../../../../models/user.model'
+import { ListContainerComponent } from '../../../../shared/components/ui/list-container/list-container.component'
 
 @Component({
   selector: 'app-user-list',

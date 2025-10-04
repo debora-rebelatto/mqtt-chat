@@ -11,10 +11,10 @@ import {
 import { CommonModule } from '@angular/common'
 import { FormsModule } from '@angular/forms'
 import { LucideAngularModule, MessageCircle } from 'lucide-angular'
-import { TranslatePipe } from '../../pipes/translate.pipe'
-import { Messages } from '../../models/messages.model'
-import { SelectedChat } from '../../models/selected-chat.models'
-import { AppStateService } from '../../services/app-state.service'
+import { Messages } from '../../../../models/messages.model'
+import { SelectedChat } from '../../../../models/selected-chat.models'
+import { TranslatePipe } from '../../../../pipes/translate.pipe'
+import { AppStateService } from '../../../../services/app-state.service'
 
 @Component({
   selector: 'chat-area',
