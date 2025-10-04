@@ -1,47 +1,12 @@
-<div class="p-4">
-  <div class="mb-6">
-    <h3 class="font-bold text-gray-300 mb-3 flex items-center gap-2">
-      {{ 'DIRECT-MESSAGES' | translate }}
-    </h3>
-    <div class="space-y-2">
-      @for (user of users; track user.id) {
-        <div
-          (click)="chatSelected.emit({ type: 'user', id: user.id, name: user.name })"
-          [class]="
-            selectedChat?.type === 'user' && selectedChat?.id === user.id
-              ? 'p-3 rounded-lg cursor-pointer transition-colors bg-blue-600'
-              : 'p-3 rounded-lg cursor-pointer transition-colors bg-gray-800 hover:bg-gray-750'
-          "
-        >
-          <div class="flex items-center justify-between">
-            <div class="flex items-center gap-2">
-              <div
-                [class]="
-                  user.online
-                    ? 'w-2 h-2 rounded-full bg-green-500'
-                    : 'w-2 h-2 rounded-full bg-gray-500'
-                "
-              ></div>
-              <span class="font-medium text-white">{{ user.name }}</span>
-            </div>
-            @if (user.unread > 0) {
-              <span
-                class="bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center"
-              >
-                {{ user.unread }}
-              </span>
-            }
-          </div>
-          @if (!user.online) {
-            <div class="text-xs text-gray-400 mt-1 ml-4">Visto {{ user.lastSeen }}</div>
-          }
-        </div>
-      }
-      @if (users.length === 0) {
-        <div class="text-center text-gray-500 text-sm py-4">
-          {{ 'NO_USERS_ONLINE' | translate }}
-        </div>
-      }
-    </div>
-  </div>
-</div>
+<list-container
+  [isEmpty]="users.length === 0"
+  [showEmptyState]="true"
+  emptyMessage="NO_USERS_ONLINE"
+>
+  @for (user of users; track user.id) {
+    <user-list-item
+      [user]="user"
+      [selected]="selectedChat?.type === 'user' && selectedChat?.id === user.id"
+    />
+  }
+</list-container>
