@@ -29,7 +29,6 @@ export class GroupListComponent implements OnInit, OnDestroy {
   @Output() chatSelected = new EventEmitter<Group>()
   @Output() groupClick = new EventEmitter<Group>()
   @Output() groupSelected = new EventEmitter<Group>()
-
   availableGroups: AvailableGroup[] = []
   groupChats: Group[] = []
   newGroupName = ''
@@ -41,7 +40,7 @@ export class GroupListComponent implements OnInit, OnDestroy {
     private appState: AppStateService,
     private groupService: GroupService,
     private chatService: ChatService
-  ) {}
+  ) { }
 
   ngOnInit() {
     this.setupSubscriptions()
