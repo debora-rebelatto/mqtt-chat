@@ -3,5 +3,5 @@ export interface User {
   name: string
   online: boolean
   lastSeen: Date | null
-  unread: number
+  unread?: number
 }

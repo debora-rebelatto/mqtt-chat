@@ -13,7 +13,6 @@ import {
   ChatMessage,
   User
 } from '../../../models'
-import { UserStatus } from '../../../models/user-status.model'
 import { AppStateService } from '../../../services/app-state.service'
 import { ChatService } from '../../../services/chat.service'
 import { GroupService } from '../../../services/group.service'
@@ -49,7 +48,7 @@ export class ChatContainerComponent implements OnInit, OnDestroy {
   availableGroups: AvailableGroup[] = []
   messages: Messages[] = []
 
-  private users: UserStatus[] = []
+  private users: User[] = []
   private groups: Group[] = []
   private allMessages: ChatMessage[] = []
 
@@ -144,10 +143,10 @@ export class ChatContainerComponent implements OnInit, OnDestroy {
 
   private getOnlineUsers(currentUser: string): User[] {
     return this.users
-      .filter((u) => u.username !== currentUser)
+      .filter((u) => u.name !== currentUser)
       .map((u) => ({
-        id: u.username,
-        name: u.username,
+        id: u.name,
+        name: u.name,
         online: u.online,
         lastSeen: u.online ? null : u.lastSeen,
         unread: 0

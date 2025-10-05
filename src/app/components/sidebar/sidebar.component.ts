@@ -5,7 +5,6 @@ import { Subject, takeUntil } from 'rxjs'
 import { LucideAngularModule, MessageCircle, Users, Search } from 'lucide-angular'
 import { GroupModalComponent } from '../../features/groups/group-modal/group-modal.component'
 import { User, GroupChat, AvailableGroup, Group, ChatMessage } from '../../models'
-import { UserStatus } from '../../models/user-status.model'
 import { MemberCountPipe } from '../../pipes/member-count.pipe'
 import { TranslatePipe } from '../../pipes/translate.pipe'
 import { AppStateService } from '../../services/app-state.service'
@@ -43,7 +42,7 @@ export class SidebarComponent implements OnInit, OnDestroy {
   showCreateGroupModal = false
   newGroupName = ''
 
-  private users: UserStatus[] = []
+  private users: User[] = []
   private groups: Group[] = []
   private allMessages: ChatMessage[] = []
 
@@ -115,62 +114,85 @@ export class SidebarComponent implements OnInit, OnDestroy {
   }
 
   private updateUserChats() {
-    const onlineUsers = this.users
-      .filter((u) => u.username !== this.appState.username)
-      .map((u) => ({
-        id: u.username,
-        name: u.username,
-        online: u.online,
-        lastSeen: u.online ? null : u.lastSeen,
-        unread: 0
-      }))
+    // Filtra usuários online (excluindo o usuário atual)
+    const onlineUsers = this.users.filter((u) => u.name !== this.appState.username && u.online)
 
-    const usersWithMessages = new Set<string>()
-    this.allMessages.forEach((msg) => {
-      if (msg.chatType === 'user') {
-        if (msg.fromCurrentUser) {
-          usersWithMessages.add(msg.chatId)
-        } else {
-          usersWithMessages.add(msg.sender)
-        }
-      }
-    })
-
-    const offlineUsersWithChats = Array.from(usersWithMessages)
+    // Encontra usuários offline com quem há conversas
+    const usersWithMessages = this.getUsersWithMessages()
+    const offlineUsersWithChats = usersWithMessages
       .filter(
         (username) =>
-          username !== this.appState.username && !onlineUsers.some((u) => u.id === username)
+          username !== this.appState.username && !onlineUsers.some((u) => u.name === username)
       )
       .map((username) => {
-        const lastMessage = this.allMessages
-          .filter(
-            (msg) => msg.chatType === 'user' && (msg.chatId === username || msg.sender === username)
-          )
-          .sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime())[0]
-
+        const lastMessage = this.getLastUserMessage(username)
         return {
           id: username,
           name: username,
           online: false,
-          lastSeen: lastMessage ? lastMessage.timestamp : null,
+          lastSeen: lastMessage ? lastMessage.timestamp : new Date(0), // Data padrão se não houver mensagens
           unread: 0
-        }
+        } as User
       })
 
+    // Combina e ordena todas as conversas
     const allUsers = [...onlineUsers, ...offlineUsersWithChats]
-    this.userChats = allUsers.sort((a, b) => {
+
+    // Remove duplicatas baseado no ID do usuário
+    const uniqueUsers = this.removeDuplicateUsers(allUsers)
+
+    // Ordena as conversas
+    this.userChats = this.sortUserChats(uniqueUsers)
+  }
+
+  private getUsersWithMessages(): string[] {
+    const users = new Set<string>()
+
+    this.allMessages.forEach((msg) => {
+      if (msg.chatType === 'user') {
+        if (msg.fromCurrentUser) {
+          users.add(msg.chatId)
+        } else {
+          users.add(msg.sender)
+        }
+      }
+    })
+
+    return Array.from(users)
+  }
+
+  private getLastUserMessage(username: string): ChatMessage | null {
+    const userMessages = this.allMessages.filter(
+      (msg) => msg.chatType === 'user' && (msg.chatId === username || msg.sender === username)
+    )
+
+    if (userMessages.length === 0) return null
+
+    return userMessages.sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime())[0]
+  }
+
+  private removeDuplicateUsers(users: User[]): User[] {
+    const seen = new Set<string>()
+    return users.filter((user) => {
+      if (seen.has(user.id)) {
+        return false
+      }
+      seen.add(user.id)
+      return true
+    })
+  }
+
+  private sortUserChats(users: User[]): User[] {
+    return users.sort((a, b) => {
+      // Primeiro: usuários online primeiro
       if (a.online && !b.online) return -1
       if (!a.online && b.online) return 1
 
-      const aLastMsg = this.allMessages
-        .filter((msg) => msg.chatType === 'user' && (msg.chatId === a.id || msg.sender === a.id))
-        .sort((x, y) => y.timestamp.getTime() - x.timestamp.getTime())[0]
+      // Segundo: ordena pela última mensagem
+      const aLastMsg = this.getLastUserMessage(a.name)
+      const bLastMsg = this.getLastUserMessage(b.name)
 
-      const bLastMsg = this.allMessages
-        .filter((msg) => msg.chatType === 'user' && (msg.chatId === b.id || msg.sender === b.id))
-        .sort((x, y) => y.timestamp.getTime() - x.timestamp.getTime())[0]
-
-      if (!aLastMsg && !bLastMsg) return 0
+      if (!aLastMsg && !bLastMsg) return a.name.localeCompare(b.name) // Ordena por nome se não há mensagens
       if (!aLastMsg) return 1
       if (!bLastMsg) return -1
 
