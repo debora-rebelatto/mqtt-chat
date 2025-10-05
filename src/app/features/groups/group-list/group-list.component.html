@@ -6,8 +6,8 @@
   @for (group of groups; track group.id) {
     <group-card [group]="group">
       <badge
-        [type]="group.leader === username ? 'leader' : 'member'"
-        [text]="group.leader === username ? 'Líder' : 'Membro'"
+        [type]="isLeader(group.leader) ? 'leader' : 'member'"
+        [text]="isLeader(group.leader) ? 'Líder' : 'Membro'"
       />
     </group-card>
   }
