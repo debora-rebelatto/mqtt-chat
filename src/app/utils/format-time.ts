@@ -1,4 +1,4 @@
-export function formatInvitationTime(date: Date): string {
+export function formatTime(date: Date): string {
   const now = new Date()
   const diff = now.getTime() - date.getTime()
   const minutes = Math.floor(diff / 60000)

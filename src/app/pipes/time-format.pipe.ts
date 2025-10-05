@@ -1,35 +1,19 @@
 import { Pipe, PipeTransform } from '@angular/core'
-import { TranslationService } from '../services/translation.service'
 
 @Pipe({
   name: 'timeFormat',
   standalone: true
 })
 export class TimeFormatPipe implements PipeTransform {
-  constructor(private translationService: TranslationService) {}
-
-  transform(date: Date | string | null): string {
+  transform(date: Date): string {
     if (!date) return ''
-    
-    const dateObj = typeof date === 'string' ? new Date(date) : date
-    const now = new Date()
-    const diffMs = now.getTime() - dateObj.getTime()
-    const diffMins = Math.floor(diffMs / 60000)
 
-    if (diffMins < 1) {
-      return this.translationService.translate('NOW')
-    }
-    
-    if (diffMins < 60) {
-      return this.translationService.translate('MINUTES_AGO', { count: diffMins })
-    }
+    const day = date.getDate().toString().padStart(2, '0')
+    const month = (date.getMonth() + 1).toString().padStart(2, '0')
+    const year = date.getFullYear()
+    const hours = date.getHours().toString().padStart(2, '0')
+    const minutes = date.getMinutes().toString().padStart(2, '0')
 
-    const diffHours = Math.floor(diffMins / 60)
-    if (diffHours < 24) {
-      return this.translationService.translate('HOURS_AGO', { count: diffHours })
-    }
-
-    const diffDays = Math.floor(diffHours / 24)
-    return this.translationService.translate('DAYS_AGO', { count: diffDays })
+    return `${day}/${month}/${year} ${hours}:${minutes}`
   }
 }

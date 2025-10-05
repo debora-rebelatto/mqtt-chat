@@ -2,6 +2,7 @@ import { Injectable } from '@angular/core'
 import { BehaviorSubject } from 'rxjs'
 import { ChatMessage } from '../models/chat-message.model'
 import { MqttService } from './mqtt.service'
+import { ChatType } from '../models/chat-type.component'
 
 @Injectable({
   providedIn: 'root'
@@ -10,9 +11,11 @@ export class ChatService {
   private messagesSubject = new BehaviorSubject<ChatMessage[]>([])
   public messages$ = this.messagesSubject.asObservable()
 
-  private currentChatSubject = new BehaviorSubject<{ type: 'user' | 'group'; id: string } | null>(null)
+  private currentChatSubject = new BehaviorSubject<{ type: 'user' | 'group'; id: string } | null>(
+    null
+  )
   public currentChat$ = this.currentChatSubject.asObservable()
-  
+
   private readonly STORAGE_KEY = 'mqtt-chat-messages'
   private readonly PENDING_MESSAGES_KEY = 'mqtt-chat-pending-messages'
   private pendingMessages: { [username: string]: ChatMessage[] } = {}
@@ -53,7 +56,7 @@ export class ChatService {
       content: content,
       timestamp: new Date(),
       fromCurrentUser: true,
-      chatType: 'user',
+      chatType: ChatType.User,
       chatId: to
     }
 
@@ -77,7 +80,7 @@ export class ChatService {
       content: content,
       timestamp: new Date(),
       fromCurrentUser: true,
-      chatType: 'group',
+      chatType: ChatType.Group,
       chatId: groupId
     }
 
@@ -102,7 +105,7 @@ export class ChatService {
       content: data.content,
       timestamp: new Date(data.timestamp),
       fromCurrentUser: data.from === currentUsername,
-      chatType: 'user',
+      chatType: ChatType.User,
       chatId: data.from === currentUsername ? data.to : data.from
     }
 
@@ -118,7 +121,7 @@ export class ChatService {
       content: data.content,
       timestamp: new Date(data.timestamp),
       fromCurrentUser: data.sender === currentUsername,
-      chatType: 'group',
+      chatType: ChatType.Group,
       chatId: data.groupId
     }
 
@@ -127,10 +130,10 @@ export class ChatService {
 
   private handlePendingSync(message: string, currentUsername: string) {
     const data = JSON.parse(message)
-    
+
     if (data.type === 'request_pending') {
       const pendingMessages = this.getPendingMessages(currentUsername)
-      pendingMessages.forEach(msg => {
+      pendingMessages.forEach((msg) => {
         this.addMessage(msg)
       })
     }
@@ -148,9 +151,7 @@ export class ChatService {
   }
 
   getMessagesForChat(type: 'user' | 'group', chatId: string): ChatMessage[] {
-    return this.messagesSubject.value.filter(
-      (m) => m.chatType === type && m.chatId === chatId
-    )
+    return this.messagesSubject.value.filter((m) => m.chatType === type && m.chatId === chatId)
   }
 
   clearMessages() {

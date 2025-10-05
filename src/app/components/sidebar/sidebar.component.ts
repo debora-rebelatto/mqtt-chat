@@ -3,19 +3,13 @@ import { CommonModule } from '@angular/common'
 import { FormsModule } from '@angular/forms'
 import { Subject, takeUntil } from 'rxjs'
 import { LucideAngularModule, MessageCircle, Users, Search } from 'lucide-angular'
-import { GroupModalComponent } from '../group-modal/group-modal.component'
-import { AvailableGroup } from '../../models/available-group.model'
-import { GroupChat } from '../../models/group-chat.model'
-import { UserChats } from '../../models/user-chat.model'
+import { GroupModalComponent } from '../../features/groups/group-modal/group-modal.component'
+import { User, AvailableGroup, Group, ChatMessage, ChatType } from '../../models'
 import { TranslatePipe } from '../../pipes/translate.pipe'
-import { MemberCountPipe } from '../../pipes/member-count.pipe'
-import { AppStateService } from '../../services/app-state.service'
-import { UserService } from '../../services/user.service'
-import { GroupService } from '../../services/group.service'
-import { ChatService } from '../../services/chat.service'
-import { UserStatus } from '../../models/user-status.model'
-import { Group } from '../../models/group.model'
-import { ChatMessage } from '../../models/chat-message.model'
+import { ToggleButtonComponent } from './toggle-button/toggle-button.component'
+import { AppStateService, GroupService, ChatService } from '../../services'
+import { GroupListComponent } from '../../features/groups/group-list/group-list.component'
+import { UserListComponent } from '../../features/users/user-list/user-list.component'
 
 @Component({
   selector: 'app-sidebar',
@@ -24,10 +18,12 @@ import { ChatMessage } from '../../models/chat-message.model'
   imports: [
     CommonModule,
     FormsModule,
-    GroupModalComponent,
     LucideAngularModule,
     TranslatePipe,
-    MemberCountPipe
+    GroupModalComponent,
+    ToggleButtonComponent,
+    GroupListComponent,
+    UserListComponent
   ]
 })
 export class SidebarComponent implements OnInit, OnDestroy {
@@ -38,20 +34,19 @@ export class SidebarComponent implements OnInit, OnDestroy {
   private destroy$ = new Subject<void>()
 
   activeView = 'chat'
-  userChats: UserChats[] = []
-  groupChats: GroupChat[] = []
+  userChats: User[] = []
+  groupChats: Group[] = []
   availableGroups: AvailableGroup[] = []
 
   showCreateGroupModal = false
   newGroupName = ''
 
-  private users: UserStatus[] = []
+  users: User[] = []
   private groups: Group[] = []
   private allMessages: ChatMessage[] = []
 
   constructor(
     private appState: AppStateService,
-    private userService: UserService,
     private groupService: GroupService,
     private chatService: ChatService
   ) {}
@@ -66,27 +61,22 @@ export class SidebarComponent implements OnInit, OnDestroy {
   }
 
   private setupSubscriptions() {
-    this.userService.users$.pipe(takeUntil(this.destroy$)).subscribe((users) => {
-      this.users = users
-      this.updateUserChats()
-    })
-
     this.groupService.groups$.pipe(takeUntil(this.destroy$)).subscribe((groups) => {
       this.groups = groups
       this.updateGroupChats()
     })
 
-    this.chatService.messages$.pipe(takeUntil(this.destroy$)).subscribe((messages) => {
-      this.allMessages = messages
-      this.updateUserChats()
-    })
+    // this.chatService.messages$.pipe(takeUntil(this.destroy$)).subscribe((messages) => {
+    //   this.allMessages = messages
+    //   // this.updateUserChats()
+    // })
   }
 
   onViewChange(view: string) {
     this.activeView = view
   }
 
-  onChatSelect(type: 'user' | 'group', id: string, name: string) {
+  onChatSelect(type: ChatType, id: string, name: string) {
     this.appState.selectChat(type, id, name)
     this.chatService.setCurrentChat(type, id)
   }
@@ -116,63 +106,86 @@ export class SidebarComponent implements OnInit, OnDestroy {
     }
   }
 
-  private updateUserChats() {
-    const onlineUsers = this.users
-      .filter((u) => u.username !== this.appState.username)
-      .map((u) => ({
-        id: u.username,
-        name: u.username,
-        online: u.online,
-        lastSeen: u.online ? null : this.formatLastSeen(u.lastSeen),
-        unread: 0
-      }))
+  // private updateUserChats() {
+  //   // Filtra usuários online (excluindo o usuário atual)
+  //   const onlineUsers = this.users.filter((u) => u.name !== this.appState.username && u.online)
 
-    const usersWithMessages = new Set<string>()
-    this.allMessages.forEach((msg) => {
-      if (msg.chatType === 'user') {
-        if (msg.fromCurrentUser) {
-          usersWithMessages.add(msg.chatId)
-        } else {
-          usersWithMessages.add(msg.sender)
-        }
+  //   // Encontra usuários offline com quem há conversas
+  //   const usersWithMessages = this.getUsersWithMessages()
+  //   const offlineUsersWithChats = usersWithMessages
+  //     .filter(
+  //       (username) =>
+  //         username !== this.appState.username && !onlineUsers.some((u) => u.name === username)
+  //     )
+  //     .map((username) => {
+  //       const lastMessage = this.getLastUserMessage(username)
+  //       return {
+  //         id: username,
+  //         name: username,
+  //         online: false,
+  //         lastSeen: lastMessage ? lastMessage.timestamp : new Date(0), // Data padrão se não houver mensagens
+  //         unread: 0
+  //       } as User
+  //     })
+
+  //   // Combina e ordena todas as conversas
+  //   const allUsers = [...onlineUsers, ...offlineUsersWithChats]
+
+  //   // Remove duplicatas baseado no ID do usuário
+  //   const uniqueUsers = this.removeDuplicateUsers(allUsers)
+
+  //   // Ordena as conversas
+  //   this.userChats = this.sortUserChats(uniqueUsers)
+  // }
+
+  // private getUsersWithMessages(): string[] {
+  //   const users = new Set<string>()
+
+  //   this.allMessages.forEach((msg) => {
+  //     if (msg.chatType === 'user') {
+  //       if (msg.fromCurrentUser) {
+  //         users.add(msg.chatId!)
+  //       } else {
+  //         users.add(msg.sender)
+  //       }
+  //     }
+  //   })
+
+  //   return Array.from(users)
+  // }
+
+  private getLastUserMessage(username: string): ChatMessage | null {
+    const userMessages = this.allMessages.filter(
+      (msg) => msg.chatType === 'user' && (msg.chatId === username || msg.sender === username)
+    )
+
+    if (userMessages.length === 0) return null
+
+    return userMessages.sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime())[0]
+  }
+
+  private removeDuplicateUsers(users: User[]): User[] {
+    const seen = new Set<string>()
+    return users.filter((user) => {
+      if (seen.has(user.id)) {
+        return false
       }
+      seen.add(user.id)
+      return true
     })
+  }
 
-    const offlineUsersWithChats = Array.from(usersWithMessages)
-      .filter(
-        (username) =>
-          username !== this.appState.username && !onlineUsers.some((u) => u.id === username)
-      )
-      .map((username) => {
-        const lastMessage = this.allMessages
-          .filter(
-            (msg) => msg.chatType === 'user' && (msg.chatId === username || msg.sender === username)
-          )
-          .sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime())[0]
-
-        return {
-          id: username,
-          name: username,
-          online: false,
-          lastSeen: lastMessage ? this.formatLastSeen(lastMessage.timestamp) : 'Offline',
-          unread: 0
-        }
-      })
-
-    const allUsers = [...onlineUsers, ...offlineUsersWithChats]
-    this.userChats = allUsers.sort((a, b) => {
+  private sortUserChats(users: User[]): User[] {
+    return users.sort((a, b) => {
+      // Primeiro: usuários online primeiro
       if (a.online && !b.online) return -1
       if (!a.online && b.online) return 1
 
-      const aLastMsg = this.allMessages
-        .filter((msg) => msg.chatType === 'user' && (msg.chatId === a.id || msg.sender === a.id))
-        .sort((x, y) => y.timestamp.getTime() - x.timestamp.getTime())[0]
+      // Segundo: ordena pela última mensagem
+      const aLastMsg = this.getLastUserMessage(a.name)
+      const bLastMsg = this.getLastUserMessage(b.name)
 
-      const bLastMsg = this.allMessages
-        .filter((msg) => msg.chatType === 'user' && (msg.chatId === b.id || msg.sender === b.id))
-        .sort((x, y) => y.timestamp.getTime() - x.timestamp.getTime())[0]
-
-      if (!aLastMsg && !bLastMsg) return 0
+      if (!aLastMsg && !bLastMsg) return a.name.localeCompare(b.name) // Ordena por nome se não há mensagens
       if (!aLastMsg) return 1
       if (!bLastMsg) return -1
 
@@ -187,7 +200,7 @@ export class SidebarComponent implements OnInit, OnDestroy {
       id: g.id,
       name: g.name,
       leader: g.leader,
-      members: g.members.length,
+      members: g.members,
       unread: 0,
       createdAt: new Date()
     }))
@@ -207,26 +220,11 @@ export class SidebarComponent implements OnInit, OnDestroy {
       }))
   }
 
-  private formatLastSeen(date: Date): string {
-    const now = new Date()
-    const diff = now.getTime() - date.getTime()
-    const minutes = Math.floor(diff / 60000)
-
-    if (minutes < 1) return 'agora'
-    if (minutes < 60) return `${minutes} min atrás`
-
-    const hours = Math.floor(minutes / 60)
-    if (hours < 24) return `${hours}h atrás`
-
-    const days = Math.floor(hours / 24)
-    return `${days}d atrás`
-  }
-
   onModalGroupNameChange(value: string) {
     this.newGroupName = value
   }
 
-  isSelected(type: 'user' | 'group', id: string): boolean {
+  isSelected(type: ChatType, id: string): boolean {
     return this.appState.isSelectedChat(type, id)
   }
 

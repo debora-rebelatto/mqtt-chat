@@ -1,0 +1,13 @@
+<list-container
+  [isEmpty]="userChats.length === 0"
+  [showEmptyState]="true"
+  emptyMessage="NO_USERS_ONLINE"
+>
+  <h3 class="font-bold text-gray-300 my-3 mx-2 flex items-center gap-2">
+    <lucide-icon [img]="MessageCircle" class="w-4 h-4"></lucide-icon>
+    {{ 'DIRECT_CONVERSATIONS' | translate }}
+  </h3>
+  @for (user of userChats; track user.id) {
+    <user-list-item [user]="user" [selected]="isSelected(user)" (click)="onUserClick(user)" />
+  }
+</list-container>

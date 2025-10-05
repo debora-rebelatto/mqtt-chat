@@ -1,7 +1,6 @@
 import { Pipe, PipeTransform, ChangeDetectorRef, OnDestroy } from '@angular/core'
 import { Subscription } from 'rxjs'
-import { TranslationService } from '../services/translation.service'
-
+import { TranslationService } from '../services'
 @Pipe({
   name: 'translate',
   standalone: true,
@@ -25,7 +24,7 @@ export class TranslatePipe implements PipeTransform, OnDestroy {
       this.lastKey = key
       this.lastParams = params
       this.updateValue()
-      
+
       if (!this.subscription) {
         this.subscription = this.translationService.getTranslations().subscribe(() => {
           this.updateValue()

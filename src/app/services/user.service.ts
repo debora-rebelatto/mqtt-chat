@@ -1,13 +1,13 @@
 import { Injectable } from '@angular/core'
 import { BehaviorSubject } from 'rxjs'
 import { MqttService } from './mqtt.service'
-import { UserStatus } from '../models/user-status.model'
+import { User } from '../models'
 
 @Injectable({
   providedIn: 'root'
 })
 export class UserService {
-  private usersSubject = new BehaviorSubject<UserStatus[]>([])
+  private usersSubject = new BehaviorSubject<User[]>([])
   public users$ = this.usersSubject.asObservable()
 
   private lastSeenMap: Map<string, number> = new Map()
@@ -84,24 +84,27 @@ export class UserService {
     if (status.type === 'online') {
       this.lastSeenMap.set(status.username, Date.now())
       this.addOrUpdateUser({
-        username: status.username,
+        name: status.username,
         online: true,
         lastSeen: new Date(status.timestamp),
-        clientId: status.clientId
+        id: status.clientId
       })
-      
-      this.mqttService.publish(`meu-chat-mqtt/sync/pending/${status.username}`, JSON.stringify({
-        type: 'request_pending',
-        username: status.username,
-        timestamp: new Date()
-      }))
+
+      this.mqttService.publish(
+        `meu-chat-mqtt/sync/pending/${status.username}`,
+        JSON.stringify({
+          type: 'request_pending',
+          username: status.username,
+          timestamp: new Date()
+        })
+      )
     } else if (status.type === 'offline') {
       this.lastSeenMap.delete(status.username)
       this.addOrUpdateUser({
-        username: status.username,
+        name: status.username,
         online: false,
         lastSeen: new Date(status.timestamp),
-        clientId: status.clientId
+        id: status.clientId
       })
     }
   }
@@ -110,10 +113,10 @@ export class UserService {
     const disconnect = JSON.parse(message)
 
     this.addOrUpdateUser({
-      username: disconnect.username,
+      name: disconnect.username,
       online: false,
       lastSeen: new Date(disconnect.timestamp),
-      clientId: disconnect.clientId
+      id: disconnect.clientId
     })
   }
 
@@ -124,10 +127,10 @@ export class UserService {
       this.lastSeenMap.set(heartbeat.username, heartbeat.timestamp)
 
       this.addOrUpdateUser({
-        username: heartbeat.username,
+        name: heartbeat.username,
         online: true,
         lastSeen: new Date(heartbeat.timestamp),
-        clientId: heartbeat.clientId
+        id: heartbeat.clientId
       })
     }
   }
@@ -139,11 +142,11 @@ export class UserService {
     }
   }
 
-  private addOrUpdateUser(userStatus: UserStatus) {
+  private addOrUpdateUser(userStatus: User) {
     const currentUsers = this.usersSubject.value
-    const existingIndex = currentUsers.findIndex((user) => user.username === userStatus.username)
+    const existingIndex = currentUsers.findIndex((user) => user.name === userStatus.name)
 
-    let updatedUsers: UserStatus[]
+    let updatedUsers: User[]
     if (existingIndex >= 0) {
       updatedUsers = [...currentUsers]
       updatedUsers[existingIndex] = userStatus
@@ -153,13 +156,13 @@ export class UserService {
 
     const now = new Date().getTime()
     updatedUsers = updatedUsers.filter(
-      (user) => user.online || now - user.lastSeen.getTime() < 7 * 24 * 60 * 60 * 1000
+      (user) => user.online || now - user.lastSeen!.getTime() < 7 * 24 * 60 * 60 * 1000
     )
 
     updatedUsers.sort((a, b) => {
       if (a.online && !b.online) return -1
       if (!a.online && b.online) return 1
-      return a.username.localeCompare(b.username)
+      return a.name.localeCompare(b.name)
     })
 
     this.usersSubject.next(updatedUsers)
@@ -173,7 +176,7 @@ export class UserService {
   private loadUsersFromStorage() {
     const stored = localStorage.getItem(this.STORAGE_KEY)
     if (stored) {
-      const users = JSON.parse(stored).map((user: UserStatus & { lastSeen: string }) => ({
+      const users = JSON.parse(stored).map((user: User & { lastSeen: string }) => ({
         ...user,
         lastSeen: new Date(user.lastSeen)
       }))
@@ -181,7 +184,7 @@ export class UserService {
     }
   }
 
-  private saveUsersToStorage(users: UserStatus[]) {
+  private saveUsersToStorage(users: User[]) {
     localStorage.setItem(this.STORAGE_KEY, JSON.stringify(users))
   }
 
@@ -196,13 +199,12 @@ export class UserService {
     const currentUsers = this.usersSubject.value
     let hasChanges = false
 
-    const updatedUsers = currentUsers.map(user => {
+    const updatedUsers = currentUsers.map((user) => {
       if (user.online) {
-        const lastHeartbeat = this.lastSeenMap.get(user.username)
+        const lastHeartbeat = this.lastSeenMap.get(user.name)
         const timeSinceHeartbeat = lastHeartbeat ? now - lastHeartbeat : 999999
-        
+
         if (!lastHeartbeat || timeSinceHeartbeat > 60000) {
-          console.log(`User ${user.username} going offline - last heartbeat: ${timeSinceHeartbeat}ms ago`)
           hasChanges = true
           return {
             ...user,

@@ -1,0 +1,81 @@
+<div class="flex flex-col bg-gray-850 h-full w-full">
+  @if (selectedChat) {
+    <div class="p-4 border-b border-gray-700 bg-gray-900">
+      <div class="flex items-center gap-3">
+        <div
+          class="w-10 h-10 bg-blue-600 rounded-full flex items-center justify-center text-white font-bold"
+        >
+          {{ selectedChat.name.charAt(0) }}
+        </div>
+        <div>
+          <div class="font-semibold text-white">{{ selectedChat.name }}</div>
+          @if (selectedChat.isUser()) {
+            <div class="text-sm text-gray-400">
+              {{ userStatus }}
+            </div>
+          }
+        </div>
+      </div>
+    </div>
+    <div class="flex-1 p-4 overflow-y-auto" #messagesContainer>
+      <div class="space-y-4">
+        @for (msg of messages; track msg.id) {
+          <div [class]="msg.fromCurrentUser ? 'flex justify-end mb-4' : 'flex justify-start mb-4'">
+            <div [class]="msg.fromCurrentUser ? 'max-w-md ml-12' : 'max-w-md mr-12'">
+              <div
+                [class]="
+                  msg.fromCurrentUser
+                    ? 'p-3 rounded-2xl bg-blue-600 text-white shadow-lg max-w-xs break-words'
+                    : 'p-3 rounded-2xl bg-gray-700 text-gray-100 shadow-lg max-w-xs break-words'
+                "
+              >
+                @if (selectedChat.isGroup() && !msg.fromCurrentUser) {
+                  <div class="text-xs font-semibold mb-1 opacity-75">{{ msg.sender }}</div>
+                }
+                <div class="mb-1">{{ msg.content }}</div>
+                <div
+                  [class]="
+                    msg.fromCurrentUser
+                      ? 'text-xs text-blue-200 opacity-75 text-right'
+                      : 'text-xs text-gray-400 opacity-75 text-left'
+                  "
+                >
+                  {{ msg.timestamp | timeFormat }}
+                </div>
+              </div>
+            </div>
+          </div>
+        }
+      </div>
+    </div>
+    <div class="p-4 border-t border-gray-700 bg-gray-900">
+      <div class="flex gap-2">
+        <input
+          [ngModel]="inputMensagem"
+          (ngModelChange)="onInputChange($event)"
+          (keypress)="onKeyPress($event)"
+          [placeholder]="'TYPE_MESSAGE' | translate"
+          class="flex-1 px-4 py-3 bg-gray-800 border border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-white placeholder-gray-400"
+        />
+        <button
+          (click)="onSendMessage()"
+          class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-semibold transition-colors"
+        >
+          {{ 'SEND' | translate }}
+        </button>
+      </div>
+    </div>
+  }
+
+  @if (!selectedChat) {
+    <div class="flex-1 flex items-center justify-center text-gray-500">
+      <div class="text-center">
+        <lucide-icon
+          [img]="MessageCircle"
+          class="w-16 h-16 mb-4 mx-auto text-gray-400"
+        ></lucide-icon>
+        <div class="text-xl">{{ 'SELECT_CONVERSATION' | translate }}</div>
+      </div>
+    </div>
+  }
+</div>

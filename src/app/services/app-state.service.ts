@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core'
 import { BehaviorSubject } from 'rxjs'
 import { SelectedChat } from '../models/selected-chat.models'
+import { ChatType } from '../models'
 
 @Injectable({
   providedIn: 'root'
@@ -38,7 +39,7 @@ export class AppStateService {
     this.selectedChatSubject.next(chat)
   }
 
-  selectChat(type: 'user' | 'group', id: string, name: string) {
+  selectChat(type: ChatType, id: string, name: string) {
     this.setSelectedChat(new SelectedChat(type, id, name))
   }
 

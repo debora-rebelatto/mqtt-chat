@@ -3,22 +3,30 @@ import { CommonModule } from '@angular/common'
 import { FormsModule } from '@angular/forms'
 import { Subject, takeUntil } from 'rxjs'
 import { LucideAngularModule, MessageCircle } from 'lucide-angular'
-import { MqttService } from '../../services/mqtt.service'
-import { UserService } from '../../services/user.service'
-import { GroupService } from '../../services/group.service'
-import { ChatService } from '../../services/chat.service'
-import { InvitationService } from '../../services/invitation.service'
-import { ConnectionManagerService } from '../../services/connection-manager.service'
-import { AppStateService } from '../../services/app-state.service'
 import { GroupInvitation } from '../../models/group-invitation.model'
-import { NotificationsPanelComponent } from '../notifications-panel/notifications-panel.component'
 import { TranslatePipe } from '../../pipes/translate.pipe'
+import { NotificationsPanelComponent } from '../notifications-panel/notifications-panel.component'
+import {
+  MqttService,
+  UserService,
+  GroupService,
+  ChatService,
+  InvitationService,
+  ConnectionManagerService,
+  AppStateService
+} from '../../services'
 
 @Component({
   selector: 'app-page-header',
   templateUrl: './page-header.component.html',
   standalone: true,
-  imports: [CommonModule, FormsModule, NotificationsPanelComponent, LucideAngularModule, TranslatePipe]
+  imports: [
+    CommonModule,
+    FormsModule,
+    NotificationsPanelComponent,
+    LucideAngularModule,
+    TranslatePipe
+  ]
 })
 export class PageHeaderComponent implements OnInit, OnDestroy {
   private destroy$ = new Subject<void>()
@@ -67,7 +75,7 @@ export class PageHeaderComponent implements OnInit, OnDestroy {
 
     try {
       const clientId = this.connectionManager.generateClientId(this.appState.username)
-      await this.mqttService.connect('broker.hivemq.com', 8000, clientId)
+      await this.mqttService.connect('localhost', 8080, clientId)
 
       this.connectionManager.setConnected(true, clientId)
       this.userService.initialize(clientId, this.appState.username)
@@ -75,9 +83,9 @@ export class PageHeaderComponent implements OnInit, OnDestroy {
       this.chatService.initialize(this.appState.username)
       this.chatService.forceLoad()
       this.invitationService.initialize(this.appState.username)
-      
+
       this.appState.setConnected(true)
-      
+
       this.usernameChange.emit(this.appState.username)
       this.connectionChange.emit(true)
 
