@@ -1,9 +1,12 @@
 import { Component, Input, Output, EventEmitter } from '@angular/core'
 import { User } from '../../../models/user.model'
+import { DateFormatPipe } from '../../../pipes/date-format.pipe'
 
 @Component({
   selector: 'user-list-item',
-  templateUrl: './user-list-item.component.html'
+  standalone: true,
+  templateUrl: './user-list-item.component.html',
+  imports: [DateFormatPipe]
 })
 export class UserListItemComponent {
   @Input() user!: User
@@ -13,5 +16,9 @@ export class UserListItemComponent {
 
   onClick(): void {
     this.click.emit()
+  }
+
+  get unreadCount(): number {
+    return this.user.unread || 0
   }
 }

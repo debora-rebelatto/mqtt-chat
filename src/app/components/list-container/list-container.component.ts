@@ -4,6 +4,7 @@ import { TranslatePipe } from '../../pipes/translate.pipe'
 @Component({
   selector: 'list-container',
   templateUrl: './list-container.component.html',
+  standalone: true,
   imports: [TranslatePipe]
 })
 export class ListContainerComponent {

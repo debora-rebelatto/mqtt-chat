@@ -3,12 +3,11 @@
   [showEmptyState]="true"
   emptyMessage="NO_GROUPS_CREATED"
 >
+  <h3 class="font-bold text-gray-300 my-3 mx-2 flex items-center gap-2">
+    <lucide-icon [img]="Search" class="w-4 h-4"></lucide-icon>
+    {{ 'AVAILABLE_GROUPS' | translate }}
+  </h3>
   @for (group of groups; track group.id) {
-    <group-card [group]="group">
-      <badge
-        [type]="isLeader(group.leader) ? 'leader' : 'member'"
-        [text]="isLeader(group.leader) ? 'Líder' : 'Membro'"
-      />
-    </group-card>
+    <group-list-item [group]="group" />
   }
 </list-container>

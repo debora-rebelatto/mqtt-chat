@@ -6,7 +6,6 @@ import { NotificationsBannerComponent } from '../../../components/notifications-
 import { SidebarComponent } from '../../../components/sidebar/sidebar.component'
 import {
   GroupInvitation,
-  GroupChat,
   AvailableGroup,
   Group,
   ChatMessage,
@@ -46,7 +45,7 @@ export class ChatContainerComponent implements OnInit, OnDestroy {
 
   notifications: GroupInvitation[] = []
   userChats: User[] = []
-  groupChats: GroupChat[] = []
+  groupChats: Group[] = []
   availableGroups: AvailableGroup[] = []
   messages: ChatMessage[] = []
 
@@ -227,7 +226,7 @@ export class ChatContainerComponent implements OnInit, OnDestroy {
       id: g.id,
       name: g.name,
       leader: g.leader,
-      members: g.members.length,
+      members: g.members,
       unread: 0,
       createdAt: new Date()
     }))

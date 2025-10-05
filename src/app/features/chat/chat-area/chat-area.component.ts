@@ -15,12 +15,13 @@ import { SelectedChat } from '../../../models/selected-chat.models'
 import { TranslatePipe } from '../../../pipes/translate.pipe'
 import { AppStateService } from '../../../services'
 import { ChatMessage } from '../../../models'
+import { TimeFormatPipe } from '../../../pipes/time-format.pipe'
 
 @Component({
   selector: 'chat-area',
   templateUrl: 'chat-area.component.html',
   standalone: true,
-  imports: [CommonModule, FormsModule, LucideAngularModule, TranslatePipe]
+  imports: [CommonModule, FormsModule, LucideAngularModule, TranslatePipe, TimeFormatPipe]
 })
 export class ChatAreaComponent implements AfterViewInit, OnChanges {
   readonly MessageCircle = MessageCircle

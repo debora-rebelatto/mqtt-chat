@@ -25,22 +25,22 @@
               <div
                 [class]="
                   msg.fromCurrentUser
-                    ? 'relative p-3 rounded-2xl bg-blue-600 text-white shadow-lg max-w-xs break-words'
-                    : 'relative p-3 rounded-2xl bg-gray-700 text-gray-100 shadow-lg max-w-xs break-words'
+                    ? 'p-3 rounded-2xl bg-blue-600 text-white shadow-lg max-w-xs break-words'
+                    : 'p-3 rounded-2xl bg-gray-700 text-gray-100 shadow-lg max-w-xs break-words'
                 "
               >
                 @if (selectedChat.isGroup() && !msg.fromCurrentUser) {
                   <div class="text-xs font-semibold mb-1 opacity-75">{{ msg.sender }}</div>
                 }
-                <div class="mb-4">{{ msg.content }}</div>
+                <div class="mb-1">{{ msg.content }}</div>
                 <div
                   [class]="
                     msg.fromCurrentUser
-                      ? 'absolute bottom-1 right-2 text-xs text-blue-200 opacity-75'
-                      : 'absolute bottom-1 right-2 text-xs text-gray-400 opacity-75'
+                      ? 'text-xs text-blue-200 opacity-75 text-right'
+                      : 'text-xs text-gray-400 opacity-75 text-left'
                   "
                 >
-                  {{ msg.timestamp }}
+                  {{ msg.timestamp | timeFormat }}
                 </div>
               </div>
             </div>
@@ -70,7 +70,10 @@
   @if (!selectedChat) {
     <div class="flex-1 flex items-center justify-center text-gray-500">
       <div class="text-center">
-        <lucide-icon [img]="MessageCircle" class="w-16 h-16 mb-4 mx-auto text-gray-400"></lucide-icon>
+        <lucide-icon
+          [img]="MessageCircle"
+          class="w-16 h-16 mb-4 mx-auto text-gray-400"
+        ></lucide-icon>
         <div class="text-xl">{{ 'SELECT_CONVERSATION' | translate }}</div>
       </div>
     </div>

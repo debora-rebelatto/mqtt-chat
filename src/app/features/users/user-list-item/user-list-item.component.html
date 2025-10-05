@@ -1,6 +1,7 @@
 <div
   [class]="selected ? 'bg-blue-600' : 'bg-gray-800 hover:bg-gray-750'"
-  class="p-3 rounded-lg cursor-pointer transition-colors"
+  class="p-3 rounded-lg cursor-pointer transition-colors my-4 mx-2"
+  (click)="onClick()"
 >
   <div class="flex items-center justify-between">
     <div class="flex items-center gap-2">
@@ -10,11 +11,15 @@
       ></div>
       <span class="font-medium text-white">{{ user.name }}</span>
     </div>
-    @if (user.unread! > 0) {
-      <span class="badge-error">{{ user.unread }}</span>
+    @if (unreadCount > 0) {
+      <span
+        class="bg-red-500 text-white text-xs rounded-full px-2 py-1 min-w-5 h-5 flex items-center justify-center"
+      >
+        {{ unreadCount }}
+      </span>
     }
   </div>
-  @if (!user.online) {
-    <div class="text-xs text-gray-400 mt-1 ml-4">Visto {{ user.lastSeen }}</div>
+  @if (!user.online && user.lastSeen) {
+    <div class="text-xs text-gray-400 mt-1 ml-4">Visto {{ user.lastSeen | dateFormat }}</div>
   }
 </div>
