@@ -14,7 +14,7 @@ import { LucideAngularModule, MessageCircle } from 'lucide-angular'
 import { Messages } from '../../../models/messages.model'
 import { SelectedChat } from '../../../models/selected-chat.models'
 import { TranslatePipe } from '../../../pipes/translate.pipe'
-import { AppStateService } from '../../../services/app-state.service'
+import { AppStateService } from '../../../services'
 
 @Component({
   selector: 'chat-area',

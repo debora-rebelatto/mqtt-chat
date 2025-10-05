@@ -13,15 +13,10 @@ import {
   ChatMessage,
   User
 } from '../../../models'
-import { AppStateService } from '../../../services/app-state.service'
-import { ChatService } from '../../../services/chat.service'
-import { GroupService } from '../../../services/group.service'
-import { InvitationService } from '../../../services/invitation.service'
-import { MqttService } from '../../../services/mqtt.service'
-import { UserService } from '../../../services/user.service'
 import { ChatAreaComponent } from '../chat-area/chat-area.component'
 import { formatTime } from '../../../utils/format-time'
 import { PageHeaderComponent } from '../../../components/page-header/page-header.component'
+import { MqttService, UserService, GroupService, ChatService, InvitationService, AppStateService } from '../../../services'
 
 @Component({
   selector: 'app-chat-container',

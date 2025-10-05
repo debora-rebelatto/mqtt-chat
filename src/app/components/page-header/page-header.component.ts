@@ -5,14 +5,16 @@ import { Subject, takeUntil } from 'rxjs'
 import { LucideAngularModule, MessageCircle } from 'lucide-angular'
 import { GroupInvitation } from '../../models/group-invitation.model'
 import { TranslatePipe } from '../../pipes/translate.pipe'
-import { AppStateService } from '../../services/app-state.service'
-import { ChatService } from '../../services/chat.service'
-import { ConnectionManagerService } from '../../services/connection-manager.service'
-import { GroupService } from '../../services/group.service'
-import { InvitationService } from '../../services/invitation.service'
-import { MqttService } from '../../services/mqtt.service'
-import { UserService } from '../../services/user.service'
 import { NotificationsPanelComponent } from '../notifications-panel/notifications-panel.component'
+import {
+  MqttService,
+  UserService,
+  GroupService,
+  ChatService,
+  InvitationService,
+  ConnectionManagerService,
+  AppStateService
+} from '../../services'
 
 @Component({
   selector: 'app-page-header',

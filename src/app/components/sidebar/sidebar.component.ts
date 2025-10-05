@@ -7,11 +7,8 @@ import { GroupModalComponent } from '../../features/groups/group-modal/group-mod
 import { User, GroupChat, AvailableGroup, Group, ChatMessage } from '../../models'
 import { MemberCountPipe } from '../../pipes/member-count.pipe'
 import { TranslatePipe } from '../../pipes/translate.pipe'
-import { AppStateService } from '../../services/app-state.service'
-import { ChatService } from '../../services/chat.service'
-import { GroupService } from '../../services/group.service'
-import { UserService } from '../../services/user.service'
 import { ToggleButtonComponent } from './toggle-button/toggle-button.component'
+import { AppStateService, UserService, GroupService, ChatService } from '../../services'
 
 @Component({
   selector: 'app-sidebar',
