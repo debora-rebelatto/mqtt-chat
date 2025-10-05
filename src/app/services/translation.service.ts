@@ -10,6 +10,27 @@ export class TranslationService {
   private translationsSubject = new BehaviorSubject<{ [key: string]: string }>({})
   private translationsLoaded = false
 
+  // Fallback translations caso o arquivo não carregue
+  private fallbackTranslations: { [key: string]: string } = {
+    CHAT_TITLE: 'Chat MQTT',
+    CONVERSATIONS: 'Conversas',
+    SEARCH: 'Procurar',
+    DIRECT_CONVERSATIONS: 'Conversas Diretas',
+    MY_GROUPS: 'Meus Grupos',
+    NEW: 'Novo',
+    AVAILABLE_GROUPS: 'Grupos Disponíveis',
+    LEADER: 'Líder',
+    MEMBER: 'Membro',
+    MEMBERS_COUNT: '{{count}} membros',
+    JOIN: 'Entrar',
+    NO_USERS_ONLINE: 'Nenhum usuário online ainda',
+    NO_GROUPS_CREATED: 'Nenhum grupo criado ainda',
+    NO_GROUPS_AVAILABLE: 'Nenhum grupo disponível no momento',
+    SELECT_CONVERSATION: 'Selecione uma conversa para começar',
+    TYPE_MESSAGE: 'Digite sua mensagem...',
+    SEND: 'Enviar'
+  }
+
   constructor() {
     this.loadTranslations()
   }
@@ -23,23 +44,17 @@ export class TranslationService {
       }
 
       this.translations = await response.json()
-      this.translationsLoaded = true
-      this.translationsSubject.next(this.translations)
     } catch (error) {
-      console.error('Error loading translations:', error)
-      // Fallback para traduções vazias
-      this.translations = {}
+      console.warn('Using fallback translations:', error)
+      this.translations = this.fallbackTranslations
+    } finally {
       this.translationsLoaded = true
       this.translationsSubject.next(this.translations)
     }
   }
 
   translate(key: string, params?: { [key: string]: string | number }): string {
-    if (!this.translationsLoaded) {
-      return key
-    }
-
-    let translation = this.translations[key] || key
+    let translation = this.translations[key] || this.fallbackTranslations[key] || key
 
     if (params) {
       Object.keys(params).forEach((param) => {

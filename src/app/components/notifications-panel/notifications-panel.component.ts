@@ -1,14 +1,14 @@
 import { Component, Input, Output, EventEmitter } from '@angular/core'
 import { CommonModule } from '@angular/common'
 import { GroupInvitation } from '../../models/group-invitation.model'
-import { formatTime } from '../../utils/format-time'
 import { TranslatePipe } from '../../pipes/translate.pipe'
+import { DateFormatPipe } from "../../pipes/date-format.pipe";
 
 @Component({
   selector: 'app-notifications-panel',
   templateUrl: './notifications-panel.component.html',
   standalone: true,
-  imports: [CommonModule, TranslatePipe]
+  imports: [CommonModule, TranslatePipe, DateFormatPipe]
 })
 export class NotificationsPanelComponent {
   @Input() notifications: GroupInvitation[] = []
@@ -28,9 +28,5 @@ export class NotificationsPanelComponent {
 
   onToggleNotifications() {
     this.toggleNotifications.emit()
-  }
-
-  invitationTime(date: Date): string {
-    return formatTime(date)
   }
 }
