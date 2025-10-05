@@ -1,4 +1,4 @@
-export type ChatType = 'user' | 'group'
+import { ChatType } from "./chat-type.component"
 
 export class SelectedChat {
   constructor(

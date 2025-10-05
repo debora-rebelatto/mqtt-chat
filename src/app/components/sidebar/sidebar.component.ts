@@ -4,7 +4,7 @@ import { FormsModule } from '@angular/forms'
 import { Subject, takeUntil } from 'rxjs'
 import { LucideAngularModule, MessageCircle, Users, Search } from 'lucide-angular'
 import { GroupModalComponent } from '../../features/groups/group-modal/group-modal.component'
-import { User, GroupChat, AvailableGroup, Group, ChatMessage } from '../../models'
+import { User, GroupChat, AvailableGroup, Group, ChatMessage, ChatType } from '../../models'
 import { MemberCountPipe } from '../../pipes/member-count.pipe'
 import { TranslatePipe } from '../../pipes/translate.pipe'
 import { ToggleButtonComponent } from './toggle-button/toggle-button.component'
@@ -80,7 +80,7 @@ export class SidebarComponent implements OnInit, OnDestroy {
     this.activeView = view
   }
 
-  onChatSelect(type: 'user' | 'group', id: string, name: string) {
+  onChatSelect(type: ChatType, id: string, name: string) {
     this.appState.selectChat(type, id, name)
     this.chatService.setCurrentChat(type, id)
   }
@@ -148,7 +148,7 @@ export class SidebarComponent implements OnInit, OnDestroy {
     this.allMessages.forEach((msg) => {
       if (msg.chatType === 'user') {
         if (msg.fromCurrentUser) {
-          users.add(msg.chatId)
+          users.add(msg.chatId!)
         } else {
           users.add(msg.sender)
         }

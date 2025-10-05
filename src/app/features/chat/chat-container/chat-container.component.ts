@@ -8,7 +8,6 @@ import {
   GroupInvitation,
   GroupChat,
   AvailableGroup,
-  Messages,
   Group,
   ChatMessage,
   User
@@ -16,7 +15,15 @@ import {
 import { ChatAreaComponent } from '../chat-area/chat-area.component'
 import { formatTime } from '../../../utils/format-time'
 import { PageHeaderComponent } from '../../../components/page-header/page-header.component'
-import { MqttService, UserService, GroupService, ChatService, InvitationService, AppStateService } from '../../../services'
+import {
+  MqttService,
+  UserService,
+  GroupService,
+  ChatService,
+  InvitationService,
+  AppStateService
+} from '../../../services'
+import { ChatType } from '../../../models/chat-type.component'
 
 @Component({
   selector: 'app-chat-container',
@@ -41,7 +48,7 @@ export class ChatContainerComponent implements OnInit, OnDestroy {
   userChats: User[] = []
   groupChats: GroupChat[] = []
   availableGroups: AvailableGroup[] = []
-  messages: Messages[] = []
+  messages: ChatMessage[] = []
 
   private users: User[] = []
   private groups: Group[] = []
@@ -121,7 +128,7 @@ export class ChatContainerComponent implements OnInit, OnDestroy {
     }
   }
 
-  selectChat(type: 'user' | 'group', id: string, name: string) {
+  selectChat(type: ChatType, id: string, name: string) {
     this.appState.selectChat(type, id, name)
     this.chatService.setCurrentChat(type, id)
   }
@@ -177,7 +184,7 @@ export class ChatContainerComponent implements OnInit, OnDestroy {
       .filter((msg) => msg.chatType === 'user')
       .forEach((msg) => {
         if (msg.fromCurrentUser && msg.chatId !== currentUser) {
-          usersWithMessages.add(msg.chatId)
+          usersWithMessages.add(msg.chatId!)
         } else if (!msg.fromCurrentUser && msg.sender !== currentUser) {
           usersWithMessages.add(msg.sender)
         }
@@ -255,8 +262,9 @@ export class ChatContainerComponent implements OnInit, OnDestroy {
       id: m.id,
       sender: m.sender,
       content: m.content,
-      timestamp: this.formatTime(m.timestamp),
-      fromCurrentUser: m.fromCurrentUser
+      timestamp: m.timestamp,
+      fromCurrentUser: m.fromCurrentUser,
+      chatType: ChatType.Group
     }))
   }
 
