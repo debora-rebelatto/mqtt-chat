@@ -4,4 +4,5 @@ export interface Group {
   leader: string
   members: string[]
   createdAt: Date
+  unread?: number
 }
