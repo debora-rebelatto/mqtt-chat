@@ -2,7 +2,7 @@ import { Component, Input, Output, EventEmitter } from '@angular/core'
 import { CommonModule } from '@angular/common'
 import { GroupInvitation } from '../../../../models/group-invitation.model'
 import { TranslatePipe } from '../../../../pipes/translate.pipe'
-import { formatInvitationTime } from '../../../../utils/format-time'
+import { formatTime } from '../../../../utils/format-time'
 
 @Component({
   selector: 'app-notifications-panel',
@@ -31,6 +31,6 @@ export class NotificationsPanelComponent {
   }
 
   invitationTime(date: Date): string {
-    return formatInvitationTime(date)
+    return formatTime(date)
   }
 }

@@ -1,8 +1,8 @@
 import { Component, Input, Output, EventEmitter } from '@angular/core'
 import { CommonModule } from '@angular/common'
 import { GroupInvitation } from '../../models/group-invitation.model'
-import { formatInvitationTime } from '../../utils/format-time'
-import { TranslatePipe } from "../../pipes/translate.pipe";
+import { formatTime } from '../../utils/format-time'
+import { TranslatePipe } from '../../pipes/translate.pipe'
 
 @Component({
   selector: 'app-notifications-banner',
@@ -26,6 +26,6 @@ export class NotificationsBannerComponent {
   }
 
   invitationTime(date: Date): string {
-    return formatInvitationTime(date)
+    return formatTime(date)
   }
 }
