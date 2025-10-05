@@ -1,4 +1,7 @@
-<div class="p-4 rounded-lg bg-gray-800 border border-gray-700 my-4 mx-2">
+<div
+  class="p-4 rounded-lg bg-gray-800 border border-gray-700 my-4 mx-2 cursor-pointer hover:bg-gray-750 transition-colors"
+  (click)="onGroupClick()"
+>
   <div class="font-medium text-white mb-1">{{ group.name }}</div>
   <div class="flex justify-between items-center">
     <div class="text-xs text-gray-500">

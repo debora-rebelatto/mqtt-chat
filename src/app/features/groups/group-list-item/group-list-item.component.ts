@@ -1,4 +1,4 @@
-import { Input, Component } from '@angular/core'
+import { Input, Component, EventEmitter, Output } from '@angular/core'
 import { Group } from '../../../models/group.model'
 import { MemberCountPipe } from '../../../pipes/member-count.pipe'
 import { TranslatePipe } from '../../../pipes/translate.pipe'
@@ -12,10 +12,15 @@ import { AppStateService } from '../../../services'
 })
 export class GroupListItemComponent {
   @Input() group!: Group
+  @Output() groupClick = new EventEmitter<Group>()
 
   constructor(private appService: AppStateService) {}
 
   isLeader(leader: string): boolean {
     return this.appService.username === leader ? true : false
+  }
+
+  onGroupClick(): void {
+    this.groupClick.emit(this.group)
   }
 }
