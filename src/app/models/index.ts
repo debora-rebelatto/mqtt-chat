@@ -1,6 +1,5 @@
 export * from './user.model'
 export * from './available-group.model'
-export * from './chat-info.component'
 export * from './chat-message.model'
 export * from './group-chat.model'
 export * from './group-invitation.model'
