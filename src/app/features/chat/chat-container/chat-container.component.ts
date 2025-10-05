@@ -2,24 +2,27 @@ import { Component, OnInit, OnDestroy } from '@angular/core'
 import { FormsModule } from '@angular/forms'
 import { CommonModule } from '@angular/common'
 import { Subject, takeUntil } from 'rxjs'
-import { AvailableGroup } from '../../../../models/available-group.model'
-import { ChatMessage } from '../../../../models/chat-message.model'
-import { GroupChat } from '../../../../models/group-chat.model'
-import { GroupInvitation } from '../../../../models/group-invitation.model'
-import { Group } from '../../../../models/group.model'
-import { Messages } from '../../../../models/messages.model'
-import { UserChats } from '../../../../models/user-chat.model'
-import { UserStatus } from '../../../../models/user-status.model'
-import { AppStateService } from '../../../../services/app-state.service'
-import { ChatService } from '../../../../services/chat.service'
-import { GroupService } from '../../../../services/group.service'
-import { InvitationService } from '../../../../services/invitation.service'
-import { MqttService } from '../../../../services/mqtt.service'
-import { UserService } from '../../../../services/user.service'
-import { NotificationsBannerComponent } from '../../../../shared/components/notifications/notifications-banner/notifications-banner.component'
-import { PageHeaderComponent } from '../../../../shared/components/ui/page-header/page-header.component'
+import { NotificationsBannerComponent } from '../../../components/notifications-banner/notifications-banner.component'
+import { SidebarComponent } from '../../../components/sidebar/sidebar.component'
+import {
+  GroupInvitation,
+  GroupChat,
+  AvailableGroup,
+  Messages,
+  Group,
+  ChatMessage,
+  User
+} from '../../../models'
+import { UserStatus } from '../../../models/user-status.model'
+import { AppStateService } from '../../../services/app-state.service'
+import { ChatService } from '../../../services/chat.service'
+import { GroupService } from '../../../services/group.service'
+import { InvitationService } from '../../../services/invitation.service'
+import { MqttService } from '../../../services/mqtt.service'
+import { UserService } from '../../../services/user.service'
 import { ChatAreaComponent } from '../chat-area/chat-area.component'
-import { SidebarComponent } from '../sidebar/sidebar.component'
+import { formatTime } from '../../../utils/format-time'
+import { PageHeaderComponent } from '../../../components/page-header/page-header.component'
 
 @Component({
   selector: 'app-chat-container',
@@ -41,7 +44,7 @@ export class ChatContainerComponent implements OnInit, OnDestroy {
   showNotifications = true
 
   notifications: GroupInvitation[] = []
-  userChats: UserChats[] = []
+  userChats: User[] = []
   groupChats: GroupChat[] = []
   availableGroups: AvailableGroup[] = []
   messages: Messages[] = []
@@ -139,33 +142,40 @@ export class ChatContainerComponent implements OnInit, OnDestroy {
     )
   }
 
-  private getOnlineUsers(currentUser: string): UserChats[] {
+  private getOnlineUsers(currentUser: string): User[] {
     return this.users
       .filter((u) => u.username !== currentUser)
       .map((u) => ({
         id: u.username,
         name: u.username,
         online: u.online,
-        lastSeen: u.online ? null : this.formatLastSeen(u.lastSeen),
+        lastSeen: u.online ? null : u.lastSeen,
         unread: 0
       }))
   }
 
-  private getOfflineUsersWithChats(currentUser: string, onlineUsers: UserChats[]): UserChats[] {
+  private getOfflineUsersWithChats(currentUser: string, onlineUsers: User[]): User[] {
     const usersWithMessages = this.getUsersWithMessages(currentUser)
     const onlineUserIds = new Set(onlineUsers.map((u) => u.id))
 
     return Array.from(usersWithMessages)
       .filter((username) => !onlineUserIds.has(username))
-      .map((username) => ({
-        id: username,
-        name: username,
-        online: false,
-        lastSeen: this.getLastSeenForUser(username),
-        unread: 0
-      }))
-  }
+      .map((username) => {
+        const lastMessage = this.allMessages
+          .filter(
+            (msg) => msg.chatType === 'user' && (msg.chatId === username || msg.sender === username)
+          )
+          .sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime())[0]
 
+        return {
+          id: username,
+          name: username,
+          online: false,
+          lastSeen: lastMessage ? lastMessage.timestamp : new Date(),
+          unread: 0
+        }
+      })
+  }
   private getUsersWithMessages(currentUser: string): Set<string> {
     const usersWithMessages = new Set<string>()
 
@@ -184,7 +194,7 @@ export class ChatContainerComponent implements OnInit, OnDestroy {
 
   private getLastSeenForUser(username: string): string {
     const lastMessage = this.getLastMessageForUser(username)
-    return lastMessage ? this.formatLastSeen(lastMessage.timestamp) : 'Offline'
+    return lastMessage ? formatTime(lastMessage.timestamp) : 'Offline'
   }
 
   private getLastMessageForUser(username: string): ChatMessage | undefined {
@@ -195,7 +205,7 @@ export class ChatContainerComponent implements OnInit, OnDestroy {
       .sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime())[0]
   }
 
-  private sortUserChats(a: UserChats, b: UserChats): number {
+  private sortUserChats(a: User, b: User): number {
     if (a.online && !b.online) return -1
     if (!a.online && b.online) return 1
 
@@ -290,21 +300,6 @@ export class ChatContainerComponent implements OnInit, OnDestroy {
 
     group.members.push(this.appState.username)
     this.mqttService.publish('meu-chat-mqtt/groups', JSON.stringify(group), true)
-  }
-
-  private formatLastSeen(date: Date): string {
-    const now = new Date()
-    const diff = now.getTime() - date.getTime()
-    const minutes = Math.floor(diff / 60000)
-
-    if (minutes < 1) return 'agora'
-    if (minutes < 60) return `${minutes} min atrás`
-
-    const hours = Math.floor(minutes / 60)
-    if (hours < 24) return `${hours}h atrás`
-
-    const days = Math.floor(hours / 24)
-    return `${days}d atrás`
   }
 
   private formatTime(date: Date): string {

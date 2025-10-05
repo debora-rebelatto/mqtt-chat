@@ -3,26 +3,30 @@ import { CommonModule } from '@angular/common'
 import { FormsModule } from '@angular/forms'
 import { Subject, takeUntil } from 'rxjs'
 import { LucideAngularModule, MessageCircle, Users, Search } from 'lucide-angular'
-import { AvailableGroup } from '../../models/available-group.model'
-import { GroupChat } from '../../models/group-chat.model'
-import { UserChats } from '../../models/user-chat.model'
-import { TranslatePipe } from '../../pipes/translate.pipe'
-import { MemberCountPipe } from '../../pipes/member-count.pipe'
-import { AppStateService } from '../../services/app-state.service'
-import { UserService } from '../../services/user.service'
-import { GroupService } from '../../services/group.service'
-import { ChatService } from '../../services/chat.service'
+import { GroupModalComponent } from '../../features/groups/group-modal/group-modal.component'
+import { User, GroupChat, AvailableGroup, Group, ChatMessage } from '../../models'
 import { UserStatus } from '../../models/user-status.model'
-import { Group } from '../../models/group.model'
-import { ChatMessage } from '../../models/chat-message.model'
-import { GroupModalComponent } from "../../features/groups/group-modal/group-modal.component";
-import { ToggleButtonComponent } from "./toggle-button/toggle-button.component";
+import { MemberCountPipe } from '../../pipes/member-count.pipe'
+import { TranslatePipe } from '../../pipes/translate.pipe'
+import { AppStateService } from '../../services/app-state.service'
+import { ChatService } from '../../services/chat.service'
+import { GroupService } from '../../services/group.service'
+import { UserService } from '../../services/user.service'
+import { ToggleButtonComponent } from './toggle-button/toggle-button.component'
 
 @Component({
   selector: 'app-sidebar',
   templateUrl: './sidebar.component.html',
   standalone: true,
-  imports: [CommonModule, FormsModule, LucideAngularModule, TranslatePipe, MemberCountPipe, GroupModalComponent, ToggleButtonComponent]
+  imports: [
+    CommonModule,
+    FormsModule,
+    LucideAngularModule,
+    TranslatePipe,
+    MemberCountPipe,
+    GroupModalComponent,
+    ToggleButtonComponent
+  ]
 })
 export class SidebarComponent implements OnInit, OnDestroy {
   readonly MessageCircle = MessageCircle
@@ -32,7 +36,7 @@ export class SidebarComponent implements OnInit, OnDestroy {
   private destroy$ = new Subject<void>()
 
   activeView = 'chat'
-  userChats: UserChats[] = []
+  userChats: User[] = []
   groupChats: GroupChat[] = []
   availableGroups: AvailableGroup[] = []
 
@@ -117,7 +121,7 @@ export class SidebarComponent implements OnInit, OnDestroy {
         id: u.username,
         name: u.username,
         online: u.online,
-        lastSeen: u.online ? null : this.formatLastSeen(u.lastSeen),
+        lastSeen: u.online ? null : u.lastSeen,
         unread: 0
       }))
 
@@ -148,7 +152,7 @@ export class SidebarComponent implements OnInit, OnDestroy {
           id: username,
           name: username,
           online: false,
-          lastSeen: lastMessage ? this.formatLastSeen(lastMessage.timestamp) : 'Offline',
+          lastSeen: lastMessage ? lastMessage.timestamp : null,
           unread: 0
         }
       })

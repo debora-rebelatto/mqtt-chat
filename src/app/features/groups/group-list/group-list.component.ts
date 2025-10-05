@@ -4,8 +4,8 @@ import { LucideAngularModule, Search } from 'lucide-angular'
 import { GroupChat } from '../../../models/group-chat.model'
 import { Group } from '../../../models/group.model'
 import { SelectedChat } from '../../../models/selected-chat.models'
-import { BadgeComponent } from '../../../shared/components/ui/badge/badge.component'
-import { ListContainerComponent } from '../../../shared/components/ui/list-container/list-container.component'
+import { BadgeComponent } from '../../../components/badge/badge.component'
+import { ListContainerComponent } from '../../../components/list-container/list-container.component'
 import { GroupCardComponent } from '../group-card/group-card.component'
 
 @Component({

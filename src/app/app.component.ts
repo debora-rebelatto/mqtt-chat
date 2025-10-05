@@ -1,5 +1,5 @@
 import { Component } from '@angular/core'
-import { ChatContainerComponent } from './features/chat/components/chat-container/chat-container.component';
+import { ChatContainerComponent } from './features/chat/chat-container/chat-container.component';
 
 @Component({
   selector: 'app-root',
