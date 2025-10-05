@@ -12,7 +12,6 @@ import {
   User
 } from '../../../models'
 import { ChatAreaComponent } from '../chat-area/chat-area.component'
-import { formatTime } from '../../../utils/format-time'
 import { PageHeaderComponent } from '../../../components/page-header/page-header.component'
 import {
   MqttService,
@@ -190,11 +189,6 @@ export class ChatContainerComponent implements OnInit, OnDestroy {
       })
 
     return usersWithMessages
-  }
-
-  private getLastSeenForUser(username: string): string {
-    const lastMessage = this.getLastMessageForUser(username)
-    return lastMessage ? formatTime(lastMessage.timestamp) : 'Offline'
   }
 
   private getLastMessageForUser(username: string): ChatMessage | undefined {
