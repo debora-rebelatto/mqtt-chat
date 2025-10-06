@@ -2,7 +2,6 @@ import { Component, OnInit, OnDestroy } from '@angular/core'
 import { FormsModule } from '@angular/forms'
 import { CommonModule } from '@angular/common'
 import { Subject, takeUntil } from 'rxjs'
-import { NotificationsBannerComponent } from '../../../components/notifications-banner/notifications-banner.component'
 import { SidebarComponent } from '../../../components/sidebar/sidebar.component'
 import { PageHeaderComponent } from '../../../components/page-header/page-header.component'
 import { ChatAreaComponent } from '../chat-area/chat-area.component'
@@ -10,8 +9,7 @@ import {
   AvailableGroup,
   Group,
   ChatMessage,
-  User,
-  GroupInvitation
+  User
 } from '../../../models'
 import {
   MqttService,
@@ -30,7 +28,6 @@ import { ChatType } from '../../../models/chat-type.component'
   imports: [
     FormsModule,
     CommonModule,
-    NotificationsBannerComponent,
     SidebarComponent,
     PageHeaderComponent,
     ChatAreaComponent
@@ -40,9 +37,6 @@ export class ChatContainerComponent implements OnInit, OnDestroy {
   private destroy$ = new Subject<void>()
 
   inputMensagem = ''
-  showNotifications = true
-
-  notifications: GroupInvitation[] = []
   userChats: User[] = []
   groupChats: Group[] = []
   availableGroups: AvailableGroup[] = []
@@ -87,9 +81,6 @@ export class ChatContainerComponent implements OnInit, OnDestroy {
       this.updateCurrentChatMessages()
     })
 
-    this.invitationService.invitations$.pipe(takeUntil(this.destroy$)).subscribe((invitations) => {
-      this.notifications = invitations
-    })
 
     this.appState.selectedChat$.pipe(takeUntil(this.destroy$)).subscribe(() => {
       this.updateCurrentChatMessages()
@@ -281,13 +272,6 @@ export class ChatContainerComponent implements OnInit, OnDestroy {
     this.inputMensagem = ''
   }
 
-  acceptInvite(invitation: GroupInvitation) {
-    this.invitationService.acceptInvitation(invitation, this.appState.username)
-  }
-
-  rejectInvite(invitation: GroupInvitation) {
-    this.invitationService.rejectInvitation(invitation, this.appState.username)
-  }
 
   joinGroup(groupId: string) {
     const group = this.groups.find((g) => g.id === groupId)

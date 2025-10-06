@@ -4,12 +4,6 @@
     (connectionChange)="onConnectionChange($event)"
   />
 
-  <app-notifications-banner
-    [notifications]="notifications"
-    [showNotifications]="showNotifications"
-    (acceptInvite)="acceptInvite($event)"
-    (rejectInvite)="rejectInvite($event)"
-  />
 
   @if (appState.connected) {
     <div class="flex flex-1 overflow-hidden">

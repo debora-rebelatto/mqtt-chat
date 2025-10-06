@@ -81,6 +81,7 @@ export class PageHeaderComponent implements OnInit, OnDestroy {
 
       this.connectionManager.setConnected(true, clientId)
       this.userService.initialize(clientId, this.appState.username)
+      this.groupService.setCurrentUser(this.appState.username)
       this.groupService.initialize()
       this.chatService.initialize(this.appState.username)
       this.chatService.forceLoad()
@@ -109,6 +110,9 @@ export class PageHeaderComponent implements OnInit, OnDestroy {
     if (this.appState.connected) {
       this.userService.publishOfflineStatus(this.appState.username)
     }
+
+    // Limpar notificações ao desconectar
+    this.invitationService.onDisconnect()
 
     this.connectionManager.stopHeartbeat()
     this.mqttService.disconnect()
