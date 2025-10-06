@@ -3,7 +3,7 @@ import { CommonModule } from '@angular/common'
 import { Subject, takeUntil } from 'rxjs'
 import { ConversationRequestsComponent } from '../conversation-requests/conversation-requests.component'
 import { DebugPanelComponent } from '../debug-panel/debug-panel.component'
-import { ConversationService, UserService, AppStateService } from '../../../services'
+import { ChatService, UserService, AppStateService } from '../../../services'
 import { User } from '../../../models'
 import { TranslatePipe } from '../../../pipes/translate.pipe'
 
@@ -23,7 +23,7 @@ export class ConversationDemoComponent implements OnInit, OnDestroy {
   private destroy$ = new Subject<void>()
 
   constructor(
-    private conversationService: ConversationService,
+    private chatService: ChatService,
     private userService: UserService,
     private appState: AppStateService
   ) {}
@@ -45,7 +45,7 @@ export class ConversationDemoComponent implements OnInit, OnDestroy {
   }
 
   requestConversation(user: User) {
-    const requestId = this.conversationService.requestConversation(user.name)
+    const requestId = this.chatService.requestConversation(user.name)
     alert(`Solicitação enviada para ${user.name}!\nID: ${requestId}\nTópico de controle: ${user.name}_Control`)
   }
 }

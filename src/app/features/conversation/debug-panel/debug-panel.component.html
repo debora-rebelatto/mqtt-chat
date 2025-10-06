@@ -3,6 +3,12 @@
     <h3 class="text-lg font-bold text-white">{{ 'DEBUG_PANEL' | translate }}</h3>
     <div class="flex gap-2">
       <button
+        (click)="testPersistence()"
+        class="bg-yellow-600 hover:bg-yellow-700 text-white px-3 py-1 rounded text-sm font-medium transition-colors"
+      >
+        Testar
+      </button>
+      <button
         (click)="clearDebugHistory()"
         class="bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded text-sm font-medium transition-colors"
       >

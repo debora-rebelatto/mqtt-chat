@@ -1,7 +1,7 @@
 import { Component, OnInit, OnDestroy } from '@angular/core'
 import { CommonModule } from '@angular/common'
 import { Subject, takeUntil } from 'rxjs'
-import { ConversationService } from '../../../services'
+import { ChatService } from '../../../services'
 import { ControlMessage, ConversationRequest, ConversationSession } from '../../../models/conversation-request.model'
 import { TranslatePipe } from '../../../pipes/translate.pipe'
 
@@ -18,26 +18,26 @@ export class DebugPanelComponent implements OnInit, OnDestroy {
   showDebug = false
   private destroy$ = new Subject<void>()
 
-  constructor(private conversationService: ConversationService) {}
+  constructor(private chatService: ChatService) {}
 
   ngOnInit() {
-    this.conversationService.debugHistory$
+    this.chatService.debugHistory$
       .pipe(takeUntil(this.destroy$))
-      .subscribe(history => {
-        this.debugHistory = history.sort((a, b) => 
+      .subscribe((history: ControlMessage[]) => {
+        this.debugHistory = history.sort((a: ControlMessage, b: ControlMessage) => 
           new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
         )
       })
 
-    this.conversationService.requests$
+    this.chatService.requests$
       .pipe(takeUntil(this.destroy$))
-      .subscribe(requests => {
+      .subscribe((requests: ConversationRequest[]) => {
         this.requests = requests
       })
 
-    this.conversationService.sessions$
+    this.chatService.sessions$
       .pipe(takeUntil(this.destroy$))
-      .subscribe(sessions => {
+      .subscribe((sessions: ConversationSession[]) => {
         this.sessions = sessions
       })
   }
@@ -70,6 +70,11 @@ export class DebugPanelComponent implements OnInit, OnDestroy {
   }
 
   clearDebugHistory() {
-    this.conversationService.clearData()
+    this.chatService.clearConversationData()
+  }
+
+  // Método temporário para testar persistência
+  testPersistence() {
+    (this.chatService as any).testDebugPersistence()
   }
 }

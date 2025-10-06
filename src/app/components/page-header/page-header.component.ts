@@ -13,8 +13,7 @@ import {
   ChatService,
   InvitationService,
   ConnectionManagerService,
-  AppStateService,
-  ConversationService
+  AppStateService
 } from '../../services'
 
 @Component({
@@ -47,7 +46,6 @@ export class PageHeaderComponent implements OnInit, OnDestroy {
     private chatService: ChatService,
     private invitationService: InvitationService,
     private connectionManager: ConnectionManagerService,
-    private conversationService: ConversationService,
     public appState: AppStateService
   ) {}
 
@@ -87,7 +85,6 @@ export class PageHeaderComponent implements OnInit, OnDestroy {
       this.chatService.initialize(this.appState.username)
       this.chatService.forceLoad()
       this.invitationService.initialize(this.appState.username)
-      this.conversationService.initialize(this.appState.username)
 
       this.appState.setConnected(true)
 
@@ -131,7 +128,11 @@ export class PageHeaderComponent implements OnInit, OnDestroy {
         'mqtt-chat-pending-messages', 
         'mqtt-chat-users',
         'mqtt-chat-groups',
-        'mqtt-chat-invitations'
+        'mqtt-chat-invitations',
+        'mqtt-chat-conversation-requests',
+        'mqtt-chat-conversation-sessions',
+        'mqtt-chat-debug-history',
+        'mqtt-chat-selected-chat'
       ]
       
       keysToRemove.forEach(key => {
@@ -139,12 +140,12 @@ export class PageHeaderComponent implements OnInit, OnDestroy {
       })
       
       this.chatService.clearMessages()
+      this.chatService.clearConversationData()
 
       alert('Todos os dados foram limpos! A página será recarregada.')
       window.location.reload()
     }
   }
-
   private sendHeartbeat() {
     if (this.appState.connected) {
       const heartbeatMessage = {

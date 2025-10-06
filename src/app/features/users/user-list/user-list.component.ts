@@ -3,7 +3,7 @@ import { CommonModule } from '@angular/common'
 import { UserListItemComponent } from '../user-list-item/user-list-item.component'
 import { ListContainerComponent } from '../../../components/list-container/list-container.component'
 import { Subject, takeUntil } from 'rxjs'
-import { AppStateService, UserService, ChatService, ConversationService } from '../../../services'
+import { AppStateService, UserService, ChatService } from '../../../services'
 import { AvailableGroup, ChatMessage, ChatType, User } from '../../../models'
 import { LucideAngularModule, MessageCircle } from 'lucide-angular'
 import { TranslatePipe } from '../../../pipes/translate.pipe'
@@ -32,8 +32,7 @@ export class UserListComponent implements OnInit, OnDestroy {
   constructor(
     private appState: AppStateService,
     private userService: UserService,
-    private chatService: ChatService,
-    private conversationService: ConversationService
+    private chatService: ChatService
   ) {}
 
   ngOnInit() {
@@ -68,7 +67,7 @@ export class UserListComponent implements OnInit, OnDestroy {
   }
 
   requestConversation(user: User): void {
-    const requestId = this.conversationService.requestConversation(user.name)
+    const requestId = this.chatService.requestConversation(user.name)
     alert(`Solicitação de conversa enviada para ${user.name}. ID: ${requestId}`)
   }
 

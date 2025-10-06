@@ -1,7 +1,7 @@
 import { Component, OnInit, OnDestroy } from '@angular/core'
 import { CommonModule } from '@angular/common'
 import { Subject, takeUntil } from 'rxjs'
-import { ConversationService, AppStateService } from '../../../services'
+import { ChatService, AppStateService } from '../../../services'
 import { ConversationRequest } from '../../../models/conversation-request.model'
 import { TranslatePipe } from '../../../pipes/translate.pipe'
 
@@ -16,16 +16,16 @@ export class ConversationRequestsComponent implements OnInit, OnDestroy {
   private destroy$ = new Subject<void>()
 
   constructor(
-    private conversationService: ConversationService,
+    private chatService: ChatService,
     private appState: AppStateService
   ) {}
 
   ngOnInit() {
-    this.conversationService.requests$
+    this.chatService.requests$
       .pipe(takeUntil(this.destroy$))
-      .subscribe(requests => {
+      .subscribe((requests: ConversationRequest[]) => {
         // Mostrar apenas solicitações recebidas pelo usuário atual
-        this.requests = requests.filter(r => r.to === this.appState.username)
+        this.requests = requests.filter((r: ConversationRequest) => r.to === this.appState.username)
       })
   }
 
@@ -35,11 +35,11 @@ export class ConversationRequestsComponent implements OnInit, OnDestroy {
   }
 
   acceptRequest(request: ConversationRequest) {
-    this.conversationService.acceptConversationRequest(request)
+    this.chatService.acceptConversationRequest(request)
   }
 
   rejectRequest(request: ConversationRequest) {
-    this.conversationService.rejectConversationRequest(request)
+    this.chatService.rejectConversationRequest(request)
   }
 
   getPendingRequests(): ConversationRequest[] {
