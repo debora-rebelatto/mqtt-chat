@@ -248,7 +248,8 @@ export class ChatContainerComponent implements OnInit, OnDestroy {
       content: m.content,
       timestamp: m.timestamp,
       fromCurrentUser: m.fromCurrentUser,
-      chatType: ChatType.Group
+      chatType: m.chatType,
+      chatId: m.chatId
     }))
   }
 

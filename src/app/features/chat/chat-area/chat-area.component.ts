@@ -37,8 +37,6 @@ export class ChatAreaComponent implements AfterViewInit, OnChanges {
   @Output() messageInputChange = new EventEmitter<string>()
   @Output() keyPress = new EventEmitter<KeyboardEvent>()
 
-  constructor(private appState: AppStateService) {}
-
   onSendMessage() {
     this.messageSend.emit()
   }

@@ -300,8 +300,7 @@ export class ChatService {
       if (type === 'user') {
         const isConversationWithUser =
           (m.sender === this.currentUserId && m.chatId === chatId) ||
-          (m.sender === chatId && m.chatId === this.currentUserId) ||
-          m.chatId === chatId
+          (m.sender === chatId && (m.chatId === this.currentUserId || m.chatId === chatId))
         return typeMatch && isConversationWithUser
       } else {
         return typeMatch && m.chatId === chatId
