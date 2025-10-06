@@ -77,6 +77,8 @@ export class PageHeaderComponent implements OnInit, OnDestroy {
       const clientId = this.connectionManager.generateClientId(this.appState.username)
       await this.mqttService.connect('localhost', 8080, clientId)
 
+      await new Promise((resolve) => setTimeout(resolve, 500))
+
       this.connectionManager.setConnected(true, clientId)
       this.userService.initialize(clientId, this.appState.username)
       this.groupService.initialize()
@@ -95,9 +97,11 @@ export class PageHeaderComponent implements OnInit, OnDestroy {
       this.connectionManager.startHeartbeat(() => {
         this.sendHeartbeat()
       })
-    } catch {
+    } catch (error) {
+      console.error('Erro ao conectar MQTT:', error)
       this.isConnecting = false
       this.connectionManager.setConnected(false, '')
+      this.appState.setConnected(false)
     }
   }
 

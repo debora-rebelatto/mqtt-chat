@@ -162,7 +162,10 @@ export class UserService {
     updatedUsers.sort((a, b) => {
       if (a.online && !b.online) return -1
       if (!a.online && b.online) return 1
-      return a.name.localeCompare(b.name)
+
+      const nameA = a.name || ''
+      const nameB = b.name || ''
+      return nameA.localeCompare(nameB)
     })
 
     this.usersSubject.next(updatedUsers)

@@ -64,7 +64,7 @@ export class ChatService {
       from: from,
       to: to,
       content: content,
-      timestamp: message.timestamp.toISOString(),
+      timestamp: message.timestamp instanceof Date ? message.timestamp.toISOString() : new Date(message.timestamp).toISOString(),
       messageId: message.id
     }
 
@@ -88,7 +88,7 @@ export class ChatService {
       groupId: groupId,
       sender: sender,
       content: content,
-      timestamp: message.timestamp.toISOString(),
+      timestamp: message.timestamp instanceof Date ? message.timestamp.toISOString() : new Date(message.timestamp).toISOString(),
       messageId: message.id
     }
 
@@ -143,6 +143,7 @@ export class ChatService {
     const messages = this.messagesSubject.value
     const exists = messages.some((m) => m.id === message.id)
 
+
     if (!exists) {
       const updatedMessages = [...messages, message]
       this.messagesSubject.next(updatedMessages)
@@ -151,7 +152,12 @@ export class ChatService {
   }
 
   getMessagesForChat(type: 'user' | 'group', chatId: string): ChatMessage[] {
-    return this.messagesSubject.value.filter((m) => m.chatType === type && m.chatId === chatId)
+    const messages = this.messagesSubject.value.filter((m) => {
+      const typeMatch = m.chatType === type || m.chatType === (type === 'user' ? ChatType.User : ChatType.Group)
+      return typeMatch && m.chatId === chatId
+    })
+
+    return messages
   }
 
   clearMessages() {
