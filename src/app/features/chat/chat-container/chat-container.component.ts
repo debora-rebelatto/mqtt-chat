@@ -5,14 +5,15 @@ import { Subject, takeUntil } from 'rxjs'
 import { NotificationsBannerComponent } from '../../../components/notifications-banner/notifications-banner.component'
 import { SidebarComponent } from '../../../components/sidebar/sidebar.component'
 import {
-  GroupInvitation,
   AvailableGroup,
   Group,
   ChatMessage,
   User
 } from '../../../models'
-import { ChatAreaComponent } from '../chat-area/chat-area.component'
-import { PageHeaderComponent } from '../../../components/page-header/page-header.component'
+import { GroupListComponent } from '../../groups/group-list/group-list.component'
+import { UserListComponent } from '../../users/user-list/user-list.component'
+import { ConversationRequestsComponent } from '../../conversation/conversation-requests/conversation-requests.component'
+import { DebugPanelComponent } from '../../conversation/debug-panel/debug-panel.component'
 import {
   MqttService,
   UserService,

@@ -13,7 +13,8 @@ import {
   ChatService,
   InvitationService,
   ConnectionManagerService,
-  AppStateService
+  AppStateService,
+  ConversationService
 } from '../../services'
 
 @Component({
@@ -46,6 +47,7 @@ export class PageHeaderComponent implements OnInit, OnDestroy {
     private chatService: ChatService,
     private invitationService: InvitationService,
     private connectionManager: ConnectionManagerService,
+    private conversationService: ConversationService,
     public appState: AppStateService
   ) {}
 
@@ -85,6 +87,7 @@ export class PageHeaderComponent implements OnInit, OnDestroy {
       this.chatService.initialize(this.appState.username)
       this.chatService.forceLoad()
       this.invitationService.initialize(this.appState.username)
+      this.conversationService.initialize(this.appState.username)
 
       this.appState.setConnected(true)
 
