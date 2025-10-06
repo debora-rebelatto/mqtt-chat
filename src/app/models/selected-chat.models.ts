@@ -8,10 +8,10 @@ export class SelectedChat {
   ) {}
 
   isUser(): boolean {
-    return this.type === 'user'
+    return this.type === ChatType.User
   }
 
   isGroup(): boolean {
-    return this.type === 'group'
+    return this.type === ChatType.Group
   }
 }

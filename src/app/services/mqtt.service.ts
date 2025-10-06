@@ -16,11 +16,21 @@ export class MqttService {
         this.handleMessage(message)
       }
 
+      this.client.onConnectionLost = () => {
+        this.client = null
+      }
+
       this.client.connect({
-        onSuccess: () => resolve(),
-        onFailure: (error) => reject(error),
+        onSuccess: () => {
+          resolve()
+        },
+        onFailure: (error) => {
+          reject(error)
+        },
         timeout: 30,
-        cleanSession: false
+        cleanSession: true,
+        keepAliveInterval: 60,
+        useSSL: false
       })
     })
   }
@@ -35,13 +45,19 @@ export class MqttService {
   subscribe(topic: string, callback: (message: string) => void) {
     if (!this.messageCallbacks.has(topic)) {
       this.messageCallbacks.set(topic, [])
-      this.client?.subscribe(topic)
+
+      if (this.client && this.client.isConnected()) {
+        this.client.subscribe(topic)
+      }
     }
     this.messageCallbacks.get(topic)!.push(callback)
   }
 
   publish(topic: string, message: string, retained: boolean = false) {
-    if (!this.client) return
+    if (!this.client || !this.client.isConnected()) {
+      console.warn('MQTT client is not connected. Cannot publish message to topic:', topic)
+      return
+    }
 
     const mqttMessage = new Paho.Message(message)
     mqttMessage.destinationName = topic

@@ -77,6 +77,8 @@ export class PageHeaderComponent implements OnInit, OnDestroy {
       const clientId = this.connectionManager.generateClientId(this.appState.username)
       await this.mqttService.connect('localhost', 8080, clientId)
 
+      await new Promise((resolve) => setTimeout(resolve, 500))
+
       this.connectionManager.setConnected(true, clientId)
       this.userService.initialize(clientId, this.appState.username)
       this.groupService.initialize()
@@ -95,9 +97,11 @@ export class PageHeaderComponent implements OnInit, OnDestroy {
       this.connectionManager.startHeartbeat(() => {
         this.sendHeartbeat()
       })
-    } catch {
+    } catch (error) {
+      console.error('Erro ao conectar MQTT:', error)
       this.isConnecting = false
       this.connectionManager.setConnected(false, '')
+      this.appState.setConnected(false)
     }
   }
 
@@ -113,6 +117,31 @@ export class PageHeaderComponent implements OnInit, OnDestroy {
     this.connectionChange.emit(false)
   }
 
+  clearAllData() {
+    if (confirm('Tem certeza que deseja limpar todos os dados? Esta ação não pode ser desfeita.')) {
+      if (this.appState.connected) {
+        this.disconnect()
+      }
+      
+      const keysToRemove = [
+        'mqtt-chat-messages',
+        'mqtt-chat-pending-messages', 
+        'mqtt-chat-users',
+        'mqtt-chat-groups',
+        'mqtt-chat-invitations'
+      ]
+      
+      keysToRemove.forEach(key => {
+        localStorage.removeItem(key)
+      })
+      
+      this.chatService.clearMessages()
+
+      alert('Todos os dados foram limpos! A página será recarregada.')
+      window.location.reload()
+    }
+  }
+
   private sendHeartbeat() {
     if (this.appState.connected) {
       const heartbeatMessage = {
@@ -124,7 +153,6 @@ export class PageHeaderComponent implements OnInit, OnDestroy {
       this.mqttService.publish('meu-chat-mqtt/heartbeat', JSON.stringify(heartbeatMessage))
     }
   }
-
   acceptInvite(invitation: GroupInvitation) {
     this.invitationService.acceptInvitation(invitation, this.appState.username)
   }
