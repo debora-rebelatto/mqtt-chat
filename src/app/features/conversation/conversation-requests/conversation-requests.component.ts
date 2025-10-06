@@ -24,7 +24,6 @@ export class ConversationRequestsComponent implements OnInit, OnDestroy {
     this.chatService.requests$
       .pipe(takeUntil(this.destroy$))
       .subscribe((requests: ConversationRequest[]) => {
-        // Mostrar apenas solicitações recebidas pelo usuário atual
         this.requests = requests.filter((r: ConversationRequest) => r.to === this.appState.username)
       })
   }

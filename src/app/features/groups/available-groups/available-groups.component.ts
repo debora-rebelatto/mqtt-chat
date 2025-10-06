@@ -26,12 +26,10 @@ export class GroupListItemComponent implements OnInit, OnDestroy {
   ) {}
 
   ngOnInit() {
-    this.groupService.groups$
-      .pipe(takeUntil(this.destroy$))
-      .subscribe(groups => {
-        this.groups = groups
-        this.updateAvailableGroups()
-      })
+    this.groupService.groups$.pipe(takeUntil(this.destroy$)).subscribe((groups) => {
+      this.groups = groups
+      this.updateAvailableGroups()
+    })
   }
 
   ngOnDestroy() {
@@ -40,32 +38,26 @@ export class GroupListItemComponent implements OnInit, OnDestroy {
   }
 
   private updateAvailableGroups() {
-    // Mostrar apenas grupos onde o usuário NÃO é membro
     this.availableGroups = this.groups
-      .filter(g => !g.members.includes(this.appState.username))
-      .map(g => ({
+      .filter((g) => !g.members.includes(this.appState.username))
+      .map((g) => ({
         id: g.id,
         name: g.name,
         leader: g.leader,
         members: g.members.length,
         description: `Grupo criado por ${g.leader}`
       }))
-    
-    console.log('Grupos disponíveis para solicitação:', this.availableGroups.length)
   }
 
   onRequestJoin(groupId: string) {
-    const group = this.groups.find(g => g.id === groupId)
+    const group = this.groups.find((g) => g.id === groupId)
     if (!group) return
 
-    // Solicitar ingresso no grupo
     this.invitationService.requestJoinGroup(
       group.id,
       group.name,
       this.appState.username,
       group.leader
     )
-    
-    alert(`Solicitação de ingresso enviada para ${group.leader}, líder do grupo "${group.name}"`)
   }
 }

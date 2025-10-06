@@ -4,7 +4,7 @@ export interface ConversationRequest {
   to: string
   timestamp: Date
   status: 'pending' | 'accepted' | 'rejected'
-  sessionTopic?: string // Tópico criado quando aceito (formato X_Y_timestamp)
+  sessionTopic?: string
 }
 
 export interface ConversationSession {

@@ -12,22 +12,19 @@ export class InvitationService {
   private readonly STORAGE_KEY_BASE = 'mqtt-chat-invitations'
   private currentUsername: string = ''
 
-  constructor(private mqttService: MqttService) {
-    // Não carregar no constructor - aguardar initialize
-  }
+  constructor(private mqttService: MqttService) {}
 
   initialize(username: string) {
-    console.log(`InvitationService: ${username} se inscrevendo no tópico meu-chat-mqtt/invitations/${username}`)
-    
     this.currentUsername = username
-    this.loadInvitationsFromStorage() // Carregar convites específicos do usuário
-    
+    this.loadInvitationsFromStorage()
+
     this.mqttService.subscribe(`meu-chat-mqtt/invitations/${username}`, (message) => {
-      console.log(`${username} recebeu mensagem no seu tópico de convites:`, message)
       this.handleInvitation(message)
     })
 
-    this.mqttService.subscribe('meu-chat-mqtt/invitations/responses', (message) => {})
+    this.mqttService.subscribe('meu-chat-mqtt/invitations/responses', (message) => {
+      console.log(message)
+    })
   }
 
   private get STORAGE_KEY(): string {
@@ -51,26 +48,21 @@ export class InvitationService {
     this.mqttService.publish(`meu-chat-mqtt/invitations/${to}`, JSON.stringify(payload))
   }
 
-  // Solicitar ingresso em um grupo (usuário pede para entrar)
   requestJoinGroup(groupId: string, groupName: string, requester: string, leader: string) {
     const joinRequest: GroupInvitation = {
       id: `req_${Date.now()}_${Math.random().toString(16).substring(2, 8)}`,
       groupId: groupId,
       groupName: groupName,
-      invitedBy: requester, // Quem está pedindo para entrar
+      invitedBy: requester,
       timestamp: new Date()
     }
 
     const payload = {
       ...joinRequest,
       to: leader,
-      type: 'join_request' // Diferencia de convite normal
+      type: 'join_request'
     }
 
-    console.log(`ENVIANDO: ${requester} solicitando ingresso no grupo "${groupName}" para o líder ${leader}`)
-    console.log(`TÓPICO DESTINO: meu-chat-mqtt/invitations/${leader}`)
-    console.log('PAYLOAD:', JSON.stringify(payload, null, 2))
-    
     this.mqttService.publish(`meu-chat-mqtt/invitations/${leader}`, JSON.stringify(payload))
   }
 
@@ -101,35 +93,24 @@ export class InvitationService {
   }
 
   private handleInvitation(message: string) {
-    console.log('Recebendo convite/solicitação via MQTT:', message)
-    
-    try {
-      const data = JSON.parse(message)
-      
-      // Criar objeto GroupInvitation a partir dos dados recebidos
-      const invitation: GroupInvitation = {
-        id: data.id,
-        groupId: data.groupId,
-        groupName: data.groupName,
-        invitedBy: data.invitedBy,
-        timestamp: new Date(data.timestamp)
-      }
-      
-      console.log('Convite processado:', invitation)
-      
-      const invitations = this.invitationsSubject.value
-      const exists = invitations.some((i) => i.id === invitation.id)
-      
-      if (!exists) {
-        const updatedInvitations = [...invitations, invitation]
-        console.log('Adicionando novo convite. Total antes:', invitations.length, 'Total depois:', updatedInvitations.length)
-        this.invitationsSubject.next(updatedInvitations)
-        this.saveInvitationsToStorage(updatedInvitations)
-      } else {
-        console.log('Convite já existe, não adicionando:', invitation.id)
-      }
-    } catch (error) {
-      console.error('Erro ao processar convite:', error)
+    const data = JSON.parse(message)
+
+    const invitation: GroupInvitation = {
+      id: data.id,
+      groupId: data.groupId,
+      groupName: data.groupName,
+      invitedBy: data.invitedBy,
+      timestamp: new Date(data.timestamp)
+    }
+
+    const invitations = this.invitationsSubject.value
+    const exists = invitations.some((i) => i.id === invitation.id)
+
+    if (!exists) {
+      const updatedInvitations = [...invitations, invitation]
+
+      this.invitationsSubject.next(updatedInvitations)
+      this.saveInvitationsToStorage(updatedInvitations)
     }
   }
 
@@ -140,19 +121,14 @@ export class InvitationService {
   }
 
   clearInvitations() {
-    console.log(`Limpando convites do usuário: ${this.currentUsername}`)
     this.invitationsSubject.next([])
     this.saveInvitationsToStorage([])
   }
 
-  // Limpar notificações ao desconectar
   onDisconnect() {
-    console.log(`Usuário ${this.currentUsername} desconectando - limpando notificações`)
     this.invitationsSubject.next([])
-    // Não salvar no localStorage - manter os convites para quando reconectar
   }
 
-  // Método para testar persistência (temporário para debug)
   testInvitePersistence() {
     const testInvitation: GroupInvitation = {
       id: 'test_inv_' + Date.now(),
@@ -161,42 +137,31 @@ export class InvitationService {
       invitedBy: 'user_test',
       timestamp: new Date()
     }
-    
-    console.log('Testando persistência de convites...')
+
     const invitations = this.invitationsSubject.value
     const updatedInvitations = [...invitations, testInvitation]
     this.invitationsSubject.next(updatedInvitations)
     this.saveInvitationsToStorage(updatedInvitations)
-    
-    // Verificar se foi salvo
+
     setTimeout(() => {
-      const saved = localStorage.getItem(this.STORAGE_KEY)
-      console.log('Convites salvos no localStorage:', saved ? JSON.parse(saved).length + ' itens' : 'nenhum')
+      localStorage.getItem(this.STORAGE_KEY)
     }, 100)
   }
 
   private loadInvitationsFromStorage() {
-    try {
-      const stored = localStorage.getItem(this.STORAGE_KEY)
-      if (stored) {
-        const invitations = JSON.parse(stored).map((inv: GroupInvitation & { timestamp: string }) => ({
+    const stored = localStorage.getItem(this.STORAGE_KEY)
+    if (stored) {
+      const invitations = JSON.parse(stored).map(
+        (inv: GroupInvitation & { timestamp: string }) => ({
           ...inv,
           timestamp: new Date(inv.timestamp)
-        }))
-        this.invitationsSubject.next(invitations)
-        console.log('Convites carregados do localStorage:', invitations.length)
-      }
-    } catch (error) {
-      console.error('Erro ao carregar convites do localStorage:', error)
+        })
+      )
+      this.invitationsSubject.next(invitations)
     }
   }
 
   private saveInvitationsToStorage(invitations: GroupInvitation[]) {
-    try {
-      localStorage.setItem(this.STORAGE_KEY, JSON.stringify(invitations))
-      console.log('Convites salvos no localStorage:', invitations.length)
-    } catch (error) {
-      console.error('Erro ao salvar convites no localStorage:', error)
-    }
+    localStorage.setItem(this.STORAGE_KEY, JSON.stringify(invitations))
   }
 }

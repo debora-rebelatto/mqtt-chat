@@ -67,36 +67,28 @@ export class UserListComponent implements OnInit, OnDestroy {
   }
 
   requestConversation(user: User): void {
-    const requestId = this.chatService.requestConversation(user.name)
-    alert(`Solicitação de conversa enviada para ${user.name}. ID: ${requestId}`)
+    this.chatService.requestConversation(user.name)
   }
 
   private updateUserChats() {
-    console.log('updateUserChats: Atualizando lista de conversas diretas')
-    console.log('Usuários conhecidos total:', this.users.length)
-    
-    // Incluir TODOS os usuários conhecidos (exceto o usuário atual)
     const allKnownUsers = this.users.filter((u) => u.name !== this.appState.username)
-    console.log('Usuários conhecidos (exceto atual):', allKnownUsers.length, allKnownUsers.map(u => u.name))
 
-    // Mapear todos os usuários para o formato correto
     const mappedUsers = allKnownUsers.map((user) => {
       const lastMessage = this.getLastUserMessage(user.name)
       return {
         id: user.name,
         name: user.name,
         online: user.online,
-        lastSeen: user.online ? null : (lastMessage ? lastMessage.timestamp : user.lastSeen),
+        lastSeen: user.online ? null : lastMessage ? lastMessage.timestamp : user.lastSeen,
         unread: 0
       } as User
     })
 
-    // Encontrar usuários que aparecem apenas nas mensagens (mas não estão na lista de usuários)
     const usersWithMessages = this.getUsersWithMessages()
     const additionalUsers = usersWithMessages
-      .filter(username => 
-        username !== this.appState.username && 
-        !allKnownUsers.some(u => u.name === username)
+      .filter(
+        (username) =>
+          username !== this.appState.username && !allKnownUsers.some((u) => u.name === username)
       )
       .map((username) => {
         const lastMessage = this.getLastUserMessage(username)
@@ -109,21 +101,11 @@ export class UserListComponent implements OnInit, OnDestroy {
         } as User
       })
 
-    // Combinar todos os usuários
     const allUsers = [...mappedUsers, ...additionalUsers]
 
-    // Remove duplicatas baseado no ID do usuário
     const uniqueUsers = this.removeDuplicateUsers(allUsers)
 
-    // Ordena as conversas
     this.userChats = this.sortUserChats(uniqueUsers)
-    
-    console.log('Lista final de conversas diretas:', this.userChats.length)
-    console.log('Usuários na lista:', this.userChats.map(u => ({ 
-      name: u.name, 
-      online: u.online, 
-      lastSeen: u.lastSeen 
-    })))
   }
 
   private getUsersWithMessages(): string[] {

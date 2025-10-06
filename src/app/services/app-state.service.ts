@@ -10,7 +10,7 @@ export class AppStateService {
   private usernameSubject = new BehaviorSubject<string>('')
   private connectedSubject = new BehaviorSubject<boolean>(false)
   private selectedChatSubject = new BehaviorSubject<SelectedChat | null>(null)
-  
+
   private readonly SELECTED_CHAT_KEY = 'mqtt-chat-selected-chat'
 
   public username$ = this.usernameSubject.asObservable()
@@ -42,7 +42,6 @@ export class AppStateService {
   }
 
   setSelectedChat(chat: SelectedChat | null) {
-    console.log('Selecionando chat:', chat)
     this.selectedChatSubject.next(chat)
     this.saveSelectedChatToStorage(chat)
   }
@@ -57,34 +56,26 @@ export class AppStateService {
   }
 
   private loadSelectedChatFromStorage() {
-    try {
-      const stored = localStorage.getItem(this.SELECTED_CHAT_KEY)
-      if (stored) {
-        const chatData = JSON.parse(stored)
-        const selectedChat = new SelectedChat(chatData.type, chatData.id, chatData.name)
-        console.log('Chat selecionado carregado do localStorage:', selectedChat)
-        this.selectedChatSubject.next(selectedChat)
-      }
-    } catch (error) {
-      console.error('Erro ao carregar chat selecionado do localStorage:', error)
+    const stored = localStorage.getItem(this.SELECTED_CHAT_KEY)
+    if (stored) {
+      const chatData = JSON.parse(stored)
+      const selectedChat = new SelectedChat(chatData.type, chatData.id, chatData.name)
+      this.selectedChatSubject.next(selectedChat)
     }
   }
 
   private saveSelectedChatToStorage(chat: SelectedChat | null) {
-    try {
-      if (chat) {
-        localStorage.setItem(this.SELECTED_CHAT_KEY, JSON.stringify({
+    if (chat) {
+      localStorage.setItem(
+        this.SELECTED_CHAT_KEY,
+        JSON.stringify({
           type: chat.type,
           id: chat.id,
           name: chat.name
-        }))
-        console.log('Chat selecionado salvo no localStorage:', chat)
-      } else {
-        localStorage.removeItem(this.SELECTED_CHAT_KEY)
-        console.log('Chat selecionado removido do localStorage')
-      }
-    } catch (error) {
-      console.error('Erro ao salvar chat selecionado no localStorage:', error)
+        })
+      )
+    } else {
+      localStorage.removeItem(this.SELECTED_CHAT_KEY)
     }
   }
 }

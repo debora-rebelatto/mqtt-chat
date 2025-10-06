@@ -32,7 +32,6 @@ export class ConversationDemoComponent implements OnInit, OnDestroy {
     this.userService.users$
       .pipe(takeUntil(this.destroy$))
       .subscribe(users => {
-        // Filtrar usuários online exceto o atual
         this.users = users.filter(u => 
           u.online && u.name !== this.appState.username
         )
@@ -45,7 +44,6 @@ export class ConversationDemoComponent implements OnInit, OnDestroy {
   }
 
   requestConversation(user: User) {
-    const requestId = this.chatService.requestConversation(user.name)
-    alert(`Solicitação enviada para ${user.name}!\nID: ${requestId}\nTópico de controle: ${user.name}_Control`)
+    this.chatService.requestConversation(user.name)
   }
 }

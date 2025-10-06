@@ -68,11 +68,7 @@ export class GroupListComponent implements OnInit, OnDestroy {
   }
 
   private updateGroupChats() {
-    console.log('updateGroupChats: Atualizando grupos do usuário:', this.appState.username)
-    console.log('Total de grupos:', this.groups.length)
-    
     const userGroups = this.groups.filter((g) => g.members.includes(this.appState.username))
-    console.log('Grupos que o usuário faz parte:', userGroups.length, userGroups.map(g => g.name))
 
     this.groupChats = userGroups.map((g) => ({
       id: g.id,
@@ -96,12 +92,9 @@ export class GroupListComponent implements OnInit, OnDestroy {
         members: g.members.length,
         description: `Grupo criado por ${g.leader}`
       }))
-    
-    console.log('Grupos disponíveis (não membro):', this.availableGroups.length, this.availableGroups.map(g => g.name))
-  }
+      }
 
   onCreateGroup(): void {
-    // Abrir o modal para inserir o nome do grupo
     this.showModal = true
   }
 
@@ -112,14 +105,11 @@ export class GroupListComponent implements OnInit, OnDestroy {
 
   onModalGroupCreate(): void {
     if (this.newGroupName.trim()) {
-      // Criar o grupo com o nome inserido
       this.groupService.createGroup(this.newGroupName.trim(), this.appState.username)
-      
-      // Fechar o modal
+
       this.showModal = false
       this.newGroupName = ''
       
-      // Emitir evento para componentes pai se necessário
       this.createGroup.emit()
     }
   }

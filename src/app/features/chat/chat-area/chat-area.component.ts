@@ -69,12 +69,4 @@ export class ChatAreaComponent implements AfterViewInit, OnChanges {
       setTimeout(() => this.scrollToBottom(), 150)
     }
   }
-
-  // getSelectedUserStatus(): string {
-  //   if (this.appState.selectedChat?.isUser()) {
-  //     const user = this.userChats.find((u) => u.id === this.appState.selectedChat?.id)
-  //     return user?.online ? 'Online' : `Visto ${user?.lastSeen}`
-  //   }
-  //   return ''
-  // }
 }

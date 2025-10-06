@@ -2,7 +2,11 @@ import { Component, OnInit, OnDestroy } from '@angular/core'
 import { CommonModule } from '@angular/common'
 import { Subject, takeUntil } from 'rxjs'
 import { ChatService } from '../../../services'
-import { ControlMessage, ConversationRequest, ConversationSession } from '../../../models/conversation-request.model'
+import {
+  ControlMessage,
+  ConversationRequest,
+  ConversationSession
+} from '../../../models/conversation-request.model'
 import { TranslatePipe } from '../../../pipes/translate.pipe'
 
 @Component({
@@ -24,8 +28,9 @@ export class DebugPanelComponent implements OnInit, OnDestroy {
     this.chatService.debugHistory$
       .pipe(takeUntil(this.destroy$))
       .subscribe((history: ControlMessage[]) => {
-        this.debugHistory = history.sort((a: ControlMessage, b: ControlMessage) => 
-          new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
+        this.debugHistory = history.sort(
+          (a: ControlMessage, b: ControlMessage) =>
+            new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
         )
       })
 
@@ -53,19 +58,27 @@ export class DebugPanelComponent implements OnInit, OnDestroy {
 
   getMessageTypeLabel(type: string): string {
     switch (type) {
-      case 'conversation_request': return 'Solicitação'
-      case 'conversation_accept': return 'Aceitação'
-      case 'conversation_reject': return 'Rejeição'
-      default: return type
+      case 'conversation_request':
+        return 'Solicitação'
+      case 'conversation_accept':
+        return 'Aceitação'
+      case 'conversation_reject':
+        return 'Rejeição'
+      default:
+        return type
     }
   }
 
   getStatusLabel(status: string): string {
     switch (status) {
-      case 'pending': return 'Pendente'
-      case 'accepted': return 'Aceito'
-      case 'rejected': return 'Rejeitado'
-      default: return status
+      case 'pending':
+        return 'Pendente'
+      case 'accepted':
+        return 'Aceito'
+      case 'rejected':
+        return 'Rejeitado'
+      default:
+        return status
     }
   }
 
@@ -73,8 +86,7 @@ export class DebugPanelComponent implements OnInit, OnDestroy {
     this.chatService.clearConversationData()
   }
 
-  // Método temporário para testar persistência
   testPersistence() {
-    (this.chatService as any).testDebugPersistence()
+    ;(this.chatService as any).testDebugPersistence()
   }
 }

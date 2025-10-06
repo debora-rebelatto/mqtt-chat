@@ -10,7 +10,6 @@ export class TranslationService {
   private translationsSubject = new BehaviorSubject<{ [key: string]: string }>({})
   private translationsLoaded = false
 
-  // Fallback translations caso o arquivo não carregue
   private fallbackTranslations: { [key: string]: string } = {
     CHAT_TITLE: 'Chat MQTT',
     CONVERSATIONS: 'Conversas',
