@@ -33,8 +33,6 @@ export class ChatService {
   private readonly MESSAGES_STORAGE_KEY = 'mqtt-chat-messages'
   private readonly PENDING_MESSAGES_KEY = 'mqtt-chat-pending-messages'
 
-  private readonly MESSAGES_STORAGE_KEY = 'mqtt-chat-messages'
-
   constructor(
     private mqttService: MqttService,
     private userService: UserService,
@@ -234,36 +232,6 @@ export class ChatService {
     }
   }
 
-  private loadMessagesFromStorage() {
-    try {
-      const stored = localStorage.getItem(this.MESSAGES_STORAGE_KEY)
-      if (stored) {
-        const messagesData = JSON.parse(stored)
-        const messages = messagesData.map((msgData: any) => {
-          const sender = new User(
-            msgData.sender.id,
-            msgData.sender.name,
-            msgData.sender.online || false,
-            msgData.sender.lastSeen ? new Date(msgData.sender.lastSeen) : new Date()
-          )
-
-          return new Message(
-            msgData.id,
-            sender,
-            msgData.content,
-            new Date(msgData.timestamp),
-            msgData.chatType,
-            msgData.chatId
-          )
-        })
-
-        this.messagesSubject.next(messages)
-      }
-    } catch (error) {
-      console.error('Erro ao carregar mensagens:', error)
-    }
-  }
-
   private saveMessagesToStorage(messages: Message[]) {
     try {
       const messagesData = messages.map((msg) => ({
@@ -314,20 +282,9 @@ export class ChatService {
     }
   }
 
-  private saveMessagesToStorage(messages: Message[]) {
-    const messagesData = messages.map(
-      (msg) => new Message(msg.id, msg.sender, msg.content, msg.timestamp, msg.chatType, msg.chatId)
-    )
-
-    localStorage.setItem(this.MESSAGES_STORAGE_KEY, JSON.stringify(messagesData))
-  }
-
   sendUserMessage(from: User, to: User, content: string) {
     const messageId = `msg_${Date.now()}_${Math.random().toString(16).substring(2, 8)}`
-<<<<<<< HEAD
 
-=======
->>>>>>> 1c31ea214e9447a1a248dddf39596e6a397e7480
     const message: Message = new Message(messageId, from, content, new Date(), ChatType.User, to.id)
 
     this.addMessage(message)
