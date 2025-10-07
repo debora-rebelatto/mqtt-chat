@@ -6,16 +6,14 @@ export class Message {
   sender: User
   content: string
   timestamp: Date
-  fromCurrentUser: boolean
   chatType: ChatType
-  chatId?: string
+  chatId: string
 
   constructor(
     id: string,
     sender: User,
     content: string,
     timestamp: Date,
-    fromCurrentUser: boolean,
     chatType: ChatType,
     chatId: string
   ) {
@@ -23,7 +21,6 @@ export class Message {
     this.sender = sender
     this.content = content
     this.timestamp = timestamp
-    this.fromCurrentUser = fromCurrentUser
     this.chatType = chatType
     this.chatId = chatId
   }

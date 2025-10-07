@@ -29,12 +29,15 @@ export class ChatService {
   private groups: Group[] = []
   private allMessages: Message[] = []
 
+  private readonly MESSAGES_STORAGE_KEY = 'mqtt-chat-messages'
+
   constructor(
     private mqttService: MqttService,
     private userService: UserService,
     private groupService: GroupService,
     private appState: AppStateService
   ) {
+    this.loadMessagesFromStorage()
     this.setupSubscriptions()
   }
 
@@ -54,17 +57,13 @@ export class ChatService {
       this.updateUserChats()
       this.updateCurrentChatMessages()
     })
-
   }
 
   initialize(username: string) {
-    console.log('Inicializando ChatService para usuário:', username)
-    
     this.mqttService.subscribe(`meu-chat-mqtt/messages/${username}`, (message) => {
       this.handleUserMessage(message, username)
     })
 
-    console.log('Inscrevendo no tópico de mensagens de grupo: meu-chat-mqtt/messages/groups')
     this.mqttService.subscribe('meu-chat-mqtt/messages/groups', (message) => {
       this.handleGroupMessage(message, username)
     })
@@ -74,17 +73,17 @@ export class ChatService {
     console.log('Recebendo mensagem MQTT:', message, 'para usuário:', currentUsername)
     const messageData = JSON.parse(message)
 
-    // Encontrar o usuário correspondente ao sender
+    const senderId =
+      typeof messageData.sender === 'string' ? messageData.sender : messageData.sender.id
+
     const senderUser =
-      this.users.find((u) => u.id === messageData.sender) ||
-      new User(messageData.sender, messageData.sender, false, new Date())
+      this.users.find((u) => u.id === senderId) || new User(senderId, senderId, false, new Date())
 
     const chatMessage: Message = new Message(
       messageData.id,
       senderUser,
       messageData.content,
       new Date(messageData.timestamp),
-      messageData.sender === currentUsername,
       ChatType.User,
       messageData.chatId
     )
@@ -97,24 +96,21 @@ export class ChatService {
     console.log('Recebendo mensagem de grupo:', message, 'usuário atual:', currentUsername)
     const messageData = JSON.parse(message)
 
-    // Encontrar o usuário correspondente ao sender
-    const senderUser =
-      this.users.find((u) => u.id === messageData.sender) ||
-      new User(messageData.sender, messageData.sender, false, new Date())
+    const senderId =
+      typeof messageData.sender === 'string' ? messageData.sender : messageData.sender.id
 
-    console.log('Sender encontrado:', senderUser.id, 'é mensagem própria?', messageData.sender === currentUsername)
+    const senderUser =
+      this.users.find((u) => u.id === senderId) || new User(senderId, senderId, false, new Date())
 
     const chatMessage: Message = new Message(
       messageData.id,
       senderUser,
       messageData.content,
       new Date(messageData.timestamp),
-      messageData.sender === currentUsername,
-      ChatType.Group, // Usar ChatType.Group em vez de string
+      ChatType.Group,
       messageData.chatId
     )
 
-    console.log('Adicionando mensagem de grupo:', chatMessage.id, 'para chat:', chatMessage.chatId)
     this.addMessage(chatMessage)
   }
 
@@ -125,80 +121,83 @@ export class ChatService {
     if (!messageExists) {
       const updatedMessages = [...currentMessages, message]
       this.messagesSubject.next(updatedMessages)
+      this.saveMessagesToStorage(updatedMessages)
     }
+  }
+
+  private loadMessagesFromStorage() {
+    localStorage.removeItem(this.MESSAGES_STORAGE_KEY)
+
+    const stored = localStorage.getItem(this.MESSAGES_STORAGE_KEY)
+    if (stored) {
+      const messagesData = JSON.parse(stored)
+      const messages = messagesData.map((msgData: Message) => {
+        const sender = new User(
+          msgData.sender.id,
+          msgData.sender.name,
+          msgData.sender.online || false,
+          msgData.sender.lastSeen ? new Date(msgData.sender.lastSeen) : new Date()
+        )
+
+        return new Message(
+          msgData.id,
+          sender,
+          msgData.content,
+          new Date(msgData.timestamp),
+          msgData.chatType,
+          msgData.chatId
+        )
+      })
+
+      this.messagesSubject.next(messages)
+    }
+  }
+
+  private saveMessagesToStorage(messages: Message[]) {
+    const messagesData = messages.map(
+      (msg) => new Message(msg.id, msg.sender, msg.content, msg.timestamp, msg.chatType, msg.chatId)
+    )
+
+    localStorage.setItem(this.MESSAGES_STORAGE_KEY, JSON.stringify(messagesData))
   }
 
   sendUserMessage(from: User, to: User, content: string) {
     const messageId = `msg_${Date.now()}_${Math.random().toString(16).substring(2, 8)}`
-    const message: Message = new Message(
-      messageId,
-      from,
-      content,
-      new Date(),
-      true,
-      ChatType.User,
-      to.id // Passar o ID do usuário como string
-    )
+    const message: Message = new Message(messageId, from, content, new Date(), ChatType.User, to.id)
 
     this.addMessage(message)
-    
-    // Criar payload limpo para MQTT
-    const mqttPayload = {
-      id: messageId,
-      sender: from.id,
-      content: content,
-      timestamp: message.timestamp.toISOString(),
-      chatId: to.id,
-      chatType: 'user'
-    }
-    
-    console.log('Enviando mensagem MQTT:', mqttPayload)
-    this.mqttService.publish(`meu-chat-mqtt/messages/${to.id}`, JSON.stringify(mqttPayload))
+
+    this.mqttService.publish(`meu-chat-mqtt/messages/${to.id}`, JSON.stringify(message))
   }
 
   sendGroupMessage(groupId: string, from: User, content: string) {
-    console.log('Enviando mensagem para grupo:', groupId, 'de:', from.id, 'conteúdo:', content)
-    
     const message: Message = new Message(
       `msg_${Date.now()}_${Math.random().toString(16).substring(2, 8)}`,
       from,
       content,
       new Date(),
-      true,
       ChatType.Group,
       groupId
     )
 
     this.addMessage(message)
-    
-    const mqttPayload = {
-      id: message.id,
-      sender: from.id,
-      content: content,
-      timestamp: message.timestamp.toISOString(),
-      chatId: groupId,
-      chatType: 'group'
-    }
-    
-    console.log('Publicando mensagem de grupo via MQTT:', mqttPayload)
-    this.mqttService.publish('meu-chat-mqtt/messages/groups', JSON.stringify(mqttPayload))
+
+    this.mqttService.publish('meu-chat-mqtt/messages/groups', JSON.stringify(message))
   }
 
-  setCurrentChat(type: ChatType, id: string) {
-    let name = id // fallback para o ID
-    
+  setCurrentChat(type: ChatType, id: string, name: string) {
     if (type === ChatType.Group) {
-      const group = this.groups.find(g => g.id === id)
+      const group = this.groups.find((g) => g.id === id)
       if (group) {
         name = group.name
       }
     } else if (type === ChatType.User) {
-      const user = this.users.find(u => u.id === id)
+      const user = this.users.find((u) => u.id === id)
       if (user) {
         name = user.name
       }
     }
-    
+
     this.appState.selectChat(type, id, name)
     this.updateCurrentChatMessages()
   }
@@ -213,22 +212,26 @@ export class ChatService {
     const currentUser = this.appState.user
     if (!currentUser) return []
 
-    return this.messagesSubject.value.filter((message) => {
+    const allMessages = this.messagesSubject.value
+
+    const filtered = allMessages.filter((message) => {
       if (message.chatType !== type) return false
-      
+
       if (type === ChatType.User) {
-        // Para conversas entre usuários, incluir mensagens onde:
-        // 1. Eu enviei para o usuário (chatId = id do outro usuário)
-        // 2. O usuário enviou para mim (sender.id = id do outro usuário)
-        return (
-          (message.fromCurrentUser && message.chatId === id) ||
-          (!message.fromCurrentUser && message.sender.id === id)
-        )
+        const isFromCurrentUserToTarget =
+          message.sender.id === currentUser.id && message.chatId === id
+        const isFromTargetToCurrentUser =
+          message.sender.id === id && message.chatId === currentUser.id
+
+        const match = isFromCurrentUserToTarget || isFromTargetToCurrentUser
+
+        return match
       } else {
-        // Para grupos, usar a lógica original
         return message.chatId === id
       }
     })
+
+    return filtered.sort((a, b) => a.timestamp.getTime() - b.timestamp.getTime())
   }
 
   private updateUserChats() {
@@ -261,7 +264,7 @@ export class ChatService {
         const lastMessage = this.allMessages
           .filter(
             (msg) =>
-              msg.chatType === ChatType.User && (msg.chatId === userId || msg.sender.id === userId) // Comparar com sender.id
+              msg.chatType === ChatType.User && (msg.chatId === userId || msg.sender.id === userId)
           )
           .sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime())[0]
 
@@ -270,14 +273,18 @@ export class ChatService {
   }
 
   private getUsersWithMessages(): string[] {
+    const currentUser = this.appState.user
+    if (!currentUser) return []
+
     const users = new Set<string>()
 
     this.allMessages.forEach((msg) => {
       if (msg.chatType === ChatType.User) {
-        if (msg.fromCurrentUser) {
-          users.add(msg.chatId!)
-        } else {
+        if (msg.sender.id !== currentUser.id) {
           users.add(msg.sender.id)
+        }
+        if (msg.chatId && msg.chatId !== currentUser.id) {
+          users.add(msg.chatId)
         }
       }
     })
@@ -286,11 +293,18 @@ export class ChatService {
   }
 
   private getLastMessageForUser(userId: string): Message | undefined {
+    const currentUser = this.appState.user
+    if (!currentUser) return undefined
+
     return this.allMessages
-      .filter(
-        (msg) =>
-          msg.chatType === ChatType.User && (msg.chatId === userId || msg.sender.id === userId)
-      ) // Comparar com sender.id
+      .filter((msg) => {
+        if (msg.chatType !== ChatType.User) return false
+
+        const isFromCurrentUserToTarget = msg.sender.id === currentUser.id && msg.chatId === userId
+        const isFromTargetToCurrentUser = msg.sender.id === userId && msg.chatId === currentUser.id
+
+        return isFromCurrentUserToTarget || isFromTargetToCurrentUser
+      })
       .sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime())[0]
   }
 
@@ -383,7 +397,7 @@ export class ChatService {
     const targetUser = this.users.find((u) => u.name === username)
     if (!targetUser) return
 
-    this.setCurrentChat(ChatType.User, targetUser.id)
+    this.setCurrentChat(ChatType.User, targetUser.id, targetUser.name)
 
     const greetingMessage = `Olá! Iniciando conversa com ${targetUser.name}`
     this.sendUserMessage(currentUser, targetUser, greetingMessage)

@@ -10,7 +10,7 @@
         [selectedChat]="appState.selectedChat"
         [messages]="messages"
         [inputMensagem]="inputMensagem"
-        (messageSend)="onMessageSend()"
+        (messageSend)="sendMessage()"
         (messageInputChange)="onMessageInputChange($event)"
         (keyPress)="onKeyPress($event)"
       />

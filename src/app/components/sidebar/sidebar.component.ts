@@ -9,7 +9,7 @@ import { ToggleButtonComponent } from './toggle-button/toggle-button.component'
 import { AppStateService, GroupService } from '../../services'
 import { GroupListComponent } from '../../features/groups/group-list/group-list.component'
 import { UserListComponent } from '../../features/users/user-list/user-list.component'
-import { GroupListItemComponent } from '../../features/groups/available-groups/available-groups.component'
+import { AvailableGroupsComponent } from '../../features/groups/available-groups/available-groups.component'
 
 @Component({
   selector: 'app-sidebar',
@@ -24,7 +24,7 @@ import { GroupListItemComponent } from '../../features/groups/available-groups/a
     ToggleButtonComponent,
     GroupListComponent,
     UserListComponent,
-    GroupListItemComponent
+    AvailableGroupsComponent
   ]
 })
 export class SidebarComponent {
