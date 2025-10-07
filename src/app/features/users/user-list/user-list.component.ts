@@ -3,7 +3,7 @@ import { CommonModule } from '@angular/common'
 import { UserListItemComponent } from '../user-list-item/user-list-item.component'
 import { ListContainerComponent } from '../../../components/list-container/list-container.component'
 import { Subject, takeUntil } from 'rxjs'
-import { AppStateService, ChatService, UserService } from '../../../services'
+import { AppStateService, UserService, ChatService } from '../../../services'
 import { AvailableGroup, ChatMessage, ChatType, User } from '../../../models'
 import { LucideAngularModule, MessageCircle } from 'lucide-angular'
 import { TranslatePipe } from '../../../pipes/translate.pipe'
@@ -66,15 +66,29 @@ export class UserListComponent implements OnInit, OnDestroy {
     return selectedChat?.type === ChatType.User && selectedChat?.id === user.name
   }
 
-  private updateUserChats() {
-    const onlineUsers = this.users.filter((u) => u.name !== this.appState.username && u.online)
+  requestConversation(user: User): void {
+    this.chatService.requestConversation(user.name)
+  }
 
-    // Encontra usuários offline com quem há conversas
+  private updateUserChats() {
+    const allKnownUsers = this.users.filter((u) => u.name !== this.appState.username)
+
+    const mappedUsers = allKnownUsers.map((user) => {
+      const lastMessage = this.getLastUserMessage(user.name)
+      return {
+        id: user.name,
+        name: user.name,
+        online: user.online,
+        lastSeen: user.online ? null : lastMessage ? lastMessage.timestamp : user.lastSeen,
+        unread: 0
+      } as User
+    })
+
     const usersWithMessages = this.getUsersWithMessages()
-    const offlineUsersWithChats = usersWithMessages
+    const additionalUsers = usersWithMessages
       .filter(
         (username) =>
-          username !== this.appState.username && !onlineUsers.some((u) => u.name === username)
+          username !== this.appState.username && !allKnownUsers.some((u) => u.name === username)
       )
       .map((username) => {
         const lastMessage = this.getLastUserMessage(username)
@@ -82,18 +96,15 @@ export class UserListComponent implements OnInit, OnDestroy {
           id: username,
           name: username,
           online: false,
-          lastSeen: lastMessage ? lastMessage.timestamp : new Date(0), // Data padrão se não houver mensagens
+          lastSeen: lastMessage ? lastMessage.timestamp : new Date(0),
           unread: 0
         } as User
       })
 
-    // Combina e ordena todas as conversas
-    const allUsers = [...onlineUsers, ...offlineUsersWithChats]
+    const allUsers = [...mappedUsers, ...additionalUsers]
 
-    // Remove duplicatas baseado no ID do usuário
     const uniqueUsers = this.removeDuplicateUsers(allUsers)
 
-    // Ordena as conversas
     this.userChats = this.sortUserChats(uniqueUsers)
   }
 

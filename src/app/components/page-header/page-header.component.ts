@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms'
 import { Subject, takeUntil } from 'rxjs'
 import { LucideAngularModule, MessageCircle } from 'lucide-angular'
 import { GroupInvitation } from '../../models/group-invitation.model'
+import { Group } from '../../models/group.model'
 import { TranslatePipe } from '../../pipes/translate.pipe'
 import { NotificationsPanelComponent } from '../notifications-panel/notifications-panel.component'
 import {
@@ -64,7 +65,11 @@ export class PageHeaderComponent implements OnInit, OnDestroy {
     })
 
     this.invitationService.invitations$.pipe(takeUntil(this.destroy$)).subscribe((invitations) => {
-      this.notifications = invitations
+      this.notifications = invitations.filter((invitation) => {
+        const group = this.groupService.getGroups().find((g: Group) => g.id === invitation.groupId)
+        const isLeader = group && group.leader === this.appState.username
+        return isLeader
+      })
     })
   }
 
@@ -75,12 +80,13 @@ export class PageHeaderComponent implements OnInit, OnDestroy {
 
     try {
       const clientId = this.connectionManager.generateClientId(this.appState.username)
-      await this.mqttService.connect('localhost', 8080, clientId)
+      await this.mqttService.connect(clientId)
 
       await new Promise((resolve) => setTimeout(resolve, 500))
 
       this.connectionManager.setConnected(true, clientId)
       this.userService.initialize(clientId, this.appState.username)
+      this.groupService.setCurrentUser(this.appState.username)
       this.groupService.initialize()
       this.chatService.initialize(this.appState.username)
       this.chatService.forceLoad()
@@ -110,6 +116,8 @@ export class PageHeaderComponent implements OnInit, OnDestroy {
       this.userService.publishOfflineStatus(this.appState.username)
     }
 
+    this.invitationService.onDisconnect()
+
     this.connectionManager.stopHeartbeat()
     this.mqttService.disconnect()
     this.appState.setConnected(false)
@@ -122,26 +130,30 @@ export class PageHeaderComponent implements OnInit, OnDestroy {
       if (this.appState.connected) {
         this.disconnect()
       }
-      
+
       const keysToRemove = [
         'mqtt-chat-messages',
-        'mqtt-chat-pending-messages', 
+        'mqtt-chat-pending-messages',
         'mqtt-chat-users',
         'mqtt-chat-groups',
-        'mqtt-chat-invitations'
+        'mqtt-chat-invitations',
+        'mqtt-chat-conversation-requests',
+        'mqtt-chat-conversation-sessions',
+        'mqtt-chat-debug-history',
+        'mqtt-chat-selected-chat'
       ]
-      
-      keysToRemove.forEach(key => {
+
+      keysToRemove.forEach((key) => {
         localStorage.removeItem(key)
       })
-      
+
       this.chatService.clearMessages()
+      this.chatService.clearConversationData()
 
       alert('Todos os dados foram limpos! A página será recarregada.')
       window.location.reload()
     }
   }
-
   private sendHeartbeat() {
     if (this.appState.connected) {
       const heartbeatMessage = {

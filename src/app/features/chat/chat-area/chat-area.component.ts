@@ -37,8 +37,6 @@ export class ChatAreaComponent implements AfterViewInit, OnChanges {
   @Output() messageInputChange = new EventEmitter<string>()
   @Output() keyPress = new EventEmitter<KeyboardEvent>()
 
-  constructor(private appState: AppStateService) {}
-
   onSendMessage() {
     this.messageSend.emit()
   }
@@ -69,12 +67,4 @@ export class ChatAreaComponent implements AfterViewInit, OnChanges {
       setTimeout(() => this.scrollToBottom(), 150)
     }
   }
-
-  // getSelectedUserStatus(): string {
-  //   if (this.appState.selectedChat?.isUser()) {
-  //     const user = this.userChats.find((u) => u.id === this.appState.selectedChat?.id)
-  //     return user?.online ? 'Online' : `Visto ${user?.lastSeen}`
-  //   }
-  //   return ''
-  // }
 }

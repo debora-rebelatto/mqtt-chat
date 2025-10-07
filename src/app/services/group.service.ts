@@ -10,15 +10,29 @@ export class GroupService {
   private groupsSubject = new BehaviorSubject<Group[]>([])
   public groups$ = this.groupsSubject.asObservable()
   private readonly STORAGE_KEY = 'mqtt-chat-groups'
+  private currentUser: string = ''
 
   constructor(private mqttService: MqttService) {
     this.loadGroupsFromStorage()
+  }
+
+  setCurrentUser(username: string) {
+    this.currentUser = username
+  }
+
+  getGroups(): Group[] {
+    return this.groupsSubject.value
   }
 
   initialize() {
     this.mqttService.subscribe('meu-chat-mqtt/groups', (message) => {
       this.handleGroupMessage(message)
     })
+    
+    this.mqttService.subscribe('meu-chat-mqtt/invitations/responses', (message) => {
+      this.handleInvitationResponse(message)
+    })
+    
     this.requestGroups()
   }
 
@@ -47,6 +61,67 @@ export class GroupService {
     this.mqttService.publish('meu-chat-mqtt/groups', JSON.stringify(group), true)
   }
 
+  addMemberToGroup(groupId: string, username: string, currentUser: string) {
+    const groups = this.groupsSubject.value
+    const group = groups.find(g => g.id === groupId)
+    
+    if (!group) {
+      console.error('Grupo não encontrado:', groupId)
+      return false
+    }
+    
+    if (group.leader !== currentUser) {
+      console.error('Apenas o líder pode adicionar membros ao grupo')
+      return false
+    }
+    
+    if (group.members.includes(username)) {
+      return false
+    }
+    
+    const updatedGroup = {
+      ...group,
+      members: [...group.members, username]
+    }
+    
+    this.updateGroup(updatedGroup)
+
+    const updatedGroups = groups.map(g => g.id === groupId ? updatedGroup : g)
+    this.groupsSubject.next(updatedGroups)
+    this.saveGroupsToStorage(updatedGroups)
+    
+    return true
+  }
+
+  inviteUserToGroup(groupId: string, username: string) {
+    const group = this.groupsSubject.value.find(g => g.id === groupId)
+    
+    if (!group) {
+      return false
+    }
+    
+    if (group.leader !== this.currentUser) {
+      return false
+    }
+    
+    if (group.members.includes(username)) {
+      return false
+    }
+    
+    const invitation = {
+      id: `inv_${Date.now()}_${Math.random().toString(16).substring(2, 8)}`,
+      groupId: groupId,
+      groupName: group.name,
+      invitedBy: this.currentUser,
+      timestamp: new Date(),
+      to: username
+    }
+    
+    this.mqttService.publish(`meu-chat-mqtt/invitations/${username}`, JSON.stringify(invitation))
+
+    return true
+  }
+
   private requestGroups() {
     this.mqttService.publish('meu-chat-mqtt/groups', 'REQUEST_GROUPS')
   }
@@ -71,6 +146,21 @@ export class GroupService {
       this.groupsSubject.next(updatedGroups)
       this.saveGroupsToStorage(updatedGroups)
     }
+  }
+
+  private handleInvitationResponse(message: string) {
+
+      const response = JSON.parse(message)
+      
+      const group = this.groupsSubject.value.find(g => g.id === response.groupId)
+      if (!group || group.leader !== this.currentUser) {
+        return
+      }
+      
+      if (response.accepted) {
+        this.addMemberToGroup(response.groupId, response.username, this.currentUser)
+      }
+    
   }
 
   private loadGroupsFromStorage() {

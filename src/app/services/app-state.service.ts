@@ -11,9 +11,15 @@ export class AppStateService {
   private connectedSubject = new BehaviorSubject<boolean>(false)
   private selectedChatSubject = new BehaviorSubject<SelectedChat | null>(null)
 
+  private readonly SELECTED_CHAT_KEY = 'mqtt-chat-selected-chat'
+
   public username$ = this.usernameSubject.asObservable()
   public connected$ = this.connectedSubject.asObservable()
   public selectedChat$ = this.selectedChatSubject.asObservable()
+
+  constructor() {
+    this.loadSelectedChatFromStorage()
+  }
 
   get username(): string {
     return this.usernameSubject.value
@@ -37,6 +43,7 @@ export class AppStateService {
 
   setSelectedChat(chat: SelectedChat | null) {
     this.selectedChatSubject.next(chat)
+    this.saveSelectedChatToStorage(chat)
   }
 
   selectChat(type: ChatType, id: string, name: string) {
@@ -46,5 +53,29 @@ export class AppStateService {
   isSelectedChat(type: 'user' | 'group', id: string): boolean {
     const selected = this.selectedChat
     return selected?.type === type && selected?.id === id
+  }
+
+  private loadSelectedChatFromStorage() {
+    const stored = localStorage.getItem(this.SELECTED_CHAT_KEY)
+    if (stored) {
+      const chatData = JSON.parse(stored)
+      const selectedChat = new SelectedChat(chatData.type, chatData.id, chatData.name)
+      this.selectedChatSubject.next(selectedChat)
+    }
+  }
+
+  private saveSelectedChatToStorage(chat: SelectedChat | null) {
+    if (chat) {
+      localStorage.setItem(
+        this.SELECTED_CHAT_KEY,
+        JSON.stringify({
+          type: chat.type,
+          id: chat.id,
+          name: chat.name
+        })
+      )
+    } else {
+      localStorage.removeItem(this.SELECTED_CHAT_KEY)
+    }
   }
 }

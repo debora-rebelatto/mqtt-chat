@@ -1,12 +1,12 @@
 <list-container
-  [isEmpty]="groups.length === 0"
+  [isEmpty]="groupChats.length === 0"
   [showEmptyState]="true"
-  emptyMessage="NO_GROUPS_CREATED"
+  emptyMessage="NO_GROUP_CONVERSATIONS"
 >
   <div class="flex items-center justify-between mx-4">
     <h3 class="font-bold text-gray-300 my-3 flex items-center gap-2">
       <lucide-icon [img]="Users" class="w-4 h-4"></lucide-icon>
-      {{ 'GROUPS' | translate }}
+      {{ 'MY_GROUPS' | translate }}
     </h3>
     <button
       (click)="onCreateGroup()"
@@ -15,7 +15,7 @@
       + {{ 'NEW' | translate }}
     </button>
   </div>
-  @for (group of groups; track group.id) {
+  @for (group of groupChats; track group.id) {
     <group-list-item [group]="group" (groupClick)="onGroupClick($event)" />
   }
 </list-container>
