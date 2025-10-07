@@ -1,19 +1,19 @@
 import { Injectable } from '@angular/core'
 import { BehaviorSubject } from 'rxjs'
 import { SelectedChat } from '../models/selected-chat.models'
-import { ChatType } from '../models'
+import { ChatType, User } from '../models'
 
 @Injectable({
   providedIn: 'root'
 })
 export class AppStateService {
-  private usernameSubject = new BehaviorSubject<string>('')
+  private userSubject = new BehaviorSubject<User | null>(null)
   private connectedSubject = new BehaviorSubject<boolean>(false)
   private selectedChatSubject = new BehaviorSubject<SelectedChat | null>(null)
 
   private readonly SELECTED_CHAT_KEY = 'mqtt-chat-selected-chat'
 
-  public username$ = this.usernameSubject.asObservable()
+  public user$ = this.userSubject.asObservable()
   public connected$ = this.connectedSubject.asObservable()
   public selectedChat$ = this.selectedChatSubject.asObservable()
 
@@ -21,8 +21,8 @@ export class AppStateService {
     this.loadSelectedChatFromStorage()
   }
 
-  get username(): string {
-    return this.usernameSubject.value
+  get user(): User | null {
+    return this.userSubject.value
   }
 
   get connected(): boolean {
@@ -33,8 +33,8 @@ export class AppStateService {
     return this.selectedChatSubject.value
   }
 
-  setUsername(username: string) {
-    this.usernameSubject.next(username)
+  setUser(user: User | null) {
+    this.userSubject.next(user)
   }
 
   setConnected(connected: boolean) {

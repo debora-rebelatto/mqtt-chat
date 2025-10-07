@@ -30,7 +30,7 @@
                 "
               >
                 @if (selectedChat.isGroup() && !msg.fromCurrentUser) {
-                  <div class="text-xs font-semibold mb-1 opacity-75">{{ msg.sender }}</div>
+                  <div class="text-xs font-semibold mb-1 opacity-75">{{ msg.sender.name }}</div>
                 }
                 <div class="mb-1">{{ msg.content }}</div>
                 <div

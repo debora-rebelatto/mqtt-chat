@@ -4,7 +4,7 @@ import { UserListItemComponent } from '../user-list-item/user-list-item.componen
 import { ListContainerComponent } from '../../../components/list-container/list-container.component'
 import { Subject, takeUntil } from 'rxjs'
 import { AppStateService, UserService, ChatService } from '../../../services'
-import { AvailableGroup, ChatMessage, ChatType, User } from '../../../models'
+import { Message, ChatType, Group, User } from '../../../models'
 import { LucideAngularModule, MessageCircle } from 'lucide-angular'
 import { TranslatePipe } from '../../../pipes/translate.pipe'
 
@@ -21,11 +21,11 @@ import { TranslatePipe } from '../../../pipes/translate.pipe'
   ]
 })
 export class UserListComponent implements OnInit, OnDestroy {
-  availableGroups: AvailableGroup[] = []
+  availableGroups: Group[] = []
   userChats: User[] = []
 
   private users: User[] = []
-  private allMessages: ChatMessage[] = []
+  private allMessages: Message[] = []
   private destroy$ = new Subject<void>()
   readonly MessageCircle = MessageCircle
 
@@ -71,7 +71,7 @@ export class UserListComponent implements OnInit, OnDestroy {
   }
 
   private updateUserChats() {
-    const allKnownUsers = this.users.filter((u) => u.name !== this.appState.username)
+    const allKnownUsers = this.users.filter((u) => u.name !== this.appState.user?.name)
 
     const mappedUsers = allKnownUsers.map((user) => {
       const lastMessage = this.getLastUserMessage(user.name)
@@ -88,7 +88,7 @@ export class UserListComponent implements OnInit, OnDestroy {
     const additionalUsers = usersWithMessages
       .filter(
         (username) =>
-          username !== this.appState.username && !allKnownUsers.some((u) => u.name === username)
+          username !== this.appState.user?.name && !allKnownUsers.some((u) => u.name === username)
       )
       .map((username) => {
         const lastMessage = this.getLastUserMessage(username)
@@ -116,7 +116,7 @@ export class UserListComponent implements OnInit, OnDestroy {
         if (msg.fromCurrentUser) {
           users.add(msg.chatId!)
         } else {
-          users.add(msg.sender)
+          users.add(msg.sender.id)
         }
       }
     })
@@ -151,9 +151,9 @@ export class UserListComponent implements OnInit, OnDestroy {
     })
   }
 
-  private getLastUserMessage(username: string): ChatMessage | null {
+  private getLastUserMessage(username: string): Message | null {
     const userMessages = this.allMessages.filter(
-      (msg) => msg.chatType === 'user' && (msg.chatId === username || msg.sender === username)
+      (msg) => msg.chatType === 'user' && (msg.chatId === username || msg.sender.id === username)
     )
 
     if (userMessages.length === 0) return null

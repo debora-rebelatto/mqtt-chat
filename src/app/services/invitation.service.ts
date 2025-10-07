@@ -2,6 +2,7 @@ import { Injectable } from '@angular/core'
 import { BehaviorSubject } from 'rxjs'
 import { MqttService } from './mqtt.service'
 import { GroupInvitation } from '../models/group-invitation.model'
+import { User } from '../models'
 
 @Injectable({
   providedIn: 'root'
@@ -10,15 +11,16 @@ export class InvitationService {
   private invitationsSubject = new BehaviorSubject<GroupInvitation[]>([])
   public invitations$ = this.invitationsSubject.asObservable()
   private readonly STORAGE_KEY_BASE = 'mqtt-chat-invitations'
-  private currentUsername: string = ''
+  private currentUser!: User
+  private pendingRequests = new Set<string>()
 
   constructor(private mqttService: MqttService) {}
 
-  initialize(username: string) {
-    this.currentUsername = username
+  initialize(user: User) {
+    this.currentUser = user
     this.loadInvitationsFromStorage()
 
-    this.mqttService.subscribe(`meu-chat-mqtt/invitations/${username}`, (message) => {
+    this.mqttService.subscribe(`meu-chat-mqtt/invitations/${user.id}`, (message) => {
       this.handleInvitation(message)
     })
 
@@ -28,89 +30,135 @@ export class InvitationService {
   }
 
   private get STORAGE_KEY(): string {
-    return `${this.STORAGE_KEY_BASE}-${this.currentUsername}`
+    return `${this.STORAGE_KEY_BASE}-${this.currentUser.id}`
   }
 
-  sendInvitation(groupId: string, groupName: string, from: string, to: string) {
-    const invitation: GroupInvitation = {
-      id: `inv_${Date.now()}_${Math.random().toString(16).substring(2, 8)}`,
-      groupId: groupId,
-      groupName: groupName,
-      invitedBy: from,
-      timestamp: new Date()
-    }
+  sendInvitation(groupId: string, groupName: string, invitee: User) {
+    const invitation = new GroupInvitation(
+      `inv_${Date.now()}_${Math.random().toString(16).substring(2, 8)}`,
+      groupId,
+      groupName,
+      invitee,
+      new Date()
+    )
 
     const payload = {
       ...invitation,
-      to: to
+      invitee: {
+        id: invitee.id,
+        name: invitee.name,
+        online: invitee.online,
+        lastSeen: invitee.lastSeen
+      }
     }
 
-    this.mqttService.publish(`meu-chat-mqtt/invitations/${to}`, JSON.stringify(payload))
+    this.mqttService.publish(`meu-chat-mqtt/invitations/${invitee.id}`, JSON.stringify(payload))
   }
 
-  requestJoinGroup(groupId: string, groupName: string, requester: string, leader: string) {
-    const joinRequest: GroupInvitation = {
-      id: `req_${Date.now()}_${Math.random().toString(16).substring(2, 8)}`,
-      groupId: groupId,
-      groupName: groupName,
-      invitedBy: requester,
-      timestamp: new Date()
+  requestJoinGroup(groupId: string, groupName: string, requester: User, leader: User) {
+    const requestKey = `${requester.id}_${groupId}`
+
+    if (this.pendingRequests.has(requestKey)) {
+      return false
     }
+
+    const joinRequest = new GroupInvitation(
+      `req_${Date.now()}_${Math.random().toString(16).substring(2, 8)}`,
+      groupId,
+      groupName,
+      requester, // O solicitante é quem será adicionado ao grupo
+      new Date()
+    )
 
     const payload = {
       ...joinRequest,
-      to: leader,
+      invitee: {
+        id: requester.id, // O solicitante é quem será adicionado
+        name: requester.name,
+        online: requester.online || true,
+        lastSeen: requester.lastSeen || new Date()
+      },
+      leader: {
+        id: leader.id,
+        name: leader.name
+      },
       type: 'join_request'
     }
 
-    this.mqttService.publish(`meu-chat-mqtt/invitations/${leader}`, JSON.stringify(payload))
+    this.pendingRequests.add(requestKey)
+    this.mqttService.publish(`meu-chat-mqtt/invitations/${leader.id}`, JSON.stringify(payload))
+
+    return true
   }
 
-  acceptInvitation(invitation: GroupInvitation, username: string) {
+  acceptInvitation(invitation: GroupInvitation) {
     const response = {
       invitationId: invitation.id,
       groupId: invitation.groupId,
-      username: username,
+      invitee: {
+        id: invitation.invitee.id,
+        name: invitation.invitee.name,
+        online: invitation.invitee.online,
+        lastSeen: invitation.invitee.lastSeen
+      },
       accepted: true,
       timestamp: new Date()
     }
 
+    console.log('Enviando resposta de aceitação:', response)
     this.mqttService.publish('meu-chat-mqtt/invitations/responses', JSON.stringify(response))
     this.removeInvitation(invitation.id)
+
+    const requestKey = `${invitation.invitee.id}_${invitation.groupId}`
+    this.pendingRequests.delete(requestKey)
   }
 
-  rejectInvitation(invitation: GroupInvitation, username: string) {
+  rejectInvitation(invitation: GroupInvitation) {
     const response = {
       invitationId: invitation.id,
       groupId: invitation.groupId,
-      username: username,
+      invitee: invitation.invitee,
       accepted: false,
       timestamp: new Date()
     }
 
     this.mqttService.publish('meu-chat-mqtt/invitations/responses', JSON.stringify(response))
     this.removeInvitation(invitation.id)
+
+    const requestKey = `${invitation.invitee.id}_${invitation.groupId}`
+    this.pendingRequests.delete(requestKey)
   }
 
   private handleInvitation(message: string) {
+    console.log('Recebendo convite/solicitação:', message)
     const data = JSON.parse(message)
 
-    const invitation: GroupInvitation = {
-      id: data.id,
-      groupId: data.groupId,
-      groupName: data.groupName,
-      invitedBy: data.invitedBy,
-      timestamp: new Date(data.timestamp)
-    }
+    // Converter os dados para instâncias de User
+    const invitee = new User(
+      data.invitee.id,
+      data.invitee.name,
+      data.invitee.online,
+      new Date(data.invitee.lastSeen)
+    )
+
+    const invitation = new GroupInvitation(
+      data.id,
+      data.groupId,
+      data.groupName,
+      invitee,
+      new Date(data.timestamp)
+    )
 
     const invitations = this.invitationsSubject.value
     const exists = invitations.some((i) => i.id === invitation.id)
 
     if (!exists) {
+      console.log('Adicionando novo convite:', invitation)
       const updatedInvitations = [...invitations, invitation]
-
       this.invitationsSubject.next(updatedInvitations)
       this.saveInvitationsToStorage(updatedInvitations)
+    } else {
+      console.log('Convite já existe, ignorando')
     }
   }
 
@@ -123,40 +171,37 @@ export class InvitationService {
   clearInvitations() {
     this.invitationsSubject.next([])
     this.saveInvitationsToStorage([])
+    this.pendingRequests.clear()
+  }
+
+  hasPendingRequest(groupId: string): boolean {
+    const requestKey = `${this.currentUser.id}_${groupId}`
+    return this.pendingRequests.has(requestKey)
   }
 
   onDisconnect() {
     this.invitationsSubject.next([])
   }
 
-  testInvitePersistence() {
-    const testInvitation: GroupInvitation = {
-      id: 'test_inv_' + Date.now(),
-      groupId: 'test_group',
-      groupName: 'Grupo Teste',
-      invitedBy: 'user_test',
-      timestamp: new Date()
-    }
-
-    const invitations = this.invitationsSubject.value
-    const updatedInvitations = [...invitations, testInvitation]
-    this.invitationsSubject.next(updatedInvitations)
-    this.saveInvitationsToStorage(updatedInvitations)
-
-    setTimeout(() => {
-      localStorage.getItem(this.STORAGE_KEY)
-    }, 100)
-  }
-
   private loadInvitationsFromStorage() {
     const stored = localStorage.getItem(this.STORAGE_KEY)
     if (stored) {
-      const invitations = JSON.parse(stored).map(
-        (inv: GroupInvitation & { timestamp: string }) => ({
-          ...inv,
-          timestamp: new Date(inv.timestamp)
-        })
-      )
+      const invitationsData = JSON.parse(stored)
+      const invitations = invitationsData.map((invData: any) => {
+        const invitee = new User(
+          invData.invitee.id,
+          invData.invitee.name,
+          invData.invitee.online,
+          new Date(invData.invitee.lastSeen)
+        )
+        return new GroupInvitation(
+          invData.id,
+          invData.groupId,
+          invData.groupName,
+          invitee,
+          new Date(invData.timestamp)
+        )
+      })
       this.invitationsSubject.next(invitations)
     }
   }

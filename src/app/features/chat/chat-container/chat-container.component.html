@@ -1,9 +1,5 @@
 <div class="h-screen w-screen bg-gray-900 flex flex-col overflow-hidden">
-  <app-page-header
-    (usernameChange)="onUsernameChange($event)"
-    (connectionChange)="onConnectionChange($event)"
-  />
-
+  <app-page-header (connectionChange)="onConnectionChange($event)" />
 
   @if (appState.connected) {
     <div class="flex flex-1 overflow-hidden">

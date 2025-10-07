@@ -3,7 +3,7 @@ import { CommonModule } from '@angular/common'
 import { FormsModule } from '@angular/forms'
 import { LucideAngularModule } from 'lucide-angular'
 import { GroupModalComponent } from '../../features/groups/group-modal/group-modal.component'
-import { User, AvailableGroup, Group } from '../../models'
+import { User, Group } from '../../models'
 import { TranslatePipe } from '../../pipes/translate.pipe'
 import { ToggleButtonComponent } from './toggle-button/toggle-button.component'
 import { AppStateService, GroupService } from '../../services'
@@ -31,7 +31,7 @@ export class SidebarComponent {
   activeView = 'chat'
   userChats: User[] = []
   groupChats: Group[] = []
-  availableGroups: AvailableGroup[] = []
+  availableGroups: Group[] = []
 
   showCreateGroupModal = false
   newGroupName = ''
@@ -55,7 +55,7 @@ export class SidebarComponent {
 
   onModalGroupCreate() {
     if (this.newGroupName.trim()) {
-      this.groupService.createGroup(this.newGroupName, this.appState.username)
+      this.groupService.createGroup(this.newGroupName, this.appState.user!)
       this.showCreateGroupModal = false
       this.newGroupName = ''
     }
