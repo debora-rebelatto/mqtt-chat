@@ -66,14 +66,14 @@ export class InvitationService {
       `req_${Date.now()}_${Math.random().toString(16).substring(2, 8)}`,
       groupId,
       groupName,
-      requester, // O solicitante é quem será adicionado ao grupo
+      requester,
       new Date()
     )
 
     const payload = {
       ...joinRequest,
       invitee: {
-        id: requester.id, // O solicitante é quem será adicionado
+        id: requester.id,
         name: requester.name,
         online: requester.online || true,
         lastSeen: requester.lastSeen || new Date()
@@ -105,7 +105,6 @@ export class InvitationService {
       timestamp: new Date()
     }
 
-    console.log('Enviando resposta de aceitação:', response)
     this.mqttService.publish('meu-chat-mqtt/invitations/responses', JSON.stringify(response))
     this.removeInvitation(invitation.id)
 
@@ -130,10 +129,8 @@ export class InvitationService {
   }
 
   private handleInvitation(message: string) {
-    console.log('Recebendo convite/solicitação:', message)
     const data = JSON.parse(message)
 
-    // Converter os dados para instâncias de User
     const invitee = new User(
       data.invitee.id,
       data.invitee.name,
@@ -153,12 +150,9 @@ export class InvitationService {
     const exists = invitations.some((i) => i.id === invitation.id)
 
     if (!exists) {
-      console.log('Adicionando novo convite:', invitation)
       const updatedInvitations = [...invitations, invitation]
       this.invitationsSubject.next(updatedInvitations)
       this.saveInvitationsToStorage(updatedInvitations)
-    } else {
-      console.log('Convite já existe, ignorando')
     }
   }
 

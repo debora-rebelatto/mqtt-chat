@@ -51,25 +51,20 @@ export class AvailableGroupsComponent implements OnInit, OnDestroy {
   }
 
   onRequestJoin(groupId: string) {
-    console.log('Solicitando entrada no grupo:', groupId)
     const group = this.groups.find((g) => g.id === groupId)
     if (!group) {
-      console.log('Grupo não encontrado:', groupId)
       return
     }
 
     if (this.requestingGroups.has(groupId)) {
-      console.log('Já solicitando entrada neste grupo')
       return
     }
 
     if (!this.appState.user) {
-      console.log('Usuário não está logado')
       return
     }
 
     this.requestingGroups.add(groupId)
-    console.log('Enviando solicitação para grupo:', group.name, 'líder:', group.leader.name)
 
     const success = this.invitationService.requestJoinGroup(
       group.id,
@@ -79,12 +74,9 @@ export class AvailableGroupsComponent implements OnInit, OnDestroy {
     )
 
     if (!success) {
-      console.log('Falha ao enviar solicitação')
       this.requestingGroups.delete(groupId)
       return
     }
-
-    console.log('Solicitação enviada com sucesso')
   }
 
   isRequesting(groupId: string): boolean {
@@ -94,8 +86,7 @@ export class AvailableGroupsComponent implements OnInit, OnDestroy {
   private checkForGroupMembership(previousGroups: Group[], currentGroups: Group[]) {
     if (!this.appState.user) return
     
-    console.log('Verificando mudanças de membership para grupos pendentes:', Array.from(this.requestingGroups))
-    
+
     for (const groupId of this.requestingGroups) {
       const previousGroup = previousGroups.find((g) => g.id === groupId)
       const currentGroup = currentGroups.find((g) => g.id === groupId)
@@ -104,10 +95,8 @@ export class AvailableGroupsComponent implements OnInit, OnDestroy {
         const wasNotMember = !previousGroup.members.some((m) => m && m.id === this.appState.user!.id)
         const isNowMember = currentGroup.members.some((m) => m && m.id === this.appState.user!.id)
 
-        console.log(`Grupo ${groupId}: era membro? ${!wasNotMember}, é membro agora? ${isNowMember}`)
 
         if (wasNotMember && isNowMember) {
-          console.log(`Usuário foi aceito no grupo ${groupId}, removendo da lista de pendentes`)
           this.requestingGroups.delete(groupId)
         }
       }
