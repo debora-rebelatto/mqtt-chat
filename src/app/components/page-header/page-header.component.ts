@@ -70,12 +70,12 @@ export class PageHeaderComponent implements OnInit, OnDestroy {
 
   async connect() {
     if (!this.appState.username.trim() || this.isConnecting) return
-
+    
     this.isConnecting = true
 
     try {
       const clientId = this.connectionManager.generateClientId(this.appState.username)
-      await this.mqttService.connect('localhost', 8080, clientId)
+      await this.mqttService.connect('localhost', 8081, clientId)
 
       await new Promise((resolve) => setTimeout(resolve, 500))
 

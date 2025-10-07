@@ -24,7 +24,8 @@
             "assets": [
               {
                 "glob": "**/*",
-                "input": "public"
+                "input": "src/assets",
+                "output": "/assets/"
               }
             ],
             "styles": ["src/styles.scss"]
@@ -77,7 +78,8 @@
             "assets": [
               {
                 "glob": "**/*",
-                "input": "public"
+                "input": "src/assets",
+                "output": "/assets/"
               }
             ],
             "styles": ["src/styles.scss"]
@@ -85,5 +87,8 @@
         }
       }
     }
+  },
+  "cli": {
+    "analytics": "006984ad-f0f4-4f6e-bcf0-d0e1dcf33a48"
   }
 }
