@@ -5,12 +5,12 @@
   <div class="font-medium text-white mb-1">{{ group.name }}</div>
   <div class="flex justify-between items-center">
     <div class="text-xs text-gray-500">
-      <div>{{ 'LEADER' | translate }}: {{ group.leader }}</div>
-      <div>{{ group.members.length | memberCount }}</div>
+      <div>{{ 'LEADER' | translate }}: {{ group.leader.name }}</div>
+      <div>{{ group.members.length }}</div>
     </div>
     <badge
-      [type]="isLeader(group.leader) ? 'leader' : 'member'"
-      [text]="isLeader(group.leader) ? 'Líder' : 'Membro'"
+      [type]="isLeader(group.leader.id) ? 'leader' : 'member'"
+      [text]="isLeader(group.leader.id) ? 'Líder' : 'Membro'"
     />
   </div>
 </div>

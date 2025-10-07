@@ -3,13 +3,13 @@ import { CommonModule } from '@angular/common'
 import { FormsModule } from '@angular/forms'
 import { LucideAngularModule } from 'lucide-angular'
 import { GroupModalComponent } from '../../features/groups/group-modal/group-modal.component'
-import { User, AvailableGroup, Group } from '../../models'
+import { User, Group } from '../../models'
 import { TranslatePipe } from '../../pipes/translate.pipe'
 import { ToggleButtonComponent } from './toggle-button/toggle-button.component'
 import { AppStateService, GroupService } from '../../services'
 import { GroupListComponent } from '../../features/groups/group-list/group-list.component'
 import { UserListComponent } from '../../features/users/user-list/user-list.component'
-import { GroupListItemComponent } from '../../features/groups/available-groups/available-groups.component'
+import { AvailableGroupsComponent } from '../../features/groups/available-groups/available-groups.component'
 
 @Component({
   selector: 'app-sidebar',
@@ -24,14 +24,14 @@ import { GroupListItemComponent } from '../../features/groups/available-groups/a
     ToggleButtonComponent,
     GroupListComponent,
     UserListComponent,
-    GroupListItemComponent
+    AvailableGroupsComponent
   ]
 })
 export class SidebarComponent {
   activeView = 'chat'
   userChats: User[] = []
   groupChats: Group[] = []
-  availableGroups: AvailableGroup[] = []
+  availableGroups: Group[] = []
 
   showCreateGroupModal = false
   newGroupName = ''
@@ -55,7 +55,7 @@ export class SidebarComponent {
 
   onModalGroupCreate() {
     if (this.newGroupName.trim()) {
-      this.groupService.createGroup(this.newGroupName, this.appState.username)
+      this.groupService.createGroup(this.newGroupName, this.appState.user!)
       this.showCreateGroupModal = false
       this.newGroupName = ''
     }

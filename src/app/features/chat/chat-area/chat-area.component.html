@@ -20,22 +20,22 @@
     <div class="flex-1 p-4 overflow-y-auto" #messagesContainer>
       <div class="space-y-4">
         @for (msg of messages; track msg.id) {
-          <div [class]="msg.fromCurrentUser ? 'flex justify-end mb-4' : 'flex justify-start mb-4'">
-            <div [class]="msg.fromCurrentUser ? 'max-w-md ml-12' : 'max-w-md mr-12'">
+          <div [class]="isCurrentUser(msg) ? 'flex justify-end mb-4' : 'flex justify-start mb-4'">
+            <div [class]="isCurrentUser(msg) ? 'max-w-md ml-12' : 'max-w-md mr-12'">
               <div
                 [class]="
-                  msg.fromCurrentUser
+                  isCurrentUser(msg)
                     ? 'p-3 rounded-2xl bg-blue-600 text-white shadow-lg max-w-xs break-words'
                     : 'p-3 rounded-2xl bg-gray-700 text-gray-100 shadow-lg max-w-xs break-words'
                 "
               >
-                @if (selectedChat.isGroup() && !msg.fromCurrentUser) {
-                  <div class="text-xs font-semibold mb-1 opacity-75">{{ msg.sender }}</div>
+                @if (selectedChat.isGroup() && !isCurrentUser(msg)) {
+                  <div class="text-xs font-semibold mb-1 opacity-75">{{ msg.sender.name }}</div>
                 }
                 <div class="mb-1">{{ msg.content }}</div>
                 <div
                   [class]="
-                    msg.fromCurrentUser
+                    isCurrentUser(msg)
                       ? 'text-xs text-blue-200 opacity-75 text-right'
                       : 'text-xs text-gray-400 opacity-75 text-left'
                   "

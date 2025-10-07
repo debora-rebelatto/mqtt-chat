@@ -13,9 +13,9 @@ import { FormsModule } from '@angular/forms'
 import { LucideAngularModule, MessageCircle } from 'lucide-angular'
 import { SelectedChat } from '../../../models/selected-chat.models'
 import { TranslatePipe } from '../../../pipes/translate.pipe'
-import { AppStateService } from '../../../services'
-import { ChatMessage } from '../../../models'
+import { Message } from '../../../models'
 import { TimeFormatPipe } from '../../../pipes/time-format.pipe'
+import { AppStateService } from '../../../services'
 
 @Component({
   selector: 'chat-area',
@@ -29,13 +29,15 @@ export class ChatAreaComponent implements AfterViewInit, OnChanges {
   @ViewChild('messagesContainer') messagesContainer!: ElementRef
 
   @Input() selectedChat: SelectedChat | null = null
-  @Input() messages: ChatMessage[] = []
+  @Input() messages: Message[] = []
   @Input() inputMensagem = ''
   @Input() userStatus = ''
 
   @Output() messageSend = new EventEmitter<void>()
   @Output() messageInputChange = new EventEmitter<string>()
   @Output() keyPress = new EventEmitter<KeyboardEvent>()
+
+  constructor(private appState: AppStateService) {}
 
   onSendMessage() {
     this.messageSend.emit()
@@ -66,5 +68,9 @@ export class ChatAreaComponent implements AfterViewInit, OnChanges {
     if (this.selectedChat || this.messages.length > 0) {
       setTimeout(() => this.scrollToBottom(), 150)
     }
+  }
+
+  isCurrentUser(msg: Message): boolean {
+    return msg.sender.id === this.appState.user?.id
   }
 }

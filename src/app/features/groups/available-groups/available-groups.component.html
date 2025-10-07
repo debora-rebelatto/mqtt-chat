@@ -7,17 +7,21 @@
     @for (group of availableGroups; track group.id) {
       <div class="p-4 rounded-lg bg-gray-800 border border-gray-700">
         <div class="font-medium text-white mb-1">{{ group.name }}</div>
-        <div class="text-xs text-gray-400 mb-2">{{ group.description }}</div>
         <div class="flex justify-between items-center">
           <div class="text-xs text-gray-500">
             <div>{{ 'LEADER' | translate }}: {{ group.leader }}</div>
-            <div>{{ group.members | memberCount }}</div>
+            <div>{{ group.members.length }}</div>
           </div>
           <button
             (click)="onRequestJoin(group.id)"
-            class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded-lg text-sm font-semibold transition-colors"
+            [disabled]="isRequesting(group.id)"
+            [class]="
+              isRequesting(group.id)
+                ? 'bg-gray-500 text-gray-300 px-3 py-1 rounded-lg text-sm font-semibold cursor-not-allowed'
+                : 'bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded-lg text-sm font-semibold transition-colors'
+            "
           >
-            {{ 'REQUEST_JOIN' | translate }}
+            {{ isRequesting(group.id) ? ('REQUESTING' | translate) : ('REQUEST_JOIN' | translate) }}
           </button>
         </div>
       </div>
