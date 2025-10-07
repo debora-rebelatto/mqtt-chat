@@ -420,11 +420,11 @@ export class ChatService {
 
   private subscribeToSession(sessionTopic: string) {
     this.mqttService.subscribe(sessionTopic, (message) => {
-      this.handleSessionMessage(message, sessionTopic)
+      this.handleSessionMessage(message)
     })
   }
 
-  private handleSessionMessage(message: string, sessionTopic: string) {
+  private handleSessionMessage(message: string) {
     const data = JSON.parse(message)
     const chatMessage: ChatMessage = {
       id: data.messageId || `msg_${Date.now()}`,
