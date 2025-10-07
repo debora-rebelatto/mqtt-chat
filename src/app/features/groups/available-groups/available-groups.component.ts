@@ -12,7 +12,7 @@ import { Subject, takeUntil } from 'rxjs'
   standalone: true,
   imports: [CommonModule, TranslatePipe, LucideAngularModule]
 })
-export class GroupListItemComponent implements OnInit, OnDestroy {
+export class AvailableGroupsComponent implements OnInit, OnDestroy {
   readonly Search = Search
   availableGroups: Group[] = []
   private groups: Group[] = []

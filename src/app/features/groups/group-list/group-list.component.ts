@@ -63,13 +63,13 @@ export class GroupListComponent implements OnInit, OnDestroy {
 
   onGroupClick(group: Group): void {
     this.appState.selectChat(ChatType.Group, group.id, group.name)
-    this.chatService.setCurrentChat(ChatType.Group, group.id)
+    this.chatService.setCurrentChat(ChatType.Group, group.id, group.name)
     this.groupSelected.emit(group)
   }
 
   private updateGroupChats() {
     if (!this.appState.user) return
-    
+
     const userGroups = this.groups.filter((g) =>
       g.members.some((member) => member && member.id === this.appState.user!.id)
     )
