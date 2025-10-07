@@ -10,7 +10,7 @@ export class MqttService {
 
   connect(clientId: string): Promise<void> {
     return new Promise((resolve, reject) => {
-      this.client = new Paho.Client('localhost', 8080, clientId)
+      this.client = new Paho.Client('localhost', 8081, clientId)
 
       this.client.onMessageArrived = (message: Paho.Message) => {
         this.handleMessage(message)
