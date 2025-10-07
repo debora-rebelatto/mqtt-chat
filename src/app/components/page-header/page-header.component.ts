@@ -137,7 +137,7 @@ export class PageHeaderComponent implements OnInit, OnDestroy {
         'mqtt-chat-users',
         'mqtt-chat-groups',
         'mqtt-chat-invitations',
-        'mqtt-chat-conversation-requests',
+        'mqtt-chat-conversation-requests',  
         'mqtt-chat-conversation-sessions',
         'mqtt-chat-debug-history',
         'mqtt-chat-selected-chat'
