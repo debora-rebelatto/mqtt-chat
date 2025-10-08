@@ -11,19 +11,21 @@ export class UserService {
   public users$ = this.usersSubject.asObservable()
 
   private lastSeenMap: Map<string, number> = new Map()
-  private clientId: string = ''
+  private currentUser: User | null = null
   private readonly STORAGE_KEY = 'mqtt-chat-users'
+
   constructor(private mqttService: MqttService) {
     this.loadUsersFromStorage()
     this.startHeartbeatMonitor()
   }
 
-  initialize(clientId: string, username: string) {
-    this.clientId = clientId
-    this.setupSubscriptions(username)
-    this.publishOnlineStatus(username)
+  initialize(clientId: string, user: User) {
+    this.currentUser = user
+    this.setupSubscriptions(user)
+    this.publishOnlineStatus(user)
   }
-  private setupSubscriptions(username: string) {
+
+  private setupSubscriptions(user: User) {
     this.mqttService.subscribe('meu-chat-mqtt/status', (message) => {
       this.handleStatusMessage(message)
     })
@@ -37,41 +39,41 @@ export class UserService {
     })
 
     this.mqttService.subscribe('meu-chat-mqtt/sync', (message) => {
-      this.handleSyncMessage(message, username)
+      this.handleSyncMessage(message, user)
     })
   }
 
-  publishOnlineStatus(username: string) {
+  publishOnlineStatus(user: User) {
     const now = Date.now()
-    this.lastSeenMap.set(username, now)
+    this.lastSeenMap.set(user.id, now)
 
     const statusMessage = {
       type: 'online',
-      username: username,
-      clientId: this.clientId,
+      user: user,
+      clientId: user.id,
       timestamp: new Date(now)
     }
 
     this.mqttService.publish('meu-chat-mqtt/status', JSON.stringify(statusMessage))
   }
 
-  publishOfflineStatus(username: string) {
+  publishOfflineStatus(user: User) {
     const offlineMessage = {
       type: 'offline',
-      username: username,
-      clientId: this.clientId,
+      user: user,
+      clientId: user.id,
       timestamp: new Date()
     }
 
     this.mqttService.publish('meu-chat-mqtt/status', JSON.stringify(offlineMessage))
-    this.lastSeenMap.delete(username)
+    this.lastSeenMap.delete(user.id)
   }
 
-  requestSync(username: string) {
+  requestSync(user: User) {
     const syncMessage = {
       type: 'sync_request',
-      from: username,
-      clientId: this.clientId,
+      from: user,
+      clientId: user.id,
       timestamp: new Date()
     }
 
@@ -82,69 +84,57 @@ export class UserService {
     const status = JSON.parse(message)
 
     if (status.type === 'online') {
-      this.lastSeenMap.set(status.username, Date.now())
-      this.addOrUpdateUser({
-        name: status.username,
-        online: true,
-        lastSeen: new Date(status.timestamp),
-        id: status.clientId
-      })
+      this.lastSeenMap.set(status.user.id, Date.now())
+      this.addOrUpdateUser(
+        new User(status.user.id, status.user.name, true, new Date(status.timestamp))
+      )
 
       this.mqttService.publish(
-        `meu-chat-mqtt/sync/pending/${status.username}`,
+        `meu-chat-mqtt/sync/pending/${status.user.id}`,
         JSON.stringify({
           type: 'request_pending',
-          username: status.username,
+          user: status.user,
           timestamp: new Date()
         })
       )
     } else if (status.type === 'offline') {
-      this.lastSeenMap.delete(status.username)
-      this.addOrUpdateUser({
-        name: status.username,
-        online: false,
-        lastSeen: new Date(status.timestamp),
-        id: status.clientId
-      })
+      this.lastSeenMap.delete(status.user.id)
+      this.addOrUpdateUser(
+        new User(status.user.id, status.user.name, false, new Date(status.timestamp))
+      )
     }
   }
 
   private handleDisconnectMessage(message: string) {
     const disconnect = JSON.parse(message)
 
-    this.addOrUpdateUser({
-      name: disconnect.username,
-      online: false,
-      lastSeen: new Date(disconnect.timestamp),
-      id: disconnect.clientId
-    })
+    this.addOrUpdateUser(
+      new User(disconnect.user.id, disconnect.user.name, false, new Date(disconnect.timestamp))
+    )
   }
 
   private handleHeartbeatMessage(message: string) {
     const heartbeat = JSON.parse(message)
 
     if (heartbeat.type === 'heartbeat') {
-      this.lastSeenMap.set(heartbeat.username, heartbeat.timestamp)
+      this.lastSeenMap.set(heartbeat.user.id, heartbeat.timestamp)
 
-      this.addOrUpdateUser({
-        name: heartbeat.username,
-        online: true,
-        lastSeen: new Date(heartbeat.timestamp),
-        id: heartbeat.clientId
-      })
+      this.addOrUpdateUser(
+        new User(heartbeat.user.id, heartbeat.user.name, true, new Date(heartbeat.timestamp))
+      )
     }
   }
 
-  private handleSyncMessage(message: string, currentUsername: string) {
+  private handleSyncMessage(message: string, currentUser: User) {
     const sync = JSON.parse(message)
-    if (sync.type === 'sync_request' && sync.from !== currentUsername) {
-      this.publishOnlineStatus(currentUsername)
+    if (sync.type === 'sync_request' && sync.from.id !== currentUser.id) {
+      this.publishOnlineStatus(currentUser)
     }
   }
 
   private addOrUpdateUser(userStatus: User) {
     const currentUsers = this.usersSubject.value
-    const existingIndex = currentUsers.findIndex((user) => user.name === userStatus.name)
+    const existingIndex = currentUsers.findIndex((user) => user.id === userStatus.id)
 
     let updatedUsers: User[]
     if (existingIndex >= 0) {
@@ -179,10 +169,11 @@ export class UserService {
   private loadUsersFromStorage() {
     const stored = localStorage.getItem(this.STORAGE_KEY)
     if (stored) {
-      const users = JSON.parse(stored).map((user: User & { lastSeen: string }) => ({
-        ...user,
-        lastSeen: new Date(user.lastSeen)
-      }))
+      const usersData = JSON.parse(stored)
+      const users = usersData.map(
+        (userData: User) =>
+          new User(userData.id, userData.name, userData.online, new Date(userData.lastSeen!))
+      )
       this.usersSubject.next(users)
     }
   }
@@ -204,16 +195,12 @@ export class UserService {
 
     const updatedUsers = currentUsers.map((user) => {
       if (user.online) {
-        const lastHeartbeat = this.lastSeenMap.get(user.name)
+        const lastHeartbeat = this.lastSeenMap.get(user.id)
         const timeSinceHeartbeat = lastHeartbeat ? now - lastHeartbeat : 999999
 
         if (!lastHeartbeat || timeSinceHeartbeat > 60000) {
           hasChanges = true
-          return {
-            ...user,
-            online: false,
-            lastSeen: new Date(lastHeartbeat || now)
-          }
+          return new User(user.id, user.name, false, new Date(lastHeartbeat || now))
         }
       }
       return user

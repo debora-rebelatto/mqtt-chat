@@ -6,7 +6,7 @@ import { UserListItemComponent } from '../user-list-item/user-list-item.componen
 import { ListContainerComponent } from '../../../components/list-container/list-container.component'
 import { Subject, takeUntil } from 'rxjs'
 import { AppStateService, UserService, ChatService } from '../../../services'
-import { AvailableGroup, ChatMessage, ChatType, User } from '../../../models'
+import { Message, ChatType, Group, User } from '../../../models'
 import { LucideAngularModule, MessageCircle } from 'lucide-angular'
 @Component({
   selector: 'user-list',
@@ -15,11 +15,11 @@ import { LucideAngularModule, MessageCircle } from 'lucide-angular'
   imports: [CommonModule, ListContainerComponent, UserListItemComponent, LucideAngularModule, TranslateModule]
 })
 export class UserListComponent implements OnInit, OnDestroy {
-  availableGroups: AvailableGroup[] = []
+  availableGroups: Group[] = []
   userChats: User[] = []
 
   private users: User[] = []
-  private allMessages: ChatMessage[] = []
+  private allMessages: Message[] = []
   private destroy$ = new Subject<void>()
   readonly MessageCircle = MessageCircle
 
@@ -51,13 +51,13 @@ export class UserListComponent implements OnInit, OnDestroy {
   }
 
   onUserClick(user: User): void {
-    this.appState.selectChat(ChatType.User, user.name, user.name)
-    this.chatService.setCurrentChat(ChatType.User, user.name)
+    this.appState.selectChat(ChatType.User, user.id, user.name)
+    this.chatService.setCurrentChat(ChatType.User, user.id, user.name)
   }
 
   isSelected(user: User): boolean {
     const selectedChat = this.appState.selectedChat
-    return selectedChat?.type === ChatType.User && selectedChat?.id === user.name
+    return selectedChat?.type === ChatType.User && selectedChat?.id === user.id
   }
 
   requestConversation(user: User): void {
@@ -65,52 +65,48 @@ export class UserListComponent implements OnInit, OnDestroy {
   }
 
   private updateUserChats() {
-    const allKnownUsers = this.users.filter((u) => u.name !== this.appState.username)
+    const currentUser = this.appState.user
+    if (!currentUser) return
+
+    const allKnownUsers = this.users.filter((u) => u.id !== currentUser.id)
 
     const mappedUsers = allKnownUsers.map((user) => {
-      const lastMessage = this.getLastUserMessage(user.name)
-      return {
-        id: user.name,
-        name: user.name,
-        online: user.online,
-        lastSeen: user.online ? null : lastMessage ? lastMessage.timestamp : user.lastSeen,
-        unread: 0
-      } as User
+      const lastMessage = this.getLastUserMessage(user.id)
+      return new User(
+        user.id,
+        user.name,
+        user.online,
+        user.online ? new Date() : lastMessage ? lastMessage.timestamp : user.lastSeen
+      )
     })
 
     const usersWithMessages = this.getUsersWithMessages()
     const additionalUsers = usersWithMessages
-      .filter(
-        (username) =>
-          username !== this.appState.username && !allKnownUsers.some((u) => u.name === username)
-      )
-      .map((username) => {
-        const lastMessage = this.getLastUserMessage(username)
-        return {
-          id: username,
-          name: username,
-          online: false,
-          lastSeen: lastMessage ? lastMessage.timestamp : new Date(0),
-          unread: 0
-        } as User
+      .filter((userId) => userId !== currentUser.id && !allKnownUsers.some((u) => u.id === userId))
+      .map((userId) => {
+        const lastMessage = this.getLastUserMessage(userId)
+        return new User(userId, userId, false, lastMessage ? lastMessage.timestamp : new Date(0))
       })
 
     const allUsers = [...mappedUsers, ...additionalUsers]
-
     const uniqueUsers = this.removeDuplicateUsers(allUsers)
 
     this.userChats = this.sortUserChats(uniqueUsers)
   }
 
   private getUsersWithMessages(): string[] {
+    const currentUser = this.appState.user
+    if (!currentUser) return []
+
     const users = new Set<string>()
 
     this.allMessages.forEach((msg) => {
-      if (msg.chatType === 'user') {
-        if (msg.fromCurrentUser) {
-          users.add(msg.chatId!)
-        } else {
-          users.add(msg.sender)
+      if (msg.chatType === ChatType.User) {
+        if (msg.sender.id !== currentUser.id) {
+          users.add(msg.sender.id)
+        }
+        if (msg.chatId && msg.chatId !== currentUser.id) {
+          users.add(msg.chatId)
         }
       }
     })
@@ -134,8 +130,8 @@ export class UserListComponent implements OnInit, OnDestroy {
       if (a.online && !b.online) return -1
       if (!a.online && b.online) return 1
 
-      const aLastMsg = this.getLastUserMessage(a.name)
-      const bLastMsg = this.getLastUserMessage(b.name)
+      const aLastMsg = this.getLastUserMessage(a.id)
+      const bLastMsg = this.getLastUserMessage(b.id)
 
       if (!aLastMsg && !bLastMsg) return a.name.localeCompare(b.name)
       if (!aLastMsg) return 1
@@ -145,10 +141,18 @@ export class UserListComponent implements OnInit, OnDestroy {
     })
   }
 
-  private getLastUserMessage(username: string): ChatMessage | null {
-    const userMessages = this.allMessages.filter(
-      (msg) => msg.chatType === 'user' && (msg.chatId === username || msg.sender === username)
-    )
+  private getLastUserMessage(userId: string): Message | null {
+    const currentUser = this.appState.user
+    if (!currentUser) return null
+
+    const userMessages = this.allMessages.filter((msg) => {
+      if (msg.chatType !== ChatType.User) return false
+
+      const isFromCurrentUserToTarget = msg.sender.id === currentUser.id && msg.chatId === userId
+      const isFromTargetToCurrentUser = msg.sender.id === userId && msg.chatId === currentUser.id
+
+      return isFromCurrentUserToTarget || isFromTargetToCurrentUser
+    })
 
     if (userMessages.length === 0) return null
 

@@ -4,7 +4,7 @@ import { TranslateModule } from '@ngx-translate/core'
 
 import { LucideAngularModule, Users } from 'lucide-angular'
 import { ListContainerComponent } from '../../../components/list-container/list-container.component'
-import { AvailableGroup, ChatType, Group, SelectedChat } from '../../../models'
+import { ChatType, Group, SelectedChat } from '../../../models'
 import { GroupListItemComponent } from '../group-list-item/group-list-item.component'
 import { GroupModalComponent } from '../group-modal/group-modal.component'
 import { Subject, takeUntil } from 'rxjs'
@@ -25,7 +25,7 @@ export class GroupListComponent implements OnInit, OnDestroy {
   @Output() chatSelected = new EventEmitter<Group>()
   @Output() groupClick = new EventEmitter<Group>()
   @Output() groupSelected = new EventEmitter<Group>()
-  availableGroups: AvailableGroup[] = []
+  availableGroups: Group[] = []
   groupChats: Group[] = []
   newGroupName = ''
   groups: Group[] = []
@@ -37,7 +37,7 @@ export class GroupListComponent implements OnInit, OnDestroy {
     private appState: AppStateService,
     private groupService: GroupService,
     private chatService: ChatService
-  ) { }
+  ) {}
 
   ngOnInit() {
     this.setupSubscriptions()
@@ -57,12 +57,16 @@ export class GroupListComponent implements OnInit, OnDestroy {
 
   onGroupClick(group: Group): void {
     this.appState.selectChat(ChatType.Group, group.id, group.name)
-    this.chatService.setCurrentChat(ChatType.Group, group.id)
+    this.chatService.setCurrentChat(ChatType.Group, group.id, group.name)
     this.groupSelected.emit(group)
   }
 
   private updateGroupChats() {
-    const userGroups = this.groups.filter((g) => g.members.includes(this.appState.username))
+    if (!this.appState.user) return
+
+    const userGroups = this.groups.filter((g) =>
+      g.members.some((member) => member && member.id === this.appState.user!.id)
+    )
 
     this.groupChats = userGroups.map((g) => ({
       id: g.id,
@@ -74,24 +78,17 @@ export class GroupListComponent implements OnInit, OnDestroy {
     }))
 
     userGroups.forEach((group) => {
-      this.chatService.subscribeToGroup(group.id, this.appState.username)
+      this.chatService.subscribeToGroup(group.id)
     })
 
     this.availableGroups = this.groups
-      .filter((g) => !g.members.includes(this.appState.username))
-      .map((g) => ({
-        id: g.id,
-        name: g.name,
-        leader: g.leader,
-        members: g.members.length,
-        description: `Grupo criado por ${g.leader}`
-      }))
-      }
+      .filter((g) => !g.members.some((member) => member && member.id === this.appState.user!.id))
+      .map((g) => new Group(g.id, g.name, g.leader, g.members))
+  }
 
   onCreateGroup(): void {
     this.showModal = true
   }
-
   onModalClose(): void {
     this.showModal = false
     this.newGroupName = ''
@@ -99,11 +96,11 @@ export class GroupListComponent implements OnInit, OnDestroy {
 
   onModalGroupCreate(): void {
     if (this.newGroupName.trim()) {
-      this.groupService.createGroup(this.newGroupName.trim(), this.appState.username)
+      this.groupService.createGroup(this.newGroupName.trim(), this.appState.user!)
 
       this.showModal = false
       this.newGroupName = ''
-      
+
       this.createGroup.emit()
     }
   }
