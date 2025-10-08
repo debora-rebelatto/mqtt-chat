@@ -52,6 +52,7 @@ export class GroupService {
     const updatedGroups = [...currentGroups, newGroup]
     this.groupsSubject.next(updatedGroups)
     this.saveGroupsToStorage(updatedGroups)
+    this.updateGroup(newGroup)
 
     return newGroup
   }
