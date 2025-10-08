@@ -1,9 +1,10 @@
 import { Component, Input, Output, EventEmitter, OnDestroy, OnInit } from '@angular/core'
 import { CommonModule } from '@angular/common'
+import { TranslateModule } from '@ngx-translate/core'
+
 import { LucideAngularModule, Users } from 'lucide-angular'
 import { ListContainerComponent } from '../../../components/list-container/list-container.component'
 import { ChatType, Group, SelectedChat } from '../../../models'
-import { TranslatePipe } from '../../../pipes/translate.pipe'
 import { GroupListItemComponent } from '../group-list-item/group-list-item.component'
 import { GroupModalComponent } from '../group-modal/group-modal.component'
 import { Subject, takeUntil } from 'rxjs'
@@ -13,14 +14,7 @@ import { AppStateService, GroupService, ChatService } from '../../../services'
   selector: 'group-list',
   templateUrl: './group-list.component.html',
   standalone: true,
-  imports: [
-    CommonModule,
-    LucideAngularModule,
-    ListContainerComponent,
-    TranslatePipe,
-    GroupListItemComponent,
-    GroupModalComponent
-  ]
+  imports: [CommonModule, LucideAngularModule, ListContainerComponent, GroupListItemComponent, GroupModalComponent, TranslateModule]
 })
 export class GroupListComponent implements OnInit, OnDestroy {
   readonly Users = Users

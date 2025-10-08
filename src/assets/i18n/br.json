@@ -2,8 +2,8 @@
   "CHAT_TITLE": "Chat MQTT",
   "CONVERSATIONS": "Conversas",
   "SEARCH": "Procurar",
-  "DIRECT-MESSAGES": "Conversas Diretas",
-  "MY-GROUPS": "Meus Grupos",
+  "DIRECT_MESSAGES": "Conversas Diretas",
+  "MY_GROUPS": "Meus Grupos",
   "NEW": "Novo",
   "AVAILABLE_GROUPS": "Grupos Disponíveis",
   "LEADER": "Líder",
@@ -33,9 +33,9 @@
   "TYPE_MESSAGE": "Digite sua mensagem...",
   "SEND": "Enviar",
   "DISCONNECT": "Sair",
-  "GROUP-INVITE": "Convite para grupo",
+  "GROUP_INVITE": "Convite para grupo",
   "ACCEPT": "Aceitar",
   "REJECT": "Rejeitar",
-  "NO-NOTIFICATION": "Nenhuma notificação",
+  "NO_NOTIFICATION": "Nenhuma notificação",
   "NOTIFICATIONS": "Notificações"
 }

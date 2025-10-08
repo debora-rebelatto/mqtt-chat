@@ -1,24 +1,18 @@
 import { Component, OnInit, OnDestroy } from '@angular/core'
 import { CommonModule } from '@angular/common'
+import { TranslateModule } from '@ngx-translate/core'
+
 import { UserListItemComponent } from '../user-list-item/user-list-item.component'
 import { ListContainerComponent } from '../../../components/list-container/list-container.component'
 import { Subject, takeUntil } from 'rxjs'
 import { AppStateService, UserService, ChatService } from '../../../services'
 import { Message, ChatType, Group, User } from '../../../models'
 import { LucideAngularModule, MessageCircle } from 'lucide-angular'
-import { TranslatePipe } from '../../../pipes/translate.pipe'
-
 @Component({
   selector: 'user-list',
   templateUrl: './user-list.component.html',
   standalone: true,
-  imports: [
-    CommonModule,
-    ListContainerComponent,
-    UserListItemComponent,
-    LucideAngularModule,
-    TranslatePipe
-  ]
+  imports: [CommonModule, ListContainerComponent, UserListItemComponent, LucideAngularModule, TranslateModule]
 })
 export class UserListComponent implements OnInit, OnDestroy {
   availableGroups: Group[] = []

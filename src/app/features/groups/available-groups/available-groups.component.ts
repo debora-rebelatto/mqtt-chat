@@ -1,6 +1,7 @@
 import { Component, OnInit, OnDestroy } from '@angular/core'
 import { CommonModule } from '@angular/common'
-import { TranslatePipe } from '../../../pipes/translate.pipe'
+import { TranslateModule } from '@ngx-translate/core'
+
 import { LucideAngularModule, Search } from 'lucide-angular'
 import { Group } from '../../../models'
 import { AppStateService, GroupService, InvitationService } from '../../../services'
@@ -10,7 +11,7 @@ import { Subject, takeUntil } from 'rxjs'
   selector: 'available-groups',
   templateUrl: 'available-groups.component.html',
   standalone: true,
-  imports: [CommonModule, TranslatePipe, LucideAngularModule]
+  imports: [CommonModule, TranslateModule, LucideAngularModule]
 })
 export class AvailableGroupsComponent implements OnInit, OnDestroy {
   readonly Search = Search

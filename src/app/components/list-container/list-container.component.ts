@@ -1,11 +1,11 @@
 import { Component, Input } from '@angular/core'
-import { TranslatePipe } from '../../pipes/translate.pipe'
+import { TranslateModule } from '@ngx-translate/core'
 
 @Component({
   selector: 'list-container',
   templateUrl: './list-container.component.html',
   standalone: true,
-  imports: [TranslatePipe]
+  imports: [TranslateModule]
 })
 export class ListContainerComponent {
   @Input() isEmpty: boolean = false
