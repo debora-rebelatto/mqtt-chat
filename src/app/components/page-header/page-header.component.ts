@@ -159,7 +159,6 @@ export class PageHeaderComponent implements OnInit, OnDestroy {
       })
 
       this.chatService.clearMessages()
-      // this.chatService.clearConversationData()
 
       alert('Todos os dados foram limpos! A página será recarregada.')
       window.location.reload()
@@ -170,7 +169,7 @@ export class PageHeaderComponent implements OnInit, OnDestroy {
     if (this.appState.connected && this.appState.user) {
       const heartbeatMessage = {
         type: 'heartbeat',
-        user: this.appState.user, // Enviar o objeto User completo
+        user: this.appState.user,
         clientId: this.connectionManager.clientId,
         timestamp: Date.now()
       }

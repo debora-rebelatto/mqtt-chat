@@ -84,7 +84,7 @@ export class GroupListComponent implements OnInit, OnDestroy {
     }))
 
     userGroups.forEach((group) => {
-      this.chatService.subscribeToGroup(group.id, this.appState.user!.name)
+      this.chatService.subscribeToGroup(group.id)
     })
 
     this.availableGroups = this.groups
