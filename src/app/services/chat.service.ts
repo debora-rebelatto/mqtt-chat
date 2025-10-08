@@ -77,7 +77,6 @@ export class ChatService {
   private sendPendingMessagesToUser(userId: string) {
     const pending = this.pendingMessages.get(userId)
     if (pending && pending.length > 0) {
-      console.log(`Enviando ${pending.length} mensagens pendentes para usuário: ${userId}`)
       const messagesToSend = [...pending]
 
       this.pendingMessages.delete(userId)
@@ -271,7 +270,6 @@ export class ChatService {
       if (filteredMessages.length !== pending.length) {
         this.pendingMessages.set(userId, filteredMessages)
         this.savePendingMessagesToStorage()
-        console.log(`Mensagem ${messageId} removida das pendentes para usuário ${userId}`)
       }
     }
   }
@@ -309,7 +307,7 @@ export class ChatService {
   }
 
   private saveMessagesToStorage(messages: Message[]) {
-    try {
+
       const messagesData = messages.map((msg) => ({
         id: msg.id,
         sender: {
@@ -325,9 +323,7 @@ export class ChatService {
       }))
 
       localStorage.setItem(this.MESSAGES_STORAGE_KEY, JSON.stringify(messagesData))
-    } catch (error) {
-      console.error('Erro ao salvar mensagens:', error)
-    }
+
   }
 
   private loadMessagesFromStorage() {
@@ -353,7 +349,6 @@ export class ChatService {
           )
         })
 
-        console.log(`✅ Carregadas ${messages.length} mensagens do histórico`)
         this.messagesSubject.next(messages)
       } catch (error) {
         console.error('Erro ao carregar mensagens do localStorage:', error)
@@ -415,8 +410,7 @@ export class ChatService {
   }
 
   setCurrentChat(type: ChatType, id: string, name: string) {
-    console.log(`💬 Selecionando chat: ${id} (${type})`)
-    
+
     if (type === ChatType.Group) {
       const group = this.groups.find((g) => g.id === id)
       if (group) {
@@ -435,7 +429,6 @@ export class ChatService {
 
     const currentMessages = this.getMessagesForChat(type, id)
     if (currentMessages.length === 0) {
-      console.log(`📂 Nenhuma mensagem encontrada, recarregando do storage...`)
       setTimeout(() => {
         this.updateCurrentChatMessages()
       }, 100)
@@ -635,7 +628,6 @@ export class ChatService {
   }
 
   reloadHistory() {
-    console.log('🔄 Recarregando histórico de mensagens...')
     this.loadMessagesFromStorage()
     this.updateCurrentChatMessages()
   }
@@ -643,7 +635,6 @@ export class ChatService {
   checkStoredMessages() {
     const stored = localStorage.getItem(this.MESSAGES_STORAGE_KEY)
     const count = stored ? JSON.parse(stored).length : 0
-    console.log(`📊 Mensagens no localStorage: ${count}`)
     return count
   }
 
@@ -686,39 +677,6 @@ export class ChatService {
         }
       })
     }
-  }
-
-  debugPendingMessagesDetailed() {
-    const info = this.getPendingMessagesInfo()
-
-    this.pendingMessages.forEach((messages) => {
-      messages.forEach((msg) => {
-        console.log(`  - ${msg.id}: "${msg.content}" (${msg.timestamp})`)
-      })
-    })
-
-    return info
-  }
-
-  diagnoseMessageFlow(fromUserId: string, toUserId: string) {
-    const allMessages = this.messagesSubject.value
-
-    allMessages.forEach((msg, index) => {
-      console.log(`  [${index}] ${msg.sender.id} -> ${msg.chatId} (${msg.chatType}): "${msg.content}"`)
-    })
-    
-    const relevantMessages = allMessages.filter(
-      (msg) =>
-        msg.chatType === ChatType.User &&
-        ((msg.sender.id === fromUserId && msg.chatId === toUserId) ||
-          (msg.sender.id === toUserId && msg.chatId === fromUserId))
-    )
-
-    relevantMessages.forEach((msg) => {
-      console.log(`  ✅ ${msg.sender.id} -> ${msg.chatId}: "${msg.content}" (${msg.timestamp})`)
-    })
-
-    return relevantMessages
   }
 
   debugCurrentState() {
