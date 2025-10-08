@@ -27,15 +27,11 @@ export class GroupListComponent implements OnInit, OnDestroy {
   readonly Users = Users
 
   @Input() selectedChat: SelectedChat | null = null
-  @Output() groupJoined = new EventEmitter<string>()
   @Output() createGroup = new EventEmitter<void>()
-  @Output() chatSelected = new EventEmitter<Group>()
-  @Output() groupClick = new EventEmitter<Group>()
   @Output() groupSelected = new EventEmitter<Group>()
-  availableGroups: Group[] = []
+  
   groupChats: Group[] = []
   newGroupName = ''
-  groups: Group[] = []
   showModal = false
 
   private destroy$ = new Subject<void>()
@@ -56,9 +52,8 @@ export class GroupListComponent implements OnInit, OnDestroy {
   }
 
   private setupSubscriptions() {
-    this.groupService.groups$.pipe(takeUntil(this.destroy$)).subscribe((groups) => {
-      this.groups = groups
-      this.updateGroupChats()
+    this.chatService.groupChats$.pipe(takeUntil(this.destroy$)).subscribe((groupChats) => {
+      this.groupChats = groupChats
     })
   }
 
@@ -67,30 +62,6 @@ export class GroupListComponent implements OnInit, OnDestroy {
     this.groupSelected.emit(group)
   }
 
-  private updateGroupChats() {
-    if (!this.appState.user) return
-
-    const userGroups = this.groups.filter((g) =>
-      g.members.some((member) => member && member.id === this.appState.user!.id)
-    )
-
-    this.groupChats = userGroups.map((g) => ({
-      id: g.id,
-      name: g.name,
-      leader: g.leader,
-      members: g.members,
-      unread: 0,
-      createdAt: new Date()
-    }))
-
-    userGroups.forEach((group) => {
-      this.chatService.subscribeToGroup(group.id)
-    })
-
-    this.availableGroups = this.groups
-      .filter((g) => !g.members.some((member) => member && member.id === this.appState.user!.id))
-      .map((g) => new Group(g.id, g.name, g.leader, g.members))
-  }
 
   onCreateGroup(): void {
     this.showModal = true

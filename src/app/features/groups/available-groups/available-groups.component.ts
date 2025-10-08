@@ -16,7 +16,6 @@ import { Subject, takeUntil } from 'rxjs'
 export class AvailableGroupsComponent implements OnInit, OnDestroy {
   readonly Search = Search
   availableGroups: Group[] = []
-  private groups: Group[] = []
   private destroy$ = new Subject<void>()
   requestingGroups = new Set<string>()
 
@@ -28,14 +27,21 @@ export class AvailableGroupsComponent implements OnInit, OnDestroy {
 
   ngOnInit() {
     this.groupService.groups$.pipe(takeUntil(this.destroy$)).subscribe((groups) => {
-      const previousGroups = this.groups
-      this.groups = groups
-      this.updateAvailableGroups()
-
-      if (previousGroups.length > 0) {
-        this.checkForGroupMembership(previousGroups, groups)
-      }
+      this.updateAvailableGroups(groups)
+      this.checkAcceptedRequests(groups)
     })
+  }
+
+  private checkAcceptedRequests(groups: Group[]) {
+    const currentUser = this.appState.user
+    if (!currentUser) return
+
+    for (const groupId of this.requestingGroups) {
+      const group = groups.find((g) => g.id === groupId)
+      if (group && this.isUserMember(group, currentUser.id)) {
+        this.requestingGroups.delete(groupId)
+      }
+    }
   }
 
   ngOnDestroy() {
@@ -43,25 +49,30 @@ export class AvailableGroupsComponent implements OnInit, OnDestroy {
     this.destroy$.complete()
   }
 
-  private updateAvailableGroups() {
-    if (!this.appState.user) return
+  private updateAvailableGroups(groups: Group[]) {
+    const currentUser = this.appState.user
+    if (!currentUser) {
+      this.availableGroups = []
+      return
+    }
 
-    this.availableGroups = this.groups
-      .filter((g) => !g.members.some((member) => member && member.id === this.appState.user!.id))
+    this.availableGroups = groups
+      .filter((g) => !this.isUserMember(g, currentUser.id))
       .map((g) => new Group(g.id, g.name, g.leader, g.members))
   }
 
+  private isUserMember(group: Group, userId: string): boolean {
+    return group.members.some((member) => member && member.id === userId)
+  }
+
   onRequestJoin(groupId: string) {
-    const group = this.groups.find((g) => g.id === groupId)
+    const currentUser = this.appState.user
+    if (!currentUser || this.requestingGroups.has(groupId)) {
+      return
+    }
+
+    const group = this.availableGroups.find((g) => g.id === groupId)
     if (!group) {
-      return
-    }
-
-    if (this.requestingGroups.has(groupId)) {
-      return
-    }
-
-    if (!this.appState.user) {
       return
     }
 
@@ -70,13 +81,12 @@ export class AvailableGroupsComponent implements OnInit, OnDestroy {
     const success = this.invitationService.requestJoinGroup(
       group.id,
       group.name,
-      this.appState.user,
+      currentUser,
       group.leader
     )
 
     if (!success) {
       this.requestingGroups.delete(groupId)
-      return
     }
   }
 
@@ -84,23 +94,4 @@ export class AvailableGroupsComponent implements OnInit, OnDestroy {
     return this.requestingGroups.has(groupId)
   }
 
-  private checkForGroupMembership(previousGroups: Group[], currentGroups: Group[]) {
-    if (!this.appState.user) return
-
-    for (const groupId of this.requestingGroups) {
-      const previousGroup = previousGroups.find((g) => g.id === groupId)
-      const currentGroup = currentGroups.find((g) => g.id === groupId)
-
-      if (previousGroup && currentGroup) {
-        const wasNotMember = !previousGroup.members.some(
-          (m) => m && m.id === this.appState.user!.id
-        )
-        const isNowMember = currentGroup.members.some((m) => m && m.id === this.appState.user!.id)
-
-        if (wasNotMember && isNowMember) {
-          this.requestingGroups.delete(groupId)
-        }
-      }
-    }
-  }
 }

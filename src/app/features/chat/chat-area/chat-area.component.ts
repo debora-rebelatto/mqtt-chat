@@ -14,8 +14,7 @@ import { TranslateModule } from '@ngx-translate/core'
 
 import { LucideAngularModule, MessageCircle } from 'lucide-angular'
 import { SelectedChat } from '../../../models/selected-chat.models'
-import { AppStateService } from '../../../services'
-import { Message } from '../../../models'
+import { Message, User } from '../../../models'
 import { TimeFormatPipe } from '../../../pipes/time-format.pipe'
 
 @Component({
@@ -33,12 +32,11 @@ export class ChatAreaComponent implements AfterViewInit, OnChanges {
   @Input() messages: Message[] = []
   @Input() inputMensagem = ''
   @Input() userStatus = ''
+  @Input() currentUser: User | null = null
 
   @Output() messageSend = new EventEmitter<void>()
   @Output() messageInputChange = new EventEmitter<string>()
   @Output() keyPress = new EventEmitter<KeyboardEvent>()
-
-  constructor(private appState: AppStateService) {}
 
   onSendMessage() {
     this.messageSend.emit()
@@ -52,26 +50,26 @@ export class ChatAreaComponent implements AfterViewInit, OnChanges {
     this.keyPress.emit(event)
   }
 
-  scrollToBottom() {
+  private scrollToBottom(delay: number = 0) {
     setTimeout(() => {
-      if (this.messagesContainer) {
-        this.messagesContainer.nativeElement.scrollTop =
-          this.messagesContainer.nativeElement.scrollHeight
+      if (this.messagesContainer?.nativeElement) {
+        const element = this.messagesContainer.nativeElement
+        element.scrollTop = element.scrollHeight
       }
-    }, 100)
+    }, delay)
   }
 
   ngAfterViewInit() {
-    this.scrollToBottom()
+    this.scrollToBottom(100)
   }
 
   ngOnChanges() {
     if (this.selectedChat || this.messages.length > 0) {
-      setTimeout(() => this.scrollToBottom(), 150)
+      this.scrollToBottom(150)
     }
   }
 
   isCurrentUser(msg: Message): boolean {
-    return msg.sender.id === this.appState.user?.id
+    return msg.sender.id === this.currentUser?.id
   }
 }
