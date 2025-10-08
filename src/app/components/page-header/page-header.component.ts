@@ -23,7 +23,13 @@ import { User } from '../../models'
   selector: 'app-page-header',
   templateUrl: './page-header.component.html',
   standalone: true,
-  imports: [CommonModule, FormsModule, NotificationsPanelComponent, LucideAngularModule, TranslateModule]
+  imports: [
+    CommonModule,
+    FormsModule,
+    NotificationsPanelComponent,
+    LucideAngularModule,
+    TranslateModule
+  ]
 })
 export class PageHeaderComponent implements OnInit, OnDestroy {
   private destroy$ = new Subject<void>()
@@ -76,12 +82,7 @@ export class PageHeaderComponent implements OnInit, OnDestroy {
     this.isConnecting = true
 
     try {
-      const currentUser = new User(
-        this._username,
-        this._username,
-        true,
-        new Date()
-      )
+      const currentUser = new User(this._username, this._username, true, new Date())
       this.appState.setUser(currentUser)
 
       const clientId = this.connectionManager.generateClientId(this.appState.user!.id)

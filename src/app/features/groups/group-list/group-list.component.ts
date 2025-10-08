@@ -14,7 +14,14 @@ import { AppStateService, GroupService, ChatService } from '../../../services'
   selector: 'group-list',
   templateUrl: './group-list.component.html',
   standalone: true,
-  imports: [CommonModule, LucideAngularModule, ListContainerComponent, GroupListItemComponent, GroupModalComponent, TranslateModule]
+  imports: [
+    CommonModule,
+    LucideAngularModule,
+    ListContainerComponent,
+    GroupListItemComponent,
+    GroupModalComponent,
+    TranslateModule
+  ]
 })
 export class GroupListComponent implements OnInit, OnDestroy {
   readonly Users = Users

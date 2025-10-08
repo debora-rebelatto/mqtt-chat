@@ -5,7 +5,6 @@ import { TranslateModule } from '@ngx-translate/core'
 
 import { LucideAngularModule } from 'lucide-angular'
 import { GroupModalComponent } from '../../features/groups/group-modal/group-modal.component'
-import { User, AvailableGroup, Group } from '../../models'
 import { User, Group } from '../../models'
 import { ToggleButtonComponent } from './toggle-button/toggle-button.component'
 import { AppStateService, GroupService } from '../../services'
@@ -25,7 +24,7 @@ import { AvailableGroupsComponent } from '../../features/groups/available-groups
     ToggleButtonComponent,
     GroupListComponent,
     UserListComponent,
-    AvailableGroupsComponent, 
+    AvailableGroupsComponent,
     TranslateModule
   ]
 })
