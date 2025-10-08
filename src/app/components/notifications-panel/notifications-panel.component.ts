@@ -3,7 +3,7 @@ import { CommonModule } from '@angular/common'
 import { TranslateModule } from '@ngx-translate/core'
 
 import { GroupInvitation } from '../../models/group-invitation.model'
-import { DateFormatPipe } from "../../pipes/date-format.pipe";
+import { DateFormatPipe } from '../../pipes/date-format.pipe'
 
 @Component({
   selector: 'app-notifications-panel',
