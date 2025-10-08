@@ -17,7 +17,7 @@ export class GroupListItemComponent {
   constructor(private appService: AppStateService) {}
 
   isLeader(leader: string): boolean {
-    return this.appService.user!.id === leader ? true : false
+    return this.appService.user!.id === leader
   }
 
   onGroupClick(): void {

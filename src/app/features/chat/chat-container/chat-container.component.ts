@@ -6,13 +6,7 @@ import { SidebarComponent } from '../../../components/sidebar/sidebar.component'
 import { PageHeaderComponent } from '../../../components/page-header/page-header.component'
 import { ChatAreaComponent } from '../chat-area/chat-area.component'
 import { Group, Message, User } from '../../../models'
-import {
-  MqttService,
-  UserService,
-  GroupService,
-  ChatService,
-  AppStateService
-} from '../../../services'
+import { GroupService, ChatService, AppStateService, InvitationService } from '../../../services'
 import { ChatType } from '../../../models/chat-type.component'
 
 @Component({
@@ -30,15 +24,10 @@ export class ChatContainerComponent implements OnInit, OnDestroy {
   availableGroups: Group[] = []
   messages: Message[] = []
 
-  private users: User[] = []
-  private groups: Group[] = []
-  private allMessages: Message[] = []
-
   constructor(
-    private mqttService: MqttService,
-    private userService: UserService,
     private groupService: GroupService,
     private chatService: ChatService,
+    private invitationService: InvitationService,
     public appState: AppStateService
   ) {}
 
@@ -52,24 +41,22 @@ export class ChatContainerComponent implements OnInit, OnDestroy {
   }
 
   private setupSubscriptions() {
-    this.userService.users$.pipe(takeUntil(this.destroy$)).subscribe((users) => {
-      this.users = users
-      this.updateUserChats()
+    this.chatService.userChats$.pipe(takeUntil(this.destroy$)).subscribe((userChats) => {
+      this.userChats = userChats
     })
 
-    this.groupService.groups$.pipe(takeUntil(this.destroy$)).subscribe((groups) => {
-      this.groups = groups
-      this.updateGroupChats()
+    this.chatService.groupChats$.pipe(takeUntil(this.destroy$)).subscribe((groupChats) => {
+      this.groupChats = groupChats
     })
 
-    this.chatService.messages$.pipe(takeUntil(this.destroy$)).subscribe((messages) => {
-      this.allMessages = messages
-      this.updateUserChats()
-      this.updateCurrentChatMessages()
-    })
+    this.chatService.availableGroups$
+      .pipe(takeUntil(this.destroy$))
+      .subscribe((availableGroups) => {
+        this.availableGroups = availableGroups
+      })
 
-    this.appState.selectedChat$.pipe(takeUntil(this.destroy$)).subscribe(() => {
-      this.updateCurrentChatMessages()
+    this.chatService.currentMessages$.pipe(takeUntil(this.destroy$)).subscribe((messages) => {
+      this.messages = messages
     })
   }
 
@@ -102,129 +89,6 @@ export class ChatContainerComponent implements OnInit, OnDestroy {
 
   selectChat(type: ChatType, id: string, name: string) {
     this.appState.selectChat(type, id, name)
-    this.chatService.setCurrentChat(type, id, name)
-  }
-
-  private updateUserChats() {
-    if (!this.appState.user) return
-
-    const onlineUsers = this.getOnlineUsers()
-    const offlineUsersWithChats = this.getOfflineUsersWithChats(onlineUsers)
-
-    this.userChats = [...onlineUsers, ...offlineUsersWithChats].sort((a, b) =>
-      this.sortUserChats(a, b)
-    )
-  }
-
-  private getOnlineUsers(): User[] {
-    const currentUser = this.appState.user
-    if (!currentUser) return []
-
-    return this.users
-      .filter((u) => u.id !== currentUser.id)
-      .map((u) => new User(u.id, u.name, u.online, u.online ? new Date() : u.lastSeen))
-  }
-
-  private getOfflineUsersWithChats(onlineUsers: User[]): User[] {
-    const usersWithMessages = this.getUsersWithMessages()
-    const onlineUserIds = new Set(onlineUsers.map((u) => u.id))
-
-    return Array.from(usersWithMessages)
-      .filter((userId) => !onlineUserIds.has(userId))
-      .map((userId) => {
-        const lastMessage = this.allMessages
-          .filter(
-            (msg) =>
-              msg.chatType === ChatType.User && (msg.chatId === userId || msg.sender.id === userId)
-          )
-          .sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime())[0]
-
-        return new User(userId, userId, false, lastMessage ? lastMessage.timestamp : new Date())
-      })
-  }
-
-  private getUsersWithMessages(): Set<string> {
-    const usersWithMessages = new Set<string>()
-    const currentUser = this.appState.user
-
-    if (!currentUser) return usersWithMessages
-
-    this.allMessages
-      .filter((msg) => msg.chatType === ChatType.User)
-      .forEach((msg) => {
-        if (msg.sender.id !== currentUser.id) {
-          usersWithMessages.add(msg.sender.id)
-        }
-        if (msg.chatId && msg.chatId !== currentUser.id) {
-          usersWithMessages.add(msg.chatId)
-        }
-      })
-
-    return usersWithMessages
-  }
-
-  private getLastMessageForUser(userId: string): Message | undefined {
-    const currentUser = this.appState.user
-    if (!currentUser) return undefined
-
-    return this.allMessages
-      .filter((msg) => {
-        if (msg.chatType !== ChatType.User) return false
-
-        const isFromCurrentUserToTarget = msg.sender.id === currentUser.id && msg.chatId === userId
-        const isFromTargetToCurrentUser = msg.sender.id === userId && msg.chatId === currentUser.id
-
-        return isFromCurrentUserToTarget || isFromTargetToCurrentUser
-      })
-      .sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime())[0]
-  }
-
-  private sortUserChats(a: User, b: User): number {
-    if (a.online && !b.online) return -1
-    if (!a.online && b.online) return 1
-
-    const aLastMsg = this.getLastMessageForUser(a.id)
-    const bLastMsg = this.getLastMessageForUser(b.id)
-
-    if (!aLastMsg && !bLastMsg) return 0
-    if (!aLastMsg) return 1
-    if (!bLastMsg) return -1
-
-    return bLastMsg.timestamp.getTime() - aLastMsg.timestamp.getTime()
-  }
-
-  private updateGroupChats() {
-    if (!this.appState.user) return
-
-    const userGroups = this.groups.filter((g) =>
-      g.members.some((member) => member && member.id === this.appState.user!.id)
-    )
-
-    this.groupChats = userGroups.map(
-      (g) => new Group(g.id, g.name, g.leader, g.members, new Date())
-    )
-
-    userGroups.forEach((group) => {
-      this.chatService.subscribeToGroup(group.id)
-    })
-
-    this.availableGroups = this.groups
-      .filter((g) => !g.members.some((member) => member && member.id === this.appState.user!.id))
-      .map((g) => new Group(g.id, g.name, g.leader, g.members, new Date()))
-  }
-
-  private updateCurrentChatMessages() {
-    if (!this.appState.selectedChat) {
-      this.messages = []
-      return
-    }
-
-    const chatMessages = this.chatService.getMessagesForChat(
-      this.appState.selectedChat.type,
-      this.appState.selectedChat.id
-    )
-
-    this.messages = chatMessages
   }
 
   sendMessage() {
@@ -233,9 +97,12 @@ export class ChatContainerComponent implements OnInit, OnDestroy {
     }
 
     if (this.appState.selectedChat.isUser()) {
-      const targetUser =
-        this.users.find((u) => u.id === this.appState.selectedChat!.id) ||
-        new User(this.appState.selectedChat.id, this.appState.selectedChat.name, false, new Date())
+      const targetUser = new User(
+        this.appState.selectedChat.id,
+        this.appState.selectedChat.name,
+        false,
+        new Date()
+      )
 
       this.chatService.sendUserMessage(this.appState.user, targetUser, this.inputMensagem)
     } else if (this.appState.selectedChat.isGroup()) {
@@ -250,20 +117,16 @@ export class ChatContainerComponent implements OnInit, OnDestroy {
   }
 
   joinGroup(groupId: string) {
-    const group = this.groups.find((g) => g.id === groupId)
-    if (!group) return
-
-    const newMember = new User(this.appState.user!.id, this.appState.user!.name, true, new Date())
-
-    group.members.push(newMember)
-
-    this.mqttService.publish(
-      'meu-chat-mqtt/groups',
-      JSON.stringify({
-        ...group,
-        members: group.members.map((m) => new User(m.id, m.name, m.online, m.lastSeen))
-      }),
-      true
-    )
+    this.groupService.groups$.pipe(takeUntil(this.destroy$)).subscribe((groups) => {
+      const group = groups.find((g) => g.id === groupId)
+      if (group && this.appState.user) {
+        this.invitationService.requestJoinGroup(
+          group.id,
+          group.name,
+          this.appState.user,
+          group.leader
+        )
+      }
+    })
   }
 }
