@@ -18,10 +18,5 @@ export class AppComponent implements OnInit {
   ngOnInit() {
     this.translate.setFallbackLang('br')
     this.translate.use('br')
-    
-    console.log('Idioma atual:', this.translate.currentLang)
-    this.translate.get('CONNECT').subscribe(value => {
-      console.log('Tradução de CONNECT:', value)
-    })
   }
 }
