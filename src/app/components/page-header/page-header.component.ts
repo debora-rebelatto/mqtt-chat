@@ -1,11 +1,12 @@
 import { Component, OnInit, OnDestroy, Output, EventEmitter } from '@angular/core'
 import { CommonModule } from '@angular/common'
 import { FormsModule } from '@angular/forms'
+import { TranslateModule } from '@ngx-translate/core'
+
 import { Subject, takeUntil } from 'rxjs'
 import { LucideAngularModule, MessageCircle } from 'lucide-angular'
 import { GroupInvitation } from '../../models/group-invitation.model'
 import { Group } from '../../models/group.model'
-import { TranslatePipe } from '../../pipes/translate.pipe'
 import { NotificationsPanelComponent } from '../notifications-panel/notifications-panel.component'
 import {
   MqttService,
@@ -21,13 +22,7 @@ import {
   selector: 'app-page-header',
   templateUrl: './page-header.component.html',
   standalone: true,
-  imports: [
-    CommonModule,
-    FormsModule,
-    NotificationsPanelComponent,
-    LucideAngularModule,
-    TranslatePipe
-  ]
+  imports: [CommonModule, FormsModule, NotificationsPanelComponent, LucideAngularModule, TranslateModule]
 })
 export class PageHeaderComponent implements OnInit, OnDestroy {
   private destroy$ = new Subject<void>()

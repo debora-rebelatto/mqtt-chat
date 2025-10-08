@@ -10,9 +10,10 @@ import {
 } from '@angular/core'
 import { CommonModule } from '@angular/common'
 import { FormsModule } from '@angular/forms'
+import { TranslateModule } from '@ngx-translate/core'
+
 import { LucideAngularModule, MessageCircle } from 'lucide-angular'
 import { SelectedChat } from '../../../models/selected-chat.models'
-import { TranslatePipe } from '../../../pipes/translate.pipe'
 import { AppStateService } from '../../../services'
 import { ChatMessage } from '../../../models'
 import { TimeFormatPipe } from '../../../pipes/time-format.pipe'
@@ -21,7 +22,7 @@ import { TimeFormatPipe } from '../../../pipes/time-format.pipe'
   selector: 'chat-area',
   templateUrl: 'chat-area.component.html',
   standalone: true,
-  imports: [CommonModule, FormsModule, LucideAngularModule, TranslatePipe, TimeFormatPipe]
+  imports: [CommonModule, FormsModule, LucideAngularModule, TimeFormatPipe, TranslateModule]
 })
 export class ChatAreaComponent implements AfterViewInit, OnChanges {
   readonly MessageCircle = MessageCircle

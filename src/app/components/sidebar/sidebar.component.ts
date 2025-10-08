@@ -1,10 +1,11 @@
 import { Component } from '@angular/core'
 import { CommonModule } from '@angular/common'
 import { FormsModule } from '@angular/forms'
+import { TranslateModule } from '@ngx-translate/core'
+
 import { LucideAngularModule } from 'lucide-angular'
 import { GroupModalComponent } from '../../features/groups/group-modal/group-modal.component'
 import { User, AvailableGroup, Group } from '../../models'
-import { TranslatePipe } from '../../pipes/translate.pipe'
 import { ToggleButtonComponent } from './toggle-button/toggle-button.component'
 import { AppStateService, GroupService } from '../../services'
 import { GroupListComponent } from '../../features/groups/group-list/group-list.component'
@@ -15,17 +16,7 @@ import { GroupListItemComponent } from '../../features/groups/available-groups/a
   selector: 'app-sidebar',
   templateUrl: './sidebar.component.html',
   standalone: true,
-  imports: [
-    CommonModule,
-    FormsModule,
-    LucideAngularModule,
-    TranslatePipe,
-    GroupModalComponent,
-    ToggleButtonComponent,
-    GroupListComponent,
-    UserListComponent,
-    GroupListItemComponent
-  ]
+  imports: [CommonModule, FormsModule, LucideAngularModule, GroupModalComponent, ToggleButtonComponent, GroupListComponent, UserListComponent, GroupListItemComponent, TranslateModule]
 })
 export class SidebarComponent {
   activeView = 'chat'
