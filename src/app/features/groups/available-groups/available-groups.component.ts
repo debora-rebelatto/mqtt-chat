@@ -87,16 +87,16 @@ export class AvailableGroupsComponent implements OnInit, OnDestroy {
 
   private checkForGroupMembership(previousGroups: Group[], currentGroups: Group[]) {
     if (!this.appState.user) return
-    
 
     for (const groupId of this.requestingGroups) {
       const previousGroup = previousGroups.find((g) => g.id === groupId)
       const currentGroup = currentGroups.find((g) => g.id === groupId)
 
       if (previousGroup && currentGroup) {
-        const wasNotMember = !previousGroup.members.some((m) => m && m.id === this.appState.user!.id)
+        const wasNotMember = !previousGroup.members.some(
+          (m) => m && m.id === this.appState.user!.id
+        )
         const isNowMember = currentGroup.members.some((m) => m && m.id === this.appState.user!.id)
-
 
         if (wasNotMember && isNowMember) {
           this.requestingGroups.delete(groupId)
