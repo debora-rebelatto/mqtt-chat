@@ -48,8 +48,6 @@ export class GroupService {
 
     const newGroup = new Group(groupId, name, leader, [leader], new Date())
 
-    this.updateGroup(newGroup)
-
     const currentGroups = this.groupsSubject.value
     const updatedGroups = [...currentGroups, newGroup]
     this.groupsSubject.next(updatedGroups)
@@ -83,7 +81,8 @@ export class GroupService {
       return false
     }
 
-    if (group.members.some((member) => member.id === user.id)) {      this.updateGroup(group)
+    if (group.members.some((member) => member.id === user.id)) {
+      this.updateGroup(group)
       return true
     }
 
@@ -199,7 +198,12 @@ export class GroupService {
     }
 
     if (response.accepted) {
-      const userToAdd = new User(response.invitee.id, response.invitee.name, response.invitee.online, response.invitee.lastSeen)
+      const userToAdd = new User(
+        response.invitee.id,
+        response.invitee.name,
+        response.invitee.online,
+        response.invitee.lastSeen
+      )
       const currentUserObj = new User(this.currentUser.id, this.currentUser.name)
 
       const success = this.addMemberToGroup(response.groupId, userToAdd, currentUserObj)
@@ -245,7 +249,7 @@ export class GroupService {
           groupData.name,
           leader,
           members,
-          new Date(groupData.createdAt),
+          new Date(groupData.createdAt)
         )
       })
       this.groupsSubject.next(groups)

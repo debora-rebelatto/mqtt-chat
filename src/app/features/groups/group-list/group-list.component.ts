@@ -29,7 +29,7 @@ export class GroupListComponent implements OnInit, OnDestroy {
   @Input() selectedChat: SelectedChat | null = null
   @Output() createGroup = new EventEmitter<void>()
   @Output() groupSelected = new EventEmitter<Group>()
-  
+
   groupChats: Group[] = []
   newGroupName = ''
   showModal = false
@@ -52,8 +52,8 @@ export class GroupListComponent implements OnInit, OnDestroy {
   }
 
   private setupSubscriptions() {
-    this.chatService.groupChats$.pipe(takeUntil(this.destroy$)).subscribe((groupChats) => {
-      this.groupChats = groupChats
+    this.groupService.groups$.pipe(takeUntil(this.destroy$)).subscribe((groups) => {
+      this.groupChats = groups
     })
   }
 
@@ -61,7 +61,6 @@ export class GroupListComponent implements OnInit, OnDestroy {
     this.appState.selectChat(ChatType.Group, group.id, group.name)
     this.groupSelected.emit(group)
   }
-
 
   onCreateGroup(): void {
     this.showModal = true
