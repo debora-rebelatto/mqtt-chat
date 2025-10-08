@@ -1,59 +1,77 @@
-# MqttChatApp
+# Mqtt Chat App
 
-This project was generated using [Angular CLI](https://github.com/angular/angular-cli) version 20.3.3.
+## Informações
+
+- Disciplina: GEX635 - TÓPICOS ESPECIAIS EM COMPUTAÇÃO XIII
+- Período: 2025.2
+- Autor: Débora Rebelatto e Bruno de Macedo Sanagiotto
+- Tecnologia: Angular + TypeScript + MQTT (Paho)
+
+## PRÉ-REQUISITOS:
+
+- Bun 1.2
+- Angular CLI 20
+- Broker MQTT (Mosquitto) configurado para WebSockets
+
+## INSTALAÇÃO DO BROKER MQTT:
+
+1. Instalar Mosquitto:
+   sudo apt-get install mosquitto mosquitto-clients
+
+2. Configurar WebSocket (criar arquivo mosquitto.conf):
+   listener 8081
+   protocol websockets
+   allow_anonymous true
+
+3. Iniciar broker:
+   sudo systemctl start mosquitto
+
+4. Verificar status:
+   sudo systemctl status mosquitto
 
 ## Development server
 
 To start a local development server, run:
 
 ```bash
-ng serve
+bun run start
 ```
 
 Once the server is running, open your browser and navigate to `http://localhost:4200/`. The application will automatically reload whenever you modify any of the source files.
 
-## Code scaffolding
+## UTILIZAÇÃO:
 
-Angular CLI includes powerful code scaffolding tools. To generate a new component, run:
+1. Inserir nome de usuário na tela inicial
+2. Para chat individual: selecionar usuário na lista lateral
+3. Para criar grupo: usar formulário "Criar Grupo"
+4. Para entrar em grupo: solicitar entrada via "Procurar Grupos"
+5. Para aceitar convites: usar painel de notificações (sino)
 
-```bash
-ng generate component component-name
-```
+## TÓPICOS MQTT UTILIZADOS:
 
-For a complete list of available schematics (such as `components`, `directives`, or `pipes`), run:
+- meu-chat-mqtt/status (status de usuários)
+- meu-chat-mqtt/messages/{userId} (mensagens individuais)
+- meu-chat-mqtt/messages/groups (mensagens de grupo)
+- meu-chat-mqtt/groups (informações de grupos)
+- meu-chat-mqtt/invitations/requests (convites)
+- meu-chat-mqtt/invitations/responses (respostas)
+- meu-chat-mqtt/group-updates/{userId} (notificações)
 
-```bash
-ng generate --help
-```
-
-## Building
-
-To build the project run:
-
-```bash
-ng build
-```
-
-This will compile your project and store the build artifacts in the `dist/` directory. By default, the production build optimizes your application for performance and speed.
-
-## Running unit tests
-
-To execute unit tests with the [Karma](https://karma-runner.github.io) test runner, use the following command:
+ESTRUTURA DO PROJETO:
 
 ```bash
-ng test
+src/app/
+├── components/     # Componentes reutilizáveis
+├── features/       # Funcionalidades principais
+├── models/         # Classes de domínio
+├── services/       # Lógica de negócio
+└── pipes/         # Pipes customizados
 ```
 
-## Running end-to-end tests
+OBSERVAÇÕES:
 
-For end-to-end (e2e) testing, run:
+- Broker MQTT deve estar rodando em localhost:8081
+- Aplicação salva dados no localStorage do navegador
+- Interface otimizada para navegadores modernos
 
-```bash
-ng e2e
-```
-
-Angular CLI does not come with an end-to-end testing framework by default. You can choose one that suits your needs.
-
-## Additional Resources
-
-For more information on using the Angular CLI, including detailed command references, visit the [Angular CLI Overview and Command Reference](https://angular.dev/tools/cli) page.
+Para mais detalhes, consulte DOCUMENTACAO.md
