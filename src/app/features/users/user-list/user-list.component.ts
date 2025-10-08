@@ -58,7 +58,6 @@ export class UserListComponent implements OnInit, OnDestroy {
 
   onUserClick(user: User): void {
     this.appState.selectChat(ChatType.User, user.id, user.name)
-    this.chatService.setCurrentChat(ChatType.User, user.id, user.name)
   }
 
   isSelected(user: User): boolean {

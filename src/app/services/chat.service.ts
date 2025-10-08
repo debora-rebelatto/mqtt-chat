@@ -63,6 +63,10 @@ export class ChatService {
       this.updateUserChats()
       this.updateCurrentChatMessages()
     })
+
+    this.appState.selectedChat$.subscribe(() => {
+      this.updateCurrentChatMessages()
+    })
   }
 
   private checkForUsersComingOnline(oldUsers: User[], newUsers: User[]): void {
@@ -340,29 +344,6 @@ export class ChatService {
     this.mqttService.publish('meu-chat-mqtt/messages/groups', JSON.stringify(mqttPayload))
   }
 
-  setCurrentChat(type: ChatType, id: string, name: string): void {
-    if (type === ChatType.Group) {
-      const group = this.groups.find((g) => g.id === id)
-      if (group) {
-        name = group.name
-      }
-    } else if (type === ChatType.User) {
-      const user = this.users.find((u) => u.id === id)
-      if (user) {
-        name = user.name
-      }
-    }
-
-    this.appState.selectChat(type, id, name)
-    this.updateCurrentChatMessages()
-
-    const currentMessages = this.getMessagesForChat(type, id)
-    if (currentMessages.length === 0) {
-      setTimeout(() => {
-        this.updateCurrentChatMessages()
-      }, 100)
-    }
-  }
 
   subscribeToGroup(groupId: string): void {
     this.mqttService.subscribe(`meu-chat-mqtt/groups/${groupId}`, (message) => {

@@ -102,7 +102,6 @@ export class ChatContainerComponent implements OnInit, OnDestroy {
 
   selectChat(type: ChatType, id: string, name: string) {
     this.appState.selectChat(type, id, name)
-    this.chatService.setCurrentChat(type, id, name)
   }
 
   private updateUserChats() {

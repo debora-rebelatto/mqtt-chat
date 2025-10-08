@@ -64,7 +64,6 @@ export class GroupListComponent implements OnInit, OnDestroy {
 
   onGroupClick(group: Group): void {
     this.appState.selectChat(ChatType.Group, group.id, group.name)
-    this.chatService.setCurrentChat(ChatType.Group, group.id, group.name)
     this.groupSelected.emit(group)
   }
 
