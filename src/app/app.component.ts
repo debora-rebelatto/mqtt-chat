@@ -1,13 +1,11 @@
 import { Component, OnInit } from '@angular/core'
 import { TranslateService, TranslateModule } from '@ngx-translate/core'
-import { ChatContainerComponent } from './features/chat/chat-container/chat-container.component';
+import { ChatContainerComponent } from './features/chat/chat-container/chat-container.component'
 
 @Component({
   selector: 'app-root',
   standalone: true,
-  imports: [ChatContainerComponent,
-    TranslateModule 
-  ],
+  imports: [ChatContainerComponent, TranslateModule],
   template: '<app-chat-container/>'
 })
 export class AppComponent implements OnInit {
@@ -18,10 +16,5 @@ export class AppComponent implements OnInit {
   ngOnInit() {
     this.translate.setFallbackLang('br')
     this.translate.use('br')
-    
-    console.log('Idioma atual:', this.translate.currentLang)
-    this.translate.get('CONNECT').subscribe(value => {
-      console.log('Tradução de CONNECT:', value)
-    })
   }
 }
