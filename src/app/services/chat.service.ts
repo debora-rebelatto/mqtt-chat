@@ -80,7 +80,6 @@ export class ChatService {
       console.log(`Enviando ${pending.length} mensagens pendentes para usuário: ${userId}`)
       const messagesToSend = [...pending]
 
-      // ✅ Limpar pendentes antes de enviar para evitar duplicação
       this.pendingMessages.delete(userId)
       this.savePendingMessagesToStorage()
 
@@ -88,24 +87,19 @@ export class ChatService {
         const mqttPayload = {
           id: message.id,
           sender: message.sender.id,
-          content: message.content, // ✅ Remover marcação [Pendente]
+          content: message.content,
           timestamp: message.timestamp.toISOString(),
           chatType: ChatType.User,
           chatId: message.chatId,
-          isOfflineMessage: true // ✅ Marcar como mensagem offline
+          isOfflineMessage: true
         }
 
-        // ✅ Enviar com delay para evitar sobrecarga
         setTimeout(() => {
           const success = this.mqttService.publish(`meu-chat-mqtt/messages/${userId}`, JSON.stringify(mqttPayload), false, 1)
           if (!success) {
-            console.warn(`Falha ao reenviar mensagem pendente: ${message.id}`)
-            // ✅ Re-adicionar à lista se falhar
             this.addPendingMessage(userId, message)
-          } else {
-            console.log(`Mensagem pendente enviada: ${message.id}`)
           }
-        }, index * 200) // ✅ 200ms entre mensagens
+        }, index * 200)
       })
     }
   }
@@ -164,8 +158,6 @@ export class ChatService {
   }
 
   initialize(username: string) {
-    console.log(`Inicializando ChatService para usuário: ${username}`)
-    
     this.mqttService.subscribe(`meu-chat-mqtt/messages/${username}`, (message) => {
       this.handleUserMessage(message, username)
     })
@@ -174,13 +166,17 @@ export class ChatService {
       this.handleGroupMessage(message)
     })
 
-    // ✅ Inscrever em confirmações de mensagens
     this.mqttService.subscribe(`meu-chat-mqtt/confirmations/${username}`, (message) => {
       this.handleMessageConfirmation(message)
     })
 
-    // ✅ Solicitar sincronização de mensagens perdidas
     this.requestMissedMessages(username)
+
+    setInterval(() => {
+      if (!this.mqttService.isConnected()) {
+        this.mqttService.forceResubscribe()
+      }
+    }, 10000)
 
     setTimeout(() => {
       this.checkPendingMessagesForOnlineUsers()
@@ -188,9 +184,6 @@ export class ChatService {
   }
 
   private requestMissedMessages(username: string) {
-    console.log(`Solicitando mensagens perdidas para: ${username}`)
-    
-    // ✅ Publicar solicitação de sincronização
     const syncRequest = {
       type: 'sync_request',
       userId: username,
@@ -212,7 +205,7 @@ export class ChatService {
       return lastMessage.timestamp.toISOString()
     }
     
-    return new Date(0).toISOString() // Epoch se não há mensagens
+    return new Date(0).toISOString()
   }
 
   private checkPendingMessagesForOnlineUsers() {
@@ -233,13 +226,6 @@ export class ChatService {
       return
     }
 
-    console.log(`Recebendo mensagem de usuário:`, {
-      id: messageData.id,
-      sender: senderId,
-      isOffline: messageData.isOfflineMessage || false,
-      content: messageData.content.substring(0, 50) + '...'
-    })
-
     const senderUser =
       this.users.find((u) => u.id === senderId) || new User(senderId, senderId, false, new Date())
 
@@ -254,15 +240,12 @@ export class ChatService {
 
     this.addMessage(chatMessage)
 
-    // ✅ Se é mensagem offline, confirmar recebimento
     if (messageData.isOfflineMessage) {
       this.confirmOfflineMessageReceived(messageData.id, senderId)
     }
   }
 
   private confirmOfflineMessageReceived(messageId: string, senderId: string) {
-    console.log(`Confirmando recebimento de mensagem offline: ${messageId}`)
-    
     const confirmation = {
       type: 'message_received',
       messageId: messageId,
@@ -277,9 +260,6 @@ export class ChatService {
     const confirmation = JSON.parse(message)
     
     if (confirmation.type === 'message_received') {
-      console.log(`Confirmação recebida para mensagem: ${confirmation.messageId} de ${confirmation.receivedBy}`)
-      
-      // ✅ Remover da lista de pendentes se ainda estiver lá
       this.removePendingMessage(confirmation.messageId, confirmation.receivedBy)
     }
   }
@@ -351,30 +331,34 @@ export class ChatService {
   }
 
   private loadMessagesFromStorage() {
-    localStorage.removeItem(this.MESSAGES_STORAGE_KEY)
-
     const stored = localStorage.getItem(this.MESSAGES_STORAGE_KEY)
     if (stored) {
-      const messagesData = JSON.parse(stored)
-      const messages = messagesData.map((msgData: Message) => {
-        const sender = new User(
-          msgData.sender.id,
-          msgData.sender.name,
-          msgData.sender.online || false,
-          msgData.sender.lastSeen ? new Date(msgData.sender.lastSeen) : new Date()
-        )
+      try {
+        const messagesData = JSON.parse(stored)
+        const messages = messagesData.map((msgData: any) => {
+          const sender = new User(
+            msgData.sender.id,
+            msgData.sender.name,
+            msgData.sender.online || false,
+            msgData.sender.lastSeen ? new Date(msgData.sender.lastSeen) : new Date()
+          )
 
-        return new Message(
-          msgData.id,
-          sender,
-          msgData.content,
-          new Date(msgData.timestamp),
-          msgData.chatType,
-          msgData.chatId
-        )
-      })
+          return new Message(
+            msgData.id,
+            sender,
+            msgData.content,
+            new Date(msgData.timestamp),
+            msgData.chatType,
+            msgData.chatId
+          )
+        })
 
-      this.messagesSubject.next(messages)
+        console.log(`✅ Carregadas ${messages.length} mensagens do histórico`)
+        this.messagesSubject.next(messages)
+      } catch (error) {
+        console.error('Erro ao carregar mensagens do localStorage:', error)
+        localStorage.removeItem(this.MESSAGES_STORAGE_KEY)
+      }
     }
   }
 
@@ -397,16 +381,11 @@ export class ChatService {
     const targetUser = this.users.find((u) => u.id === to.id)
 
     if (targetUser && targetUser.online) {
-      // ✅ Usuário online: enviar via MQTT com QoS 1
-      console.log(`Enviando mensagem para usuário online: ${to.id}`)
       const success = this.mqttService.publish(`meu-chat-mqtt/messages/${to.id}`, JSON.stringify(mqttPayload), false, 1)
       if (!success) {
-        console.warn(`Falha ao enviar via MQTT, adicionando como pendente: ${to.id}`)
         this.addPendingMessage(to.id, message)
       }
     } else {
-      // ✅ Usuário offline: apenas armazenar como pendente
-      console.log(`Usuário offline, armazenando mensagem pendente: ${to.id}`)
       this.addPendingMessage(to.id, message)
     }
   }
@@ -436,6 +415,8 @@ export class ChatService {
   }
 
   setCurrentChat(type: ChatType, id: string, name: string) {
+    console.log(`💬 Selecionando chat: ${id} (${type})`)
+    
     if (type === ChatType.Group) {
       const group = this.groups.find((g) => g.id === id)
       if (group) {
@@ -449,7 +430,16 @@ export class ChatService {
     }
 
     this.appState.selectChat(type, id, name)
+    
     this.updateCurrentChatMessages()
+
+    const currentMessages = this.getMessagesForChat(type, id)
+    if (currentMessages.length === 0) {
+      console.log(`📂 Nenhuma mensagem encontrada, recarregando do storage...`)
+      setTimeout(() => {
+        this.updateCurrentChatMessages()
+      }, 100)
+    }
   }
 
   subscribeToGroup(groupId: string) {
@@ -644,6 +634,19 @@ export class ChatService {
     localStorage.removeItem(this.MESSAGES_STORAGE_KEY)
   }
 
+  reloadHistory() {
+    console.log('🔄 Recarregando histórico de mensagens...')
+    this.loadMessagesFromStorage()
+    this.updateCurrentChatMessages()
+  }
+
+  checkStoredMessages() {
+    const stored = localStorage.getItem(this.MESSAGES_STORAGE_KEY)
+    const count = stored ? JSON.parse(stored).length : 0
+    console.log(`📊 Mensagens no localStorage: ${count}`)
+    return count
+  }
+
   requestConversation(username: string): void {
     const currentUser = this.appState.user
     if (!currentUser) return
@@ -669,14 +672,6 @@ export class ChatService {
     return { total, byUser }
   }
 
-  private getTotalPendingMessages(): number {
-    let total = 0
-    this.pendingMessages.forEach((messages) => {
-      total += messages.length
-    })
-    return total
-  }
-
   forceSendPendingMessages(userId: string) {
     this.sendPendingMessagesToUser(userId)
   }
@@ -696,7 +691,7 @@ export class ChatService {
   debugPendingMessagesDetailed() {
     const info = this.getPendingMessagesInfo()
 
-    this.pendingMessages.forEach((messages, userId) => {
+    this.pendingMessages.forEach((messages) => {
       messages.forEach((msg) => {
         console.log(`  - ${msg.id}: "${msg.content}" (${msg.timestamp})`)
       })
@@ -707,6 +702,11 @@ export class ChatService {
 
   diagnoseMessageFlow(fromUserId: string, toUserId: string) {
     const allMessages = this.messagesSubject.value
+
+    allMessages.forEach((msg, index) => {
+      console.log(`  [${index}] ${msg.sender.id} -> ${msg.chatId} (${msg.chatType}): "${msg.content}"`)
+    })
+    
     const relevantMessages = allMessages.filter(
       (msg) =>
         msg.chatType === ChatType.User &&
@@ -715,9 +715,22 @@ export class ChatService {
     )
 
     relevantMessages.forEach((msg) => {
-      console.log(`  ${msg.sender.id} -> ${msg.chatId}: "${msg.content}"`)
+      console.log(`  ✅ ${msg.sender.id} -> ${msg.chatId}: "${msg.content}" (${msg.timestamp})`)
     })
 
     return relevantMessages
+  }
+
+  debugCurrentState() {
+    const currentUser = this.appState.user
+    const allMessages = this.messagesSubject.value
+    const selectedChat = this.appState.selectedChat
+
+    return {
+      currentUser: currentUser?.id,
+      selectedChat: selectedChat?.id,
+      totalMessages: allMessages.length,
+      pendingMessages: this.getPendingMessagesInfo()
+    }
   }
 }
