@@ -77,25 +77,35 @@ export class ChatService {
   private sendPendingMessagesToUser(userId: string) {
     const pending = this.pendingMessages.get(userId)
     if (pending && pending.length > 0) {
+      console.log(`Enviando ${pending.length} mensagens pendentes para usuário: ${userId}`)
       const messagesToSend = [...pending]
 
+      // ✅ Limpar pendentes antes de enviar para evitar duplicação
       this.pendingMessages.delete(userId)
       this.savePendingMessagesToStorage()
 
-      messagesToSend.forEach((message) => {
+      messagesToSend.forEach((message, index) => {
         const mqttPayload = {
-          id: message.id + '_pending',
+          id: message.id,
           sender: message.sender.id,
-          content: `[Pendente] ${message.content}`,
+          content: message.content, // ✅ Remover marcação [Pendente]
           timestamp: message.timestamp.toISOString(),
           chatType: ChatType.User,
           chatId: message.chatId,
-          isPending: true
+          isOfflineMessage: true // ✅ Marcar como mensagem offline
         }
 
-        this.mqttService.publish(`meu-chat-mqtt/messages/${userId}`, JSON.stringify(mqttPayload))
-
-        setTimeout(() => {}, 100)
+        // ✅ Enviar com delay para evitar sobrecarga
+        setTimeout(() => {
+          const success = this.mqttService.publish(`meu-chat-mqtt/messages/${userId}`, JSON.stringify(mqttPayload), false, 1)
+          if (!success) {
+            console.warn(`Falha ao reenviar mensagem pendente: ${message.id}`)
+            // ✅ Re-adicionar à lista se falhar
+            this.addPendingMessage(userId, message)
+          } else {
+            console.log(`Mensagem pendente enviada: ${message.id}`)
+          }
+        }, index * 200) // ✅ 200ms entre mensagens
       })
     }
   }
@@ -154,6 +164,8 @@ export class ChatService {
   }
 
   initialize(username: string) {
+    console.log(`Inicializando ChatService para usuário: ${username}`)
+    
     this.mqttService.subscribe(`meu-chat-mqtt/messages/${username}`, (message) => {
       this.handleUserMessage(message, username)
     })
@@ -162,9 +174,45 @@ export class ChatService {
       this.handleGroupMessage(message)
     })
 
+    // ✅ Inscrever em confirmações de mensagens
+    this.mqttService.subscribe(`meu-chat-mqtt/confirmations/${username}`, (message) => {
+      this.handleMessageConfirmation(message)
+    })
+
+    // ✅ Solicitar sincronização de mensagens perdidas
+    this.requestMissedMessages(username)
+
     setTimeout(() => {
       this.checkPendingMessagesForOnlineUsers()
     }, 3000)
+  }
+
+  private requestMissedMessages(username: string) {
+    console.log(`Solicitando mensagens perdidas para: ${username}`)
+    
+    // ✅ Publicar solicitação de sincronização
+    const syncRequest = {
+      type: 'sync_request',
+      userId: username,
+      timestamp: new Date().toISOString(),
+      lastSeen: this.getLastMessageTimestamp(username)
+    }
+    
+    this.mqttService.publish(`meu-chat-mqtt/sync/${username}`, JSON.stringify(syncRequest), false, 1)
+  }
+
+  private getLastMessageTimestamp(username: string): string {
+    const userMessages = this.messagesSubject.value.filter(
+      msg => msg.chatType === ChatType.User && 
+      (msg.sender.id === username || msg.chatId === username)
+    )
+    
+    if (userMessages.length > 0) {
+      const lastMessage = userMessages.sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime())[0]
+      return lastMessage.timestamp.toISOString()
+    }
+    
+    return new Date(0).toISOString() // Epoch se não há mensagens
   }
 
   private checkPendingMessagesForOnlineUsers() {
@@ -185,6 +233,13 @@ export class ChatService {
       return
     }
 
+    console.log(`Recebendo mensagem de usuário:`, {
+      id: messageData.id,
+      sender: senderId,
+      isOffline: messageData.isOfflineMessage || false,
+      content: messageData.content.substring(0, 50) + '...'
+    })
+
     const senderUser =
       this.users.find((u) => u.id === senderId) || new User(senderId, senderId, false, new Date())
 
@@ -198,6 +253,47 @@ export class ChatService {
     )
 
     this.addMessage(chatMessage)
+
+    // ✅ Se é mensagem offline, confirmar recebimento
+    if (messageData.isOfflineMessage) {
+      this.confirmOfflineMessageReceived(messageData.id, senderId)
+    }
+  }
+
+  private confirmOfflineMessageReceived(messageId: string, senderId: string) {
+    console.log(`Confirmando recebimento de mensagem offline: ${messageId}`)
+    
+    const confirmation = {
+      type: 'message_received',
+      messageId: messageId,
+      receivedBy: this.appState.user?.id,
+      timestamp: new Date().toISOString()
+    }
+    
+    this.mqttService.publish(`meu-chat-mqtt/confirmations/${senderId}`, JSON.stringify(confirmation), false, 1)
+  }
+
+  private handleMessageConfirmation(message: string) {
+    const confirmation = JSON.parse(message)
+    
+    if (confirmation.type === 'message_received') {
+      console.log(`Confirmação recebida para mensagem: ${confirmation.messageId} de ${confirmation.receivedBy}`)
+      
+      // ✅ Remover da lista de pendentes se ainda estiver lá
+      this.removePendingMessage(confirmation.messageId, confirmation.receivedBy)
+    }
+  }
+
+  private removePendingMessage(messageId: string, userId: string) {
+    const pending = this.pendingMessages.get(userId)
+    if (pending) {
+      const filteredMessages = pending.filter(msg => msg.id !== messageId)
+      if (filteredMessages.length !== pending.length) {
+        this.pendingMessages.set(userId, filteredMessages)
+        this.savePendingMessagesToStorage()
+        console.log(`Mensagem ${messageId} removida das pendentes para usuário ${userId}`)
+      }
+    }
   }
 
   private handleGroupMessage(message: string) {
@@ -301,10 +397,17 @@ export class ChatService {
     const targetUser = this.users.find((u) => u.id === to.id)
 
     if (targetUser && targetUser.online) {
-      this.mqttService.publish(`meu-chat-mqtt/messages/${to.id}`, JSON.stringify(mqttPayload))
+      // ✅ Usuário online: enviar via MQTT com QoS 1
+      console.log(`Enviando mensagem para usuário online: ${to.id}`)
+      const success = this.mqttService.publish(`meu-chat-mqtt/messages/${to.id}`, JSON.stringify(mqttPayload), false, 1)
+      if (!success) {
+        console.warn(`Falha ao enviar via MQTT, adicionando como pendente: ${to.id}`)
+        this.addPendingMessage(to.id, message)
+      }
     } else {
+      // ✅ Usuário offline: apenas armazenar como pendente
+      console.log(`Usuário offline, armazenando mensagem pendente: ${to.id}`)
       this.addPendingMessage(to.id, message)
-      this.mqttService.publish(`meu-chat-mqtt/messages/${to.id}`, JSON.stringify(mqttPayload))
     }
   }
 
