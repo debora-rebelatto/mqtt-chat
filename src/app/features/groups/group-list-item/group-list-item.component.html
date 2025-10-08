@@ -10,7 +10,7 @@
     </div>
     <badge
       [type]="isLeader(group.leader.id) ? 'leader' : 'member'"
-      [text]="isLeader(group.leader.id) ? 'Líder' : 'Membro'"
+      [text]="isLeader(group.leader.id) ? ('LEADER' | translate) : ('MEMBER' | translate)"
     />
   </div>
 </div>

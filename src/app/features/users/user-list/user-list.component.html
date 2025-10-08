@@ -5,7 +5,7 @@
 >
   <h3 class="font-bold text-gray-300 my-3 mx-2 flex items-center gap-2">
     <lucide-icon [img]="MessageCircle" class="w-4 h-4"></lucide-icon>
-    {{ 'DIRECT-MESSAGES' | translate }}
+    {{ 'DIRECT_MESSAGES' | translate }}
   </h3>
   @for (user of userChats; track user.id) {
     <user-list-item [user]="user" [selected]="isSelected(user)" (click)="onUserClick(user)" />
