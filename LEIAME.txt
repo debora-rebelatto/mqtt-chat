@@ -1,0 +1,76 @@
+MQTT CHAT APPLICATION
+=====================
+
+IDENTIFICAÇÃO:
+- Disciplina: GEX635 - TÓPICOS ESPECIAIS EM COMPUTAÇÃO XIII
+- Período: 2025.2
+- Autor: Débora Rebelatto e Bruno de Macedo Sanagiotto
+- Tecnologia: Angular + TypeScript + MQTT (Paho)
+
+DESCRIÇÃO:
+Sistema de chat em tempo real utilizando protocolo MQTT, desenvolvido em Angular.
+Permite comunicação um-a-um e em grupo com interface web moderna.
+
+PRÉ-REQUISITOS:
+- Node.js 18 ou superior
+- Angular CLI 20 ou superior
+- Broker MQTT (Mosquitto) configurado para WebSockets
+
+INSTALAÇÃO DO BROKER MQTT:
+1. Instalar Mosquitto:
+   sudo apt-get install mosquitto mosquitto-clients
+
+2. Configurar WebSocket (criar arquivo mosquitto.conf):
+   listener 8081
+   protocol websockets
+   allow_anonymous true
+
+3. Iniciar broker:
+   mosquitto -c mosquitto.conf
+
+INSTALAÇÃO DA APLICAÇÃO:
+1. Navegar até o diretório do projeto
+2. Instalar dependências:
+   npm install
+3. Iniciar aplicação:
+   ng serve
+4. Acessar: http://localhost:4200
+
+UTILIZAÇÃO:
+1. Inserir nome de usuário na tela inicial
+2. Para chat individual: selecionar usuário na lista lateral
+3. Para criar grupo: usar formulário "Criar Grupo"
+4. Para entrar em grupo: solicitar entrada via "Procurar Grupos"
+5. Para aceitar convites: usar painel de notificações (sino)
+
+FUNCIONALIDADES IMPLEMENTADAS:
+✓ Comunicação um-a-um
+✓ Comunicação em grupo
+✓ Sistema de convites para grupos
+✓ Persistência de mensagens (localStorage)
+✓ Status online/offline de usuários
+✓ Interface responsiva
+
+TÓPICOS MQTT UTILIZADOS:
+- meu-chat-mqtt/status (status de usuários)
+- meu-chat-mqtt/messages/{userId} (mensagens individuais)
+- meu-chat-mqtt/messages/groups (mensagens de grupo)
+- meu-chat-mqtt/groups (informações de grupos)
+- meu-chat-mqtt/invitations/requests (convites)
+- meu-chat-mqtt/invitations/responses (respostas)
+- meu-chat-mqtt/group-updates/{userId} (notificações)
+
+ESTRUTURA DO PROJETO:
+src/app/
+├── components/     # Componentes reutilizáveis
+├── features/       # Funcionalidades principais
+├── models/         # Classes de domínio
+├── services/       # Lógica de negócio
+└── pipes/         # Pipes customizados
+
+OBSERVAÇÕES:
+- Broker MQTT deve estar rodando em localhost:8081
+- Aplicação salva dados no localStorage do navegador
+- Interface otimizada para navegadores modernos
+
+Para mais detalhes, consulte DOCUMENTACAO.md
