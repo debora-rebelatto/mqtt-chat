@@ -105,7 +105,6 @@ export class InvitationService {
       timestamp: new Date()
     }
 
-    console.log('Enviando resposta de aceitação:', response)
     this.mqttService.publish('meu-chat-mqtt/invitations/responses', JSON.stringify(response))
     this.removeInvitation(invitation.id)
 
@@ -130,7 +129,6 @@ export class InvitationService {
   }
 
   private handleInvitation(message: string) {
-    console.log('Recebendo convite/solicitação:', message)
     const data = JSON.parse(message)
 
     const invitee = new User(
@@ -152,12 +150,9 @@ export class InvitationService {
     const exists = invitations.some((i) => i.id === invitation.id)
 
     if (!exists) {
-      console.log('Adicionando novo convite:', invitation)
       const updatedInvitations = [...invitations, invitation]
       this.invitationsSubject.next(updatedInvitations)
       this.saveInvitationsToStorage(updatedInvitations)
-    } else {
-      console.log('Convite já existe, ignorando')
     }
   }
 

@@ -3,7 +3,7 @@
     <input
       [(ngModel)]="message"
       (keypress)="sendMessage()"
-      placeholder="Digite sua mensagem..."
+      [placeholder]="'TYPE_MESSAGE' | translate"
       class="flex-1 px-4 py-3 bg-gray-800 border border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-white placeholder-gray-400"
     />
     <button

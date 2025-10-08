@@ -55,7 +55,6 @@ export class ChatService {
 
     this.groupService.groups$.subscribe((groups: Group[]) => {
       this.groups = groups
-      this.updateGroupChats()
     })
 
     this.messages$.subscribe((messages: Message[]) => {
@@ -82,20 +81,28 @@ export class ChatService {
       this.pendingMessages.delete(userId)
       this.savePendingMessagesToStorage()
 
-      messagesToSend.forEach((message) => {
+      messagesToSend.forEach((message, index) => {
         const mqttPayload = {
-          id: message.id + '_pending',
+          id: message.id,
           sender: message.sender.id,
-          content: `[Pendente] ${message.content}`,
+          content: message.content,
           timestamp: message.timestamp.toISOString(),
           chatType: ChatType.User,
           chatId: message.chatId,
-          isPending: true
+          isOfflineMessage: true
         }
 
-        this.mqttService.publish(`meu-chat-mqtt/messages/${userId}`, JSON.stringify(mqttPayload))
-
-        setTimeout(() => {}, 100)
+        setTimeout(() => {
+          const success = this.mqttService.publish(
+            `meu-chat-mqtt/messages/${userId}`,
+            JSON.stringify(mqttPayload),
+            false,
+            1
+          )
+          if (!success) {
+            this.addPendingMessage(userId, message)
+          }
+        }, index * 200)
       })
     }
   }
@@ -162,9 +169,53 @@ export class ChatService {
       this.handleGroupMessage(message)
     })
 
+    this.mqttService.subscribe(`meu-chat-mqtt/confirmations/${username}`, (message) => {
+      this.handleMessageConfirmation(message)
+    })
+
+    this.requestMissedMessages(username)
+
+    setInterval(() => {
+      if (!this.mqttService.isConnected()) {
+        this.mqttService.forceResubscribe()
+      }
+    }, 10000)
+
     setTimeout(() => {
       this.checkPendingMessagesForOnlineUsers()
     }, 3000)
+  }
+
+  private requestMissedMessages(username: string) {
+    const syncRequest = {
+      type: 'sync_request',
+      userId: username,
+      timestamp: new Date().toISOString(),
+      lastSeen: this.getLastMessageTimestamp(username)
+    }
+
+    this.mqttService.publish(
+      `meu-chat-mqtt/sync/${username}`,
+      JSON.stringify(syncRequest),
+      false,
+      1
+    )
+  }
+
+  private getLastMessageTimestamp(username: string): string {
+    const userMessages = this.messagesSubject.value.filter(
+      (msg) =>
+        msg.chatType === ChatType.User && (msg.sender.id === username || msg.chatId === username)
+    )
+
+    if (userMessages.length > 0) {
+      const lastMessage = userMessages.sort(
+        (a, b) => b.timestamp.getTime() - a.timestamp.getTime()
+      )[0]
+      return lastMessage.timestamp.toISOString()
+    }
+
+    return new Date(0).toISOString()
   }
 
   private checkPendingMessagesForOnlineUsers() {
@@ -198,6 +249,45 @@ export class ChatService {
     )
 
     this.addMessage(chatMessage)
+
+    if (messageData.isOfflineMessage) {
+      this.confirmOfflineMessageReceived(messageData.id, senderId)
+    }
+  }
+
+  private confirmOfflineMessageReceived(messageId: string, senderId: string) {
+    const confirmation = {
+      type: 'message_received',
+      messageId: messageId,
+      receivedBy: this.appState.user?.id,
+      timestamp: new Date().toISOString()
+    }
+
+    this.mqttService.publish(
+      `meu-chat-mqtt/confirmations/${senderId}`,
+      JSON.stringify(confirmation),
+      false,
+      1
+    )
+  }
+
+  private handleMessageConfirmation(message: string) {
+    const confirmation = JSON.parse(message)
+
+    if (confirmation.type === 'message_received') {
+      this.removePendingMessage(confirmation.messageId, confirmation.receivedBy)
+    }
+  }
+
+  private removePendingMessage(messageId: string, userId: string) {
+    const pending = this.pendingMessages.get(userId)
+    if (pending) {
+      const filteredMessages = pending.filter((msg) => msg.id !== messageId)
+      if (filteredMessages.length !== pending.length) {
+        this.pendingMessages.set(userId, filteredMessages)
+        this.savePendingMessagesToStorage()
+      }
+    }
   }
 
   private handleGroupMessage(message: string) {
@@ -233,52 +323,51 @@ export class ChatService {
   }
 
   private saveMessagesToStorage(messages: Message[]) {
-    try {
-      const messagesData = messages.map((msg) => ({
-        id: msg.id,
-        sender: {
-          id: msg.sender.id,
-          name: msg.sender.name,
-          online: msg.sender.online,
-          lastSeen: msg.sender.lastSeen
-        },
-        content: msg.content,
-        timestamp: msg.timestamp,
-        chatType: msg.chatType,
-        chatId: msg.chatId
-      }))
+    const messagesData = messages.map((msg) => ({
+      id: msg.id,
+      sender: {
+        id: msg.sender.id,
+        name: msg.sender.name,
+        online: msg.sender.online,
+        lastSeen: msg.sender.lastSeen
+      },
+      content: msg.content,
+      timestamp: msg.timestamp,
+      chatType: msg.chatType,
+      chatId: msg.chatId
+    }))
 
-      localStorage.setItem(this.MESSAGES_STORAGE_KEY, JSON.stringify(messagesData))
-    } catch (error) {
-      console.error('Erro ao salvar mensagens:', error)
-    }
+    localStorage.setItem(this.MESSAGES_STORAGE_KEY, JSON.stringify(messagesData))
   }
 
   private loadMessagesFromStorage() {
-    localStorage.removeItem(this.MESSAGES_STORAGE_KEY)
-
     const stored = localStorage.getItem(this.MESSAGES_STORAGE_KEY)
     if (stored) {
-      const messagesData = JSON.parse(stored)
-      const messages = messagesData.map((msgData: Message) => {
-        const sender = new User(
-          msgData.sender.id,
-          msgData.sender.name,
-          msgData.sender.online || false,
-          msgData.sender.lastSeen ? new Date(msgData.sender.lastSeen) : new Date()
-        )
+      try {
+        const messagesData = JSON.parse(stored)
+        const messages = messagesData.map((msgData: any) => {
+          const sender = new User(
+            msgData.sender.id,
+            msgData.sender.name,
+            msgData.sender.online || false,
+            msgData.sender.lastSeen ? new Date(msgData.sender.lastSeen) : new Date()
+          )
 
-        return new Message(
-          msgData.id,
-          sender,
-          msgData.content,
-          new Date(msgData.timestamp),
-          msgData.chatType,
-          msgData.chatId
-        )
-      })
+          return new Message(
+            msgData.id,
+            sender,
+            msgData.content,
+            new Date(msgData.timestamp),
+            msgData.chatType,
+            msgData.chatId
+          )
+        })
 
-      this.messagesSubject.next(messages)
+        this.messagesSubject.next(messages)
+      } catch (error) {
+        console.error('Erro ao carregar mensagens do localStorage:', error)
+        localStorage.removeItem(this.MESSAGES_STORAGE_KEY)
+      }
     }
   }
 
@@ -301,10 +390,17 @@ export class ChatService {
     const targetUser = this.users.find((u) => u.id === to.id)
 
     if (targetUser && targetUser.online) {
-      this.mqttService.publish(`meu-chat-mqtt/messages/${to.id}`, JSON.stringify(mqttPayload))
+      const success = this.mqttService.publish(
+        `meu-chat-mqtt/messages/${to.id}`,
+        JSON.stringify(mqttPayload),
+        false,
+        1
+      )
+      if (!success) {
+        this.addPendingMessage(to.id, message)
+      }
     } else {
       this.addPendingMessage(to.id, message)
-      this.mqttService.publish(`meu-chat-mqtt/messages/${to.id}`, JSON.stringify(mqttPayload))
     }
   }
 
@@ -346,7 +442,15 @@ export class ChatService {
     }
 
     this.appState.selectChat(type, id, name)
+
     this.updateCurrentChatMessages()
+
+    const currentMessages = this.getMessagesForChat(type, id)
+    if (currentMessages.length === 0) {
+      setTimeout(() => {
+        this.updateCurrentChatMessages()
+      }, 100)
+    }
   }
 
   subscribeToGroup(groupId: string) {
@@ -470,31 +574,6 @@ export class ChatService {
     return bLastMsg.timestamp.getTime() - aLastMsg.timestamp.getTime()
   }
 
-  private updateGroupChats() {
-    const currentUser = this.appState.user
-    if (!currentUser) return
-
-    const userGroups = this.groups.filter((g) =>
-      g.members.some((member: User) => member.id === currentUser.id)
-    )
-
-    const groupChats = userGroups.map(
-      (g) => new Group(g.id, g.name, g.leader, g.members, g.createdAt, g.unread)
-    )
-
-    this.groupChatsSubject.next(groupChats)
-
-    userGroups.forEach((group) => {
-      this.subscribeToGroup(group.id)
-    })
-
-    const availableGroups = this.groups
-      .filter((g) => !g.members.some((member: User) => member.id === currentUser.id))
-      .map((g) => new Group(g.id, g.name, g.leader, g.members, g.createdAt))
-
-    this.availableGroupsSubject.next(availableGroups)
-  }
-
   private updateCurrentChatMessages() {
     if (!this.appState.selectedChat) {
       this.currentMessagesSubject.next([])
@@ -509,112 +588,10 @@ export class ChatService {
     this.currentMessagesSubject.next(chatMessages)
   }
 
-  joinGroup(groupId: string) {
-    const currentUser = this.appState.user
-    if (!currentUser) return
-
-    const group = this.groups.find((g) => g.id === groupId)
-    if (!group) return
-
-    const newMember = new User(currentUser.id, currentUser.name, true, new Date())
-    group.members.push(newMember)
-
-    this.mqttService.publish(
-      'meu-chat-mqtt/groups',
-      JSON.stringify({
-        ...group,
-        members: group.members.map((m) => ({
-          id: m.id,
-          name: m.name,
-          online: m.online,
-          lastSeen: m.lastSeen
-        }))
-      }),
-      true
-    )
-  }
-
   clearMessages() {
     this.messagesSubject.next([])
     this.pendingMessages.clear()
     localStorage.removeItem(this.PENDING_MESSAGES_KEY)
     localStorage.removeItem(this.MESSAGES_STORAGE_KEY)
-  }
-
-  requestConversation(username: string): void {
-    const currentUser = this.appState.user
-    if (!currentUser) return
-
-    const targetUser = this.users.find((u) => u.name === username)
-    if (!targetUser) return
-
-    this.setCurrentChat(ChatType.User, targetUser.id, targetUser.name)
-
-    const greetingMessage = `Olá! Iniciando conversa com ${targetUser.name}`
-    this.sendUserMessage(currentUser, targetUser, greetingMessage)
-  }
-
-  getPendingMessagesInfo(): { total: number; byUser: { [userId: string]: number } } {
-    let total = 0
-    const byUser: { [userId: string]: number } = {}
-
-    this.pendingMessages.forEach((messages, userId) => {
-      byUser[userId] = messages.length
-      total += messages.length
-    })
-
-    return { total, byUser }
-  }
-
-  private getTotalPendingMessages(): number {
-    let total = 0
-    this.pendingMessages.forEach((messages) => {
-      total += messages.length
-    })
-    return total
-  }
-
-  forceSendPendingMessages(userId: string) {
-    this.sendPendingMessagesToUser(userId)
-  }
-
-  forceDeliverPendingMessages(userId?: string) {
-    if (userId) {
-      this.sendPendingMessagesToUser(userId)
-    } else {
-      this.pendingMessages.forEach((messages, userId) => {
-        if (messages.length > 0) {
-          this.sendPendingMessagesToUser(userId)
-        }
-      })
-    }
-  }
-
-  debugPendingMessagesDetailed() {
-    const info = this.getPendingMessagesInfo()
-
-    this.pendingMessages.forEach((messages, userId) => {
-      messages.forEach((msg) => {
-        console.log(`  - ${msg.id}: "${msg.content}" (${msg.timestamp})`)
-      })
-    })
-
-    return info
-  }
-
-  diagnoseMessageFlow(fromUserId: string, toUserId: string) {
-    const allMessages = this.messagesSubject.value
-    const relevantMessages = allMessages.filter(
-      (msg) =>
-        msg.chatType === ChatType.User &&
-        ((msg.sender.id === fromUserId && msg.chatId === toUserId) ||
-          (msg.sender.id === toUserId && msg.chatId === fromUserId))
-    )
-
-    relevantMessages.forEach((msg) => {
-      console.log(`  ${msg.sender.id} -> ${msg.chatId}: "${msg.content}"`)
-    })
-
-    return relevantMessages
   }
 }

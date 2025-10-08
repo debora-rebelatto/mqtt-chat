@@ -52,7 +52,6 @@ export class AvailableGroupsComponent implements OnInit, OnDestroy {
   }
 
   onRequestJoin(groupId: string) {
-    console.log('Solicitando entrada no grupo:', groupId)
     const group = this.groups.find((g) => g.id === groupId)
     if (!group) {
       return

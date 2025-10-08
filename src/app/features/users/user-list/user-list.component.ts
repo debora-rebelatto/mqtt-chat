@@ -66,10 +66,6 @@ export class UserListComponent implements OnInit, OnDestroy {
     return selectedChat?.type === ChatType.User && selectedChat?.id === user.id
   }
 
-  requestConversation(user: User): void {
-    this.chatService.requestConversation(user.name)
-  }
-
   private updateUserChats() {
     const currentUser = this.appState.user
     if (!currentUser) return

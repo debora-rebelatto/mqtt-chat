@@ -135,14 +135,12 @@ export class GroupService {
   }
 
   private requestGroups() {
-    console.log('Solicitando atualização de grupos via MQTT')
     this.mqttService.publish('meu-chat-mqtt/groups', 'REQUEST_GROUPS')
   }
 
   private handleGroupMessage(message: string) {
     if (message === 'REQUEST_GROUPS') return
 
-    console.log('Recebendo dados de grupo via MQTT:', message)
     const groupData = JSON.parse(message)
 
     if (groupData.id && groupData.name && groupData.leader && groupData.members) {

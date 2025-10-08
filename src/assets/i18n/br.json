@@ -37,5 +37,12 @@
   "ACCEPT": "Aceitar",
   "REJECT": "Rejeitar",
   "NO_NOTIFICATION": "Nenhuma notificação",
-  "NOTIFICATIONS": "Notificações"
+  "NOTIFICATIONS": "Notificações",
+  "NO-NOTIFICATION": "Nenhuma notificação",
+  "REQUEST_JOIN": "Solicitar entrada",
+  "REQUESTING": "Solicitando...",
+  "GROUP-INVITE": "Convite para grupo",
+  "CLEAR_DATA": "Limpar dados",
+  "CLEAR_ALL_DATA": "Limpar todos os dados",
+  "FROM": "De"
 }
