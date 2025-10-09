@@ -1,4 +1,3 @@
-// pending-messages.service.ts
 import { Injectable } from '@angular/core'
 import { Message, User } from '../models'
 import { MqttService } from './mqtt.service'

@@ -1,6 +1,6 @@
 import { ChatType } from "./chat-type.component"
-import { Group } from "./group.model" // Ajuste o caminho conforme sua estrutura
-import { User } from "./user.model" // Ajuste o caminho conforme sua estrutura
+import { Group } from "./group.model"
+import { User } from "./user.model"
 
 export class SelectedChat {
   constructor(
