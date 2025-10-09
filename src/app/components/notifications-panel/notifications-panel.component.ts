@@ -1,14 +1,15 @@
 import { Component, Input, Output, EventEmitter } from '@angular/core'
 import { CommonModule } from '@angular/common'
+import { TranslateModule } from '@ngx-translate/core'
+
 import { GroupInvitation } from '../../models/group-invitation.model'
-import { TranslatePipe } from '../../pipes/translate.pipe'
-import { DateFormatPipe } from "../../pipes/date-format.pipe";
+import { DateFormatPipe } from '../../pipes/date-format.pipe'
 
 @Component({
   selector: 'app-notifications-panel',
   templateUrl: './notifications-panel.component.html',
   standalone: true,
-  imports: [CommonModule, TranslatePipe, DateFormatPipe]
+  imports: [CommonModule, DateFormatPipe, TranslateModule]
 })
 export class NotificationsPanelComponent {
   @Input() notifications: GroupInvitation[] = []

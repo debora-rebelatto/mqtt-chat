@@ -1,10 +1,12 @@
 import { Component, OnInit, OnDestroy, Output, EventEmitter } from '@angular/core'
 import { CommonModule } from '@angular/common'
 import { FormsModule } from '@angular/forms'
+import { TranslateModule } from '@ngx-translate/core'
+
 import { Subject, takeUntil } from 'rxjs'
 import { LucideAngularModule, MessageCircle } from 'lucide-angular'
 import { GroupInvitation } from '../../models/group-invitation.model'
-import { TranslatePipe } from '../../pipes/translate.pipe'
+import { Group } from '../../models/group.model'
 import { NotificationsPanelComponent } from '../notifications-panel/notifications-panel.component'
 import {
   MqttService,
@@ -15,6 +17,8 @@ import {
   ConnectionManagerService,
   AppStateService
 } from '../../services'
+import { User } from '../../models'
+import { MqttTopics } from '../../config/mqtt-topics'
 
 @Component({
   selector: 'app-page-header',
@@ -25,16 +29,17 @@ import {
     FormsModule,
     NotificationsPanelComponent,
     LucideAngularModule,
-    TranslatePipe
+    TranslateModule
   ]
 })
 export class PageHeaderComponent implements OnInit, OnDestroy {
   private destroy$ = new Subject<void>()
   readonly MessageCircle = MessageCircle
 
+  isConnecting = false
   showNotifications = false
   notifications: GroupInvitation[] = []
-  isConnecting = false
+  private _username = ''
 
   @Output() usernameChange = new EventEmitter<string>()
   @Output() connectionChange = new EventEmitter<boolean>()
@@ -64,35 +69,43 @@ export class PageHeaderComponent implements OnInit, OnDestroy {
     })
 
     this.invitationService.invitations$.pipe(takeUntil(this.destroy$)).subscribe((invitations) => {
-      this.notifications = invitations
+      this.notifications = invitations.filter((invitation) => {
+        const group = this.groupService.getGroups().find((g: Group) => g.id === invitation.groupId)
+        const isLeader = group && group.leader.id === this.appState.user?.id
+        return isLeader
+      })
     })
   }
 
   async connect() {
-    if (!this.appState.username.trim() || this.isConnecting) return
-    
+    if (!this._username.trim() || this.isConnecting) return
+
     this.isConnecting = true
 
     try {
-      const clientId = this.connectionManager.generateClientId(this.appState.username)
-      await this.mqttService.connect('localhost', 8081, clientId)
+      const currentUser = new User(this._username, this._username, true, new Date())
+      this.appState.setUser(currentUser)
+
+      const clientId = this.connectionManager.generateClientId(this.appState.user!.id)
+      await this.mqttService.connect(clientId)
 
       await new Promise((resolve) => setTimeout(resolve, 500))
 
       this.connectionManager.setConnected(true, clientId)
-      this.userService.initialize(clientId, this.appState.username)
+
+      this.userService.initialize(clientId, currentUser)
+      this.groupService.setCurrentUser(currentUser)
       this.groupService.initialize()
-      this.chatService.initialize(this.appState.username)
-      this.chatService.forceLoad()
-      this.invitationService.initialize(this.appState.username)
+      this.chatService.initialize(this.appState.user!.id)
+      this.invitationService.initialize(this.appState.user!)
 
       this.appState.setConnected(true)
 
-      this.usernameChange.emit(this.appState.username)
+      this.usernameChange.emit(this.appState.user!.id)
       this.connectionChange.emit(true)
 
-      this.userService.publishOnlineStatus(this.appState.username)
-      this.userService.requestSync(this.appState.username)
+      this.userService.publishOnlineStatus(currentUser)
+      this.userService.requestSync(currentUser)
 
       this.connectionManager.startHeartbeat(() => {
         this.sendHeartbeat()
@@ -106,9 +119,12 @@ export class PageHeaderComponent implements OnInit, OnDestroy {
   }
 
   disconnect() {
-    if (this.appState.connected) {
-      this.userService.publishOfflineStatus(this.appState.username)
+    const currentUser = this.appState.user
+    if (this.appState.connected && currentUser) {
+      this.userService.publishOfflineStatus(currentUser)
     }
+
+    this.invitationService.onDisconnect()
 
     this.connectionManager.stopHeartbeat()
     this.mqttService.disconnect()
@@ -122,19 +138,23 @@ export class PageHeaderComponent implements OnInit, OnDestroy {
       if (this.appState.connected) {
         this.disconnect()
       }
-      
+
       const keysToRemove = [
         'mqtt-chat-messages',
-        'mqtt-chat-pending-messages', 
+        'mqtt-chat-pending-messages',
         'mqtt-chat-users',
         'mqtt-chat-groups',
-        'mqtt-chat-invitations'
+        'mqtt-chat-invitations',
+        'mqtt-chat-conversation-requests',
+        'mqtt-chat-conversation-sessions',
+        'mqtt-chat-debug-history',
+        'mqtt-chat-selected-chat'
       ]
-      
-      keysToRemove.forEach(key => {
+
+      keysToRemove.forEach((key) => {
         localStorage.removeItem(key)
       })
-      
+
       this.chatService.clearMessages()
 
       alert('Todos os dados foram limpos! A página será recarregada.')
@@ -143,22 +163,23 @@ export class PageHeaderComponent implements OnInit, OnDestroy {
   }
 
   private sendHeartbeat() {
-    if (this.appState.connected) {
+    if (this.appState.connected && this.appState.user) {
       const heartbeatMessage = {
         type: 'heartbeat',
-        username: this.appState.username,
+        user: this.appState.user,
         clientId: this.connectionManager.clientId,
         timestamp: Date.now()
       }
-      this.mqttService.publish('meu-chat-mqtt/heartbeat', JSON.stringify(heartbeatMessage))
+      this.mqttService.publish(MqttTopics.heartbeat, JSON.stringify(heartbeatMessage))
     }
   }
+
   acceptInvite(invitation: GroupInvitation) {
-    this.invitationService.acceptInvitation(invitation, this.appState.username)
+    this.invitationService.acceptInvitation(invitation)
   }
 
   rejectInvite(invitation: GroupInvitation) {
-    this.invitationService.rejectInvitation(invitation, this.appState.username)
+    this.invitationService.rejectInvitation(invitation)
   }
 
   onToggleNotifications() {
@@ -166,10 +187,10 @@ export class PageHeaderComponent implements OnInit, OnDestroy {
   }
 
   get username(): string {
-    return this.appState.username
+    return this._username
   }
 
   set username(value: string) {
-    this.appState.setUsername(value)
+    this._username = value
   }
 }

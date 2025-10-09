@@ -1,15 +1,5 @@
 <div class="h-screen w-screen bg-gray-900 flex flex-col overflow-hidden">
-  <app-page-header
-    (usernameChange)="onUsernameChange($event)"
-    (connectionChange)="onConnectionChange($event)"
-  />
-
-  <app-notifications-banner
-    [notifications]="notifications"
-    [showNotifications]="showNotifications"
-    (acceptInvite)="acceptInvite($event)"
-    (rejectInvite)="rejectInvite($event)"
-  />
+  <app-page-header (connectionChange)="onConnectionChange($event)" />
 
   @if (appState.connected) {
     <div class="flex flex-1 overflow-hidden">
@@ -20,7 +10,8 @@
         [selectedChat]="appState.selectedChat"
         [messages]="messages"
         [inputMensagem]="inputMensagem"
-        (messageSend)="onMessageSend()"
+        [currentUser]="appState.user"
+        (messageSend)="sendMessage()"
         (messageInputChange)="onMessageInputChange($event)"
         (keyPress)="onKeyPress($event)"
       />

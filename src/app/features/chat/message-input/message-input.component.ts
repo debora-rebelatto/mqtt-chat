@@ -1,13 +1,13 @@
 import { Component, Output, EventEmitter } from '@angular/core'
 import { CommonModule } from '@angular/common'
 import { FormsModule } from '@angular/forms'
-import { TranslatePipe } from '../../../pipes/translate.pipe'
+import { TranslateModule } from '@ngx-translate/core'
 
 @Component({
   selector: 'app-message-input',
   templateUrl: './message-input.component.html',
   standalone: true,
-  imports: [CommonModule, FormsModule, TranslatePipe]
+  imports: [CommonModule, FormsModule, TranslateModule]
 })
 export class MessageInputComponent {
   @Output() messageSent = new EventEmitter<string>()
