@@ -2,6 +2,7 @@ import { Injectable } from '@angular/core'
 import { BehaviorSubject } from 'rxjs'
 import { MqttService } from './mqtt.service'
 import { User } from '../models'
+import { MqttTopics } from '../config/mqtt-topics'
 
 @Injectable({
   providedIn: 'root'
@@ -26,19 +27,19 @@ export class UserService {
   }
 
   private setupSubscriptions(user: User) {
-    this.mqttService.subscribe('meu-chat-mqtt/status', (message) => {
+    this.mqttService.subscribe(MqttTopics.status, (message) => {
       this.handleStatusMessage(message)
     })
 
-    this.mqttService.subscribe('meu-chat-mqtt/status/disconnected', (message) => {
+    this.mqttService.subscribe(MqttTopics.disconnected, (message) => {
       this.handleDisconnectMessage(message)
     })
 
-    this.mqttService.subscribe('meu-chat-mqtt/heartbeat', (message) => {
+    this.mqttService.subscribe(MqttTopics.heartbeat, (message) => {
       this.handleHeartbeatMessage(message)
     })
 
-    this.mqttService.subscribe('meu-chat-mqtt/sync', (message) => {
+    this.mqttService.subscribe(MqttTopics.sync, (message) => {
       this.handleSyncMessage(message, user)
     })
   }
@@ -54,7 +55,7 @@ export class UserService {
       timestamp: new Date(now)
     }
 
-    this.mqttService.publish('meu-chat-mqtt/status', JSON.stringify(statusMessage))
+    this.mqttService.publish(MqttTopics.status, JSON.stringify(statusMessage))
   }
 
   publishOfflineStatus(user: User) {
@@ -65,7 +66,7 @@ export class UserService {
       timestamp: new Date()
     }
 
-    this.mqttService.publish('meu-chat-mqtt/status', JSON.stringify(offlineMessage))
+    this.mqttService.publish(MqttTopics.status, JSON.stringify(offlineMessage))
     this.lastSeenMap.delete(user.id)
   }
 
@@ -77,7 +78,7 @@ export class UserService {
       timestamp: new Date()
     }
 
-    this.mqttService.publish('meu-chat-mqtt/sync', JSON.stringify(syncMessage))
+    this.mqttService.publish(MqttTopics.sync, JSON.stringify(syncMessage))
   }
 
   private handleStatusMessage(message: string) {
@@ -90,7 +91,7 @@ export class UserService {
       )
 
       this.mqttService.publish(
-        `meu-chat-mqtt/sync/pending/${status.user.id}`,
+        MqttTopics.pendingSync(status.user.id),
         JSON.stringify({
           type: 'request_pending',
           user: status.user,

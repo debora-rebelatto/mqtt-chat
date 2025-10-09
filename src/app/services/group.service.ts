@@ -3,6 +3,7 @@ import { BehaviorSubject } from 'rxjs'
 import { Group } from '../models/group.model'
 import { User } from '../models/user.model'
 import { MqttService } from './mqtt.service'
+import { MqttTopics } from '../config/mqtt-topics'
 
 @Injectable({
   providedIn: 'root'
@@ -21,7 +22,7 @@ export class GroupService {
     this.currentUser = user
 
     if (user) {
-      this.mqttService.subscribe(`meu-chat-mqtt/group-updates/${user.id}`, (message) => {
+      this.mqttService.subscribe(MqttTopics.groupUpdates(user.id), (message) => {
         this.handleGroupUpdate(message)
       })
     }
@@ -32,11 +33,11 @@ export class GroupService {
   }
 
   initialize() {
-    this.mqttService.subscribe('meu-chat-mqtt/groups', (message) => {
+    this.mqttService.subscribe(MqttTopics.groupList, (message) => {
       this.handleGroupMessage(message)
     })
 
-    this.mqttService.subscribe('meu-chat-mqtt/invitations/responses', (message) => {
+    this.mqttService.subscribe(MqttTopics.invitationResponses, (message) => {
       this.handleInvitationResponse(message)
     })
 
@@ -68,7 +69,8 @@ export class GroupService {
         lastSeen: member.lastSeen
       }))
     }
-    this.mqttService.publish('meu-chat-mqtt/groups', JSON.stringify(groupForMqtt), true)
+
+    this.mqttService.publish(MqttTopics.groupList, JSON.stringify(groupForMqtt), true)
   }
 
   addMemberToGroup(groupId: string, user: User, currentUser: User) {
@@ -83,7 +85,8 @@ export class GroupService {
       return false
     }
 
-    if (group.members.some((member) => member.id === user.id)) {      this.updateGroup(group)
+    if (group.members.some((member) => member.id === user.id)) {
+      this.updateGroup(group)
       return true
     }
 
@@ -129,13 +132,13 @@ export class GroupService {
       to: username
     }
 
-    this.mqttService.publish(`meu-chat-mqtt/invitations/${username}`, JSON.stringify(invitation))
+    this.mqttService.publish(MqttTopics.sendInvitation(username), JSON.stringify(invitation))
 
     return true
   }
 
   private requestGroups() {
-    this.mqttService.publish('meu-chat-mqtt/groups', 'REQUEST_GROUPS')
+    this.mqttService.publish(MqttTopics.groupList, 'REQUEST_GROUPS')
   }
 
   private handleGroupMessage(message: string) {
@@ -199,14 +202,19 @@ export class GroupService {
     }
 
     if (response.accepted) {
-      const userToAdd = new User(response.invitee.id, response.invitee.name, response.invitee.online, response.invitee.lastSeen)
+      const userToAdd = new User(
+        response.invitee.id,
+        response.invitee.name,
+        response.invitee.online,
+        response.invitee.lastSeen
+      )
       const currentUserObj = new User(this.currentUser.id, this.currentUser.name)
 
       const success = this.addMemberToGroup(response.groupId, userToAdd, currentUserObj)
 
       if (success) {
         this.mqttService.publish(
-          `meu-chat-mqtt/group-updates/${response.invitee.id}`,
+          MqttTopics.groupUpdates(response.invitee.id),
           JSON.stringify({
             type: 'member_added',
             groupId: response.groupId,
@@ -245,7 +253,7 @@ export class GroupService {
           groupData.name,
           leader,
           members,
-          new Date(groupData.createdAt),
+          new Date(groupData.createdAt)
         )
       })
       this.groupsSubject.next(groups)
