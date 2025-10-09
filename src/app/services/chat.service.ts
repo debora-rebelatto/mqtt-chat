@@ -6,6 +6,7 @@ import { AppStateService } from './app-state.service'
 import { GroupService } from './group.service'
 import { UserService } from './user.service'
 import { PendingMessagesService } from './pending-messages.service'
+import { MqttTopics } from '../config/mqtt-topics'
 
 @Injectable({
   providedIn: 'root'
@@ -55,9 +56,9 @@ export class ChatService {
 
     this.groupService.groups$.subscribe((groups: Group[]) => {
       this.groups = groups
+      this.updateGroupChats()
       this.updateAvailableGroups()
     })
-
     this.messages$.subscribe((messages: Message[]) => {
       this.allMessages = messages
       this.updateUserChats()
@@ -67,6 +68,20 @@ export class ChatService {
     this.appState.selectedChat$.subscribe(() => {
       this.updateCurrentChatMessages()
     })
+  }
+
+  private updateGroupChats(): void {
+    const currentUser = this.appState.user
+    if (!currentUser) {
+      this.groupChatsSubject.next([])
+      return
+    }
+
+    const userGroups = this.groups.filter((group) =>
+      group.members.some((member) => member.id === currentUser.id)
+    )
+
+    this.groupChatsSubject.next(userGroups)
   }
 
   private checkForUsersComingOnline(oldUsers: User[], newUsers: User[]): void {
@@ -79,15 +94,22 @@ export class ChatService {
   }
 
   initialize(username: string): void {
-    this.mqttService.subscribe(`meu-chat-mqtt/messages/${username}`, (message) => {
+    const currentUser = this.appState.user
+
+    if (currentUser) {
+      this.groupService.setCurrentUser(currentUser)
+      this.groupService.initialize()
+    }
+
+    this.mqttService.subscribe(MqttTopics.privateMessage(username), (message) => {
       this.handleUserMessage(message, username)
     })
 
-    this.mqttService.subscribe('meu-chat-mqtt/messages/groups', (message) => {
+    this.mqttService.subscribe(MqttTopics.groupMessages, (message) => {
       this.handleGroupMessage(message)
     })
 
-    this.mqttService.subscribe(`meu-chat-mqtt/confirmations/${username}`, (message) => {
+    this.mqttService.subscribe(MqttTopics.confirmation(username), (message) => {
       this.handleMessageConfirmation(message)
     })
 
@@ -112,12 +134,7 @@ export class ChatService {
       lastSeen: this.getLastMessageTimestamp(username)
     }
 
-    this.mqttService.publish(
-      `meu-chat-mqtt/sync/${username}`,
-      JSON.stringify(syncRequest),
-      false,
-      1
-    )
+    this.mqttService.publish(MqttTopics.syncByUser(username), JSON.stringify(syncRequest), false, 1)
   }
 
   private getLastMessageTimestamp(username: string): string {
@@ -175,7 +192,7 @@ export class ChatService {
     }
 
     this.mqttService.publish(
-      `meu-chat-mqtt/confirmations/${senderId}`,
+      MqttTopics.confirmation(senderId),
       JSON.stringify(confirmation),
       false,
       1
@@ -304,7 +321,7 @@ export class ChatService {
 
     if (targetUser && targetUser.online) {
       const success = this.mqttService.publish(
-        `meu-chat-mqtt/messages/${to.id}`,
+        MqttTopics.privateMessage(to.id),
         JSON.stringify(mqttPayload),
         false,
         1
@@ -341,12 +358,11 @@ export class ChatService {
       chatId: groupId
     }
 
-    this.mqttService.publish('meu-chat-mqtt/messages/groups', JSON.stringify(mqttPayload))
+    this.mqttService.publish(MqttTopics.groupList, JSON.stringify(mqttPayload))
   }
 
-
   subscribeToGroup(groupId: string): void {
-    this.mqttService.subscribe(`meu-chat-mqtt/groups/${groupId}`, (message) => {
+    this.mqttService.subscribe(MqttTopics.specificGroup(groupId), (message) => {
       this.handleGroupMessage(message)
     })
   }

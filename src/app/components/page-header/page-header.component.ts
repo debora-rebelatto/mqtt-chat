@@ -18,6 +18,7 @@ import {
   AppStateService
 } from '../../services'
 import { User } from '../../models'
+import { MqttTopics } from '../../config/mqtt-topics'
 
 @Component({
   selector: 'app-page-header',
@@ -169,7 +170,7 @@ export class PageHeaderComponent implements OnInit, OnDestroy {
         clientId: this.connectionManager.clientId,
         timestamp: Date.now()
       }
-      this.mqttService.publish('meu-chat-mqtt/heartbeat', JSON.stringify(heartbeatMessage))
+      this.mqttService.publish(MqttTopics.heartbeat, JSON.stringify(heartbeatMessage))
     }
   }
 

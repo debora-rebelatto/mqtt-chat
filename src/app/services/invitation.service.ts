@@ -3,6 +3,7 @@ import { BehaviorSubject } from 'rxjs'
 import { MqttService } from './mqtt.service'
 import { GroupInvitation } from '../models/group-invitation.model'
 import { User } from '../models'
+import { MqttTopics } from '../config/mqtt-topics'
 
 @Injectable({
   providedIn: 'root'
@@ -20,11 +21,11 @@ export class InvitationService {
     this.currentUser = user
     this.loadInvitationsFromStorage()
 
-    this.mqttService.subscribe(`meu-chat-mqtt/invitations/${user.id}`, (message) => {
+    this.mqttService.subscribe(MqttTopics.sendInvitation(user.id), (message) => {
       this.handleInvitation(message)
     })
 
-    this.mqttService.subscribe('meu-chat-mqtt/invitations/responses', (message) => {
+    this.mqttService.subscribe(MqttTopics.invitationResponses, (message) => {
       console.log(message)
     })
   }
@@ -52,7 +53,7 @@ export class InvitationService {
       }
     }
 
-    this.mqttService.publish(`meu-chat-mqtt/invitations/${invitee.id}`, JSON.stringify(payload))
+    this.mqttService.publish(MqttTopics.sendInvitation(invitee.id), JSON.stringify(payload))
   }
 
   requestJoinGroup(groupId: string, groupName: string, requester: User, leader: User) {
@@ -86,7 +87,7 @@ export class InvitationService {
     }
 
     this.pendingRequests.add(requestKey)
-    this.mqttService.publish(`meu-chat-mqtt/invitations/${leader.id}`, JSON.stringify(payload))
+    this.mqttService.publish(MqttTopics.sendInvitation(leader.id), JSON.stringify(payload))
 
     return true
   }
@@ -105,7 +106,7 @@ export class InvitationService {
       timestamp: new Date()
     }
 
-    this.mqttService.publish('meu-chat-mqtt/invitations/responses', JSON.stringify(response))
+    this.mqttService.publish(MqttTopics.invitationResponses, JSON.stringify(response))
     this.removeInvitation(invitation.id)
 
     const requestKey = `${invitation.invitee.id}_${invitation.groupId}`
@@ -121,7 +122,7 @@ export class InvitationService {
       timestamp: new Date()
     }
 
-    this.mqttService.publish('meu-chat-mqtt/invitations/responses', JSON.stringify(response))
+    this.mqttService.publish(MqttTopics.invitationResponses, JSON.stringify(response))
     this.removeInvitation(invitation.id)
 
     const requestKey = `${invitation.invitee.id}_${invitation.groupId}`

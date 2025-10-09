@@ -2,6 +2,7 @@
 import { Injectable } from '@angular/core'
 import { Message, User } from '../models'
 import { MqttService } from './mqtt.service'
+import { MqttTopics } from '../config/mqtt-topics'
 
 @Injectable({
   providedIn: 'root'
@@ -94,7 +95,6 @@ export class PendingMessagesService {
     }
   }
 
-
   private async sendSinglePendingMessage(userId: string, message: Message): Promise<boolean> {
     const mqttPayload = {
       id: message.id,
@@ -107,7 +107,7 @@ export class PendingMessagesService {
     }
 
     return this.mqttService.publish(
-      `meu-chat-mqtt/messages/${userId}`,
+      MqttTopics.privateMessage(userId),
       JSON.stringify(mqttPayload),
       false,
       1
@@ -119,7 +119,6 @@ export class PendingMessagesService {
     localStorage.removeItem(this.STORAGE_KEY)
   }
 
-
   private saveToStorage(): void {
     const pendingData: { [key: string]: any[] } = {}
 
@@ -129,7 +128,6 @@ export class PendingMessagesService {
 
     localStorage.setItem(this.STORAGE_KEY, JSON.stringify(pendingData))
   }
-
 
   private loadFromStorage(): void {
     const stored = localStorage.getItem(this.STORAGE_KEY)
