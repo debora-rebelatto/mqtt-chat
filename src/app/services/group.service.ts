@@ -87,4 +87,25 @@ export class GroupService {
   private saveGroupsToStorage(groups: Group[]) {
     localStorage.setItem(this.STORAGE_KEY, JSON.stringify(groups))
   }
+
+  getGroupById(groupId: string): Group | undefined {
+    return this.groupsSubject.value.find(g => g.id === groupId);
+  }
+
+  getGroupMembers(groupId: string): User[] {
+    const group = this.getGroupById(groupId);
+    return group ? group.members : [];
+  }
+
+  refreshGroups(): void {
+    this.mqttService.publish('meu-chat-mqtt/groups', 'REQUEST_GROUPS');
+  }
+
+  getGroupDataForModal(groupId: string): { group: Group | undefined, members: User[] } {
+    const group = this.getGroupById(groupId);
+    return {
+      group: group,
+      members: group ? group.members : []
+    };
+  }
 }

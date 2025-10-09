@@ -1,19 +1,24 @@
 <div class="flex flex-col bg-gray-850 h-full w-full">
   @if (selectedChat) {
     <div class="p-4 border-b border-gray-700 bg-gray-900">
-      <div class="flex items-center gap-3">
-        <div
-          class="w-10 h-10 bg-blue-600 rounded-full flex items-center justify-center text-white font-bold"
-        >
-          {{ selectedChat.name.charAt(0) }}
-        </div>
-        <div>
-          <div class="font-semibold text-white">{{ selectedChat.name }}</div>
-          @if (selectedChat.isUser()) {
-            <div class="text-sm text-gray-400">
-              {{ userStatus }}
-            </div>
-          }
+      <div 
+        class="flex items-center gap-3 cursor-pointer hover:bg-gray-800 p-2 rounded-lg transition-colors group"
+        (click)="openGroupMembers()"
+      >
+        <div class="flex items-center gap-3">
+          <div
+            class="w-10 h-10 bg-blue-600 rounded-full flex items-center justify-center text-white font-bold"
+          >
+            {{ selectedChat.name.charAt(0) }}
+          </div>
+          <div>
+            <div class="font-semibold text-white">{{ selectedChat.name }}</div>
+            @if (selectedChat.isUser()) {
+              <div class="text-sm text-gray-400">
+                {{ userStatus }}
+              </div>
+            }
+          </div>
         </div>
       </div>
     </div>
@@ -78,4 +83,9 @@
       </div>
     </div>
   }
+  <group-members-modal
+    [isOpen]="showMembersModal"
+    [selectedChat]="selectedChat"
+    (closed)="closeMembersModal()"
+  ></group-members-modal>
 </div>

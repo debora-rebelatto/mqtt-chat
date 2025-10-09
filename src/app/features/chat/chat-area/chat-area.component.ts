@@ -16,12 +16,20 @@ import { TranslatePipe } from '../../../pipes/translate.pipe'
 import { AppStateService } from '../../../services'
 import { ChatMessage } from '../../../models'
 import { TimeFormatPipe } from '../../../pipes/time-format.pipe'
+import { GroupMembersModalComponent } from '../../groups/group-members-modal/group-members-modal.component'
 
 @Component({
   selector: 'chat-area',
   templateUrl: 'chat-area.component.html',
   standalone: true,
-  imports: [CommonModule, FormsModule, LucideAngularModule, TranslatePipe, TimeFormatPipe]
+  imports: [
+    CommonModule, 
+    FormsModule, 
+    LucideAngularModule, 
+    TimeFormatPipe, 
+    TranslateModule,
+    GroupMembersModalComponent
+  ]
 })
 export class ChatAreaComponent implements AfterViewInit, OnChanges {
   readonly MessageCircle = MessageCircle
@@ -37,8 +45,12 @@ export class ChatAreaComponent implements AfterViewInit, OnChanges {
   @Output() messageInputChange = new EventEmitter<string>()
   @Output() keyPress = new EventEmitter<KeyboardEvent>()
 
+  // Propriedade para controlar o modal
+  showMembersModal = false
+
   constructor(private appState: AppStateService) {}
 
+  // Métodos existentes do chat
   onSendMessage() {
     this.messageSend.emit()
   }
@@ -77,4 +89,16 @@ export class ChatAreaComponent implements AfterViewInit, OnChanges {
   //   }
   //   return ''
   // }
+
+  // Métodos para o modal de membros
+  openGroupMembers() {
+    if (this.selectedChat?.isGroup()) {
+      this.showMembersModal = true
+    }
+  }
+
+  closeMembersModal() {
+    this.showMembersModal = false
+  }
+  
 }
