@@ -93,11 +93,10 @@ export class PageHeaderComponent implements OnInit, OnDestroy {
 
       this.connectionManager.setConnected(true, clientId)
 
-      this.userService.initialize(clientId, currentUser)
-      this.groupService.setCurrentUser(currentUser)
+      this.userService.initialize()
       this.groupService.initialize()
-      this.chatService.initialize(this.appState.user!.id)
-      this.invitationService.initialize(this.appState.user!)
+      this.chatService.initialize()
+      this.invitationService.initialize()
 
       this.appState.setConnected(true)
 

@@ -3,6 +3,7 @@ import { BehaviorSubject } from 'rxjs'
 import { MqttService } from './mqtt.service'
 import { User } from '../models'
 import { MqttTopics } from '../config/mqtt-topics'
+import { AppStateService } from './app-state.service'
 
 @Injectable({
   providedIn: 'root'
@@ -15,15 +16,18 @@ export class UserService {
   private currentUser: User | null = null
   private readonly STORAGE_KEY = 'mqtt-chat-users'
 
-  constructor(private mqttService: MqttService) {
+  constructor(
+    private mqttService: MqttService,
+    private appState: AppStateService
+  ) {
     this.loadUsersFromStorage()
     this.startHeartbeatMonitor()
   }
 
-  initialize(clientId: string, user: User) {
-    this.currentUser = user
-    this.setupSubscriptions(user)
-    this.publishOnlineStatus(user)
+  initialize() {
+    this.currentUser = this.appState.user
+    this.setupSubscriptions(this.currentUser!)
+    this.publishOnlineStatus(this.currentUser!)
   }
 
   private setupSubscriptions(user: User) {

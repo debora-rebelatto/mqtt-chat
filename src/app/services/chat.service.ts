@@ -93,27 +93,27 @@ export class ChatService {
     })
   }
 
-  initialize(username: string): void {
-    const currentUser = this.appState.user
+  initialize(): void {
+    const currentUser = this.appState.user!
 
     if (currentUser) {
       this.groupService.setCurrentUser(currentUser)
       this.groupService.initialize()
     }
 
-    this.mqttService.subscribe(MqttTopics.privateMessage(username), (message) => {
-      this.handleUserMessage(message, username)
+    this.mqttService.subscribe(MqttTopics.privateMessage(currentUser.name), (message) => {
+      this.handleUserMessage(message, currentUser.name)
     })
 
     this.mqttService.subscribe(MqttTopics.groupMessages, (message) => {
       this.handleGroupMessage(message)
     })
 
-    this.mqttService.subscribe(MqttTopics.confirmation(username), (message) => {
+    this.mqttService.subscribe(MqttTopics.confirmation(currentUser.name), (message) => {
       this.handleMessageConfirmation(message)
     })
 
-    this.requestMissedMessages(username)
+    this.requestMissedMessages(currentUser.name)
 
     setInterval(() => {
       if (!this.mqttService.isConnected()) {
