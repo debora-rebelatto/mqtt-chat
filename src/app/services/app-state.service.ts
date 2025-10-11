@@ -50,7 +50,7 @@ export class AppStateService {
     this.setSelectedChat(new SelectedChat(type, id, name))
   }
 
-  isSelectedChat(type: 'user' | 'group', id: string): boolean {
+  isSelectedChat(type: ChatType, id: string): boolean {
     const selected = this.selectedChat
     return selected?.type === type && selected?.id === id
   }

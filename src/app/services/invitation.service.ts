@@ -4,6 +4,7 @@ import { MqttService } from './mqtt.service'
 import { GroupInvitation } from '../models/group-invitation.model'
 import { User } from '../models'
 import { MqttTopics } from '../config/mqtt-topics'
+import { AppStateService } from './app-state.service'
 
 @Injectable({
   providedIn: 'root'
@@ -15,13 +16,16 @@ export class InvitationService {
   private currentUser!: User
   private pendingRequests = new Set<string>()
 
-  constructor(private mqttService: MqttService) {}
+  constructor(
+    private mqttService: MqttService,
+    private appState: AppStateService
+  ) {}
 
-  initialize(user: User) {
-    this.currentUser = user
+  initialize() {
+    this.currentUser = this.appState.user!
     this.loadInvitationsFromStorage()
 
-    this.mqttService.subscribe(MqttTopics.sendInvitation(user.id), (message) => {
+    this.mqttService.subscribe(MqttTopics.sendInvitation(this.currentUser.id), (message) => {
       this.handleInvitation(message)
     })
 
