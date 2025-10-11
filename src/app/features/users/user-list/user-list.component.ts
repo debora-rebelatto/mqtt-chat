@@ -41,7 +41,7 @@ export class UserListComponent implements OnInit, OnDestroy {
   }
 
   private setupSubscriptions() {
-    this.chatService.userChats$.pipe(takeUntil(this.destroy$)).subscribe((userChats) => {
+    this.userService.users$.pipe(takeUntil(this.destroy$)).subscribe((userChats) => {
       this.userChats = userChats
     })
   }
