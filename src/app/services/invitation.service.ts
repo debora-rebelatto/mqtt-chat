@@ -5,6 +5,7 @@ import { GroupInvitation } from '../models/group-invitation.model'
 import { User } from '../models'
 import { MqttTopics } from '../config/mqtt-topics'
 import { AppStateService } from './app-state.service'
+import { IdGeneratorService } from './id-generator.service'
 
 @Injectable({
   providedIn: 'root'
@@ -12,18 +13,17 @@ import { AppStateService } from './app-state.service'
 export class InvitationService {
   private invitationsSubject = new BehaviorSubject<GroupInvitation[]>([])
   public invitations$ = this.invitationsSubject.asObservable()
-  private readonly STORAGE_KEY_BASE = 'mqtt-chat-invitations'
   private currentUser!: User
   private pendingRequests = new Set<string>()
 
   constructor(
     private mqttService: MqttService,
-    private appState: AppStateService
+    private appState: AppStateService,
+    private idGenerator: IdGeneratorService
   ) {}
 
   initialize() {
     this.currentUser = this.appState.user!
-    this.loadInvitationsFromStorage()
 
     this.mqttService.subscribe(MqttTopics.sendInvitation(this.currentUser.id), (message) => {
       this.handleInvitation(message)
@@ -34,32 +34,6 @@ export class InvitationService {
     })
   }
 
-  private get STORAGE_KEY(): string {
-    return `${this.STORAGE_KEY_BASE}-${this.currentUser.id}`
-  }
-
-  sendInvitation(groupId: string, groupName: string, invitee: User) {
-    const invitation = new GroupInvitation(
-      `inv_${Date.now()}_${Math.random().toString(16).substring(2, 8)}`,
-      groupId,
-      groupName,
-      invitee,
-      new Date()
-    )
-
-    const payload = {
-      ...invitation,
-      invitee: {
-        id: invitee.id,
-        name: invitee.name,
-        online: invitee.online,
-        lastSeen: invitee.lastSeen
-      }
-    }
-
-    this.mqttService.publish(MqttTopics.sendInvitation(invitee.id), JSON.stringify(payload))
-  }
-
   requestJoinGroup(groupId: string, groupName: string, requester: User, leader: User) {
     const requestKey = `${requester.id}_${groupId}`
 
@@ -67,13 +41,8 @@ export class InvitationService {
       return false
     }
 
-    const joinRequest = new GroupInvitation(
-      `req_${Date.now()}_${Math.random().toString(16).substring(2, 8)}`,
-      groupId,
-      groupName,
-      requester,
-      new Date()
-    )
+    const invitationId = this.idGenerator.generateRequestId()
+    const joinRequest = new GroupInvitation(invitationId, groupId, groupName, requester, new Date())
 
     const payload = {
       ...joinRequest,
@@ -157,19 +126,16 @@ export class InvitationService {
     if (!exists) {
       const updatedInvitations = [...invitations, invitation]
       this.invitationsSubject.next(updatedInvitations)
-      this.saveInvitationsToStorage(updatedInvitations)
     }
   }
 
   private removeInvitation(invitationId: string) {
     const invitations = this.invitationsSubject.value.filter((i) => i.id !== invitationId)
     this.invitationsSubject.next(invitations)
-    this.saveInvitationsToStorage(invitations)
   }
 
   clearInvitations() {
     this.invitationsSubject.next([])
-    this.saveInvitationsToStorage([])
     this.pendingRequests.clear()
   }
 
@@ -180,32 +146,5 @@ export class InvitationService {
 
   onDisconnect() {
     this.invitationsSubject.next([])
-  }
-
-  private loadInvitationsFromStorage() {
-    const stored = localStorage.getItem(this.STORAGE_KEY)
-    if (stored) {
-      const invitationsData = JSON.parse(stored)
-      const invitations = invitationsData.map((invData: any) => {
-        const invitee = new User(
-          invData.invitee.id,
-          invData.invitee.name,
-          invData.invitee.online,
-          new Date(invData.invitee.lastSeen)
-        )
-        return new GroupInvitation(
-          invData.id,
-          invData.groupId,
-          invData.groupName,
-          invitee,
-          new Date(invData.timestamp)
-        )
-      })
-      this.invitationsSubject.next(invitations)
-    }
-  }
-
-  private saveInvitationsToStorage(invitations: GroupInvitation[]) {
-    localStorage.setItem(this.STORAGE_KEY, JSON.stringify(invitations))
   }
 }
