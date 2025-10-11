@@ -20,7 +20,7 @@ export class UserService {
     this.startHeartbeatMonitor()
   }
 
-  initialize(clientId: string, user: User) {
+  initialize(user: User) {
     this.currentUser = user
     this.setupSubscriptions(user)
     this.publishOnlineStatus(user)
