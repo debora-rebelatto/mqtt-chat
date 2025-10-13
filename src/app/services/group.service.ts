@@ -13,6 +13,7 @@ export class GroupService {
   public groups$ = this.groupsSubject.asObservable()
   private readonly STORAGE_KEY = 'mqtt-chat-groups'
   private currentUser!: User
+  private processedMessages = new Set<string>()
 
   constructor(private mqttService: MqttService) {
     this.loadGroupsFromStorage()
@@ -22,7 +23,7 @@ export class GroupService {
     this.currentUser = user
 
     if (user) {
-      this.mqttService.subscribe(MqttTopics.groupUpdates(user.id), (message) => {
+      this.mqttService.subscribe(MqttTopics.groupUpdates, (message) => {
         this.handleGroupUpdate(message)
       })
     }
@@ -39,6 +40,10 @@ export class GroupService {
 
     this.mqttService.subscribe(MqttTopics.invitationResponses, (message) => {
       this.handleInvitationResponse(message)
+    })
+
+    this.mqttService.subscribe(MqttTopics.groupUpdates, (message) => {
+      this.handleGroupUpdate(message)
     })
 
     this.requestGroups()
@@ -72,22 +77,16 @@ export class GroupService {
     this.mqttService.publish(MqttTopics.groupList, JSON.stringify(groupForMqtt), true)
   }
 
-  addMemberToGroup(groupId: string, user: User, currentUser: User) {
+  addMemberToGroup(groupId: string, user: User) {
     const groups = this.groupsSubject.value
-    const group = groups.find((g) => g.id === groupId)
+    const groupIndex = groups.findIndex((g) => g.id === groupId)
 
-    if (!group) {
+    if (groupIndex === -1) {
+      console.error(`Group ${groupId} not found`)
       return false
     }
 
-    if (group.leader.id !== currentUser.id) {
-      return false
-    }
-
-    if (group.members.some((member) => member.id === user.id)) {
-      this.updateGroup(group)
-      return true
-    }
+    const group = groups[groupIndex]
 
     const updatedGroup = new Group(
       group.id,
@@ -98,11 +97,14 @@ export class GroupService {
       group.unread
     )
 
-    const updatedGroups = groups.map((g) => (g.id === groupId ? updatedGroup : g))
+    const updatedGroups = [...groups]
+    updatedGroups[groupIndex] = updatedGroup
+
     this.groupsSubject.next(updatedGroups)
     this.saveGroupsToStorage(updatedGroups)
-
     this.updateGroup(updatedGroup)
+
+    this.mqttService.publish(MqttTopics.groupList, JSON.stringify(updatedGroup), true)
 
     return true
   }
@@ -202,18 +204,15 @@ export class GroupService {
 
     if (response.accepted) {
       const userToAdd = new User(
-        response.invitee.id,
-        response.invitee.name,
-        response.invitee.online,
-        response.invitee.lastSeen
+        response.invitee,
+        response.invitee,
       )
-      const currentUserObj = new User(this.currentUser.id, this.currentUser.name)
 
-      const success = this.addMemberToGroup(response.groupId, userToAdd, currentUserObj)
+      const success = this.addMemberToGroup(response.groupId, userToAdd)
 
       if (success) {
         this.mqttService.publish(
-          MqttTopics.groupUpdates(response.invitee.id),
+          MqttTopics.groupUpdates,
           JSON.stringify({
             type: 'member_added',
             groupId: response.groupId,
@@ -225,14 +224,31 @@ export class GroupService {
   }
 
   private handleGroupUpdate(message: string) {
-    const update = JSON.parse(message)
+    try {
+      const update = JSON.parse(message)
 
-    if (update.type === 'member_added') {
-      this.requestGroups()
+      const messageKey = `${update.type}_${update.invitationId}_${update.timestamp}`
+      if (this.processedMessages.has(messageKey)) {
+        return
+      }
 
-      setTimeout(() => {
-        this.requestGroups()
-      }, 1000)
+      this.processedMessages.add(messageKey)
+      if (this.processedMessages.size > 100) {
+        const first = this.processedMessages.values().next().value
+        this.processedMessages.delete(first!)
+      }
+
+
+      if (update.type === 'member_added' && update.accepted === true) {
+        const userToAdd = new User(
+          update.invitee,
+          update.invitee,
+        )
+
+        this.addMemberToGroup(update.groupId, userToAdd)
+      }
+    } catch (error) {
+      console.error('Error handling group update:', error)
     }
   }
 
