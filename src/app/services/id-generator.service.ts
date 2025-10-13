@@ -22,6 +22,10 @@ export class IdGeneratorService {
     return this.generateId('msg')
   }
 
+  generateInvitationId(): string {
+    return this.generateId('inv')
+  }
+
   generateClientId(username: string): string {
     return this.generateId(`chat_${username}_`)
   }
