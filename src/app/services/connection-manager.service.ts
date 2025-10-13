@@ -7,7 +7,7 @@ import { BehaviorSubject, Observable } from 'rxjs'
 export class ConnectionManagerService implements OnDestroy {
   private connectedSubject = new BehaviorSubject<boolean>(false)
   private clientIdSubject = new BehaviorSubject<string>('')
-  private heartbeatInterval: any = null
+  private heartbeatInterval: ReturnType<typeof setInterval> | null = null
 
   connected$: Observable<boolean> = this.connectedSubject.asObservable()
   clientId$: Observable<string> = this.clientIdSubject.asObservable()
@@ -22,11 +22,6 @@ export class ConnectionManagerService implements OnDestroy {
 
   ngOnDestroy() {
     this.stopHeartbeat()
-  }
-
-  generateClientId(username: string): string {
-    const randomPart = Math.random().toString(16).substring(2, 8)
-    return `chat_${username}_${randomPart}`
   }
 
   setConnected(connected: boolean, clientId: string = '') {

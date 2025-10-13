@@ -15,7 +15,8 @@ import {
   ChatService,
   InvitationService,
   ConnectionManagerService,
-  AppStateService
+  AppStateService,
+  IdGeneratorService
 } from '../../services'
 import { User } from '../../models'
 import { MqttTopics } from '../../config/mqtt-topics'
@@ -51,7 +52,8 @@ export class PageHeaderComponent implements OnInit, OnDestroy {
     private chatService: ChatService,
     private invitationService: InvitationService,
     private connectionManager: ConnectionManagerService,
-    public appState: AppStateService
+    public appState: AppStateService,
+    public idGeneratorService: IdGeneratorService
   ) {}
 
   ngOnInit() {
@@ -86,7 +88,7 @@ export class PageHeaderComponent implements OnInit, OnDestroy {
       const currentUser = new User(this._username, this._username, true, new Date())
       this.appState.setUser(currentUser)
 
-      const clientId = this.connectionManager.generateClientId(this.appState.user!.id)
+      const clientId = this.idGeneratorService.generateClientId(this.appState.user!.id)
       await this.mqttService.connect(clientId)
 
       await new Promise((resolve) => setTimeout(resolve, 500))
@@ -103,8 +105,8 @@ export class PageHeaderComponent implements OnInit, OnDestroy {
       this.usernameChange.emit(this.appState.user!.id)
       this.connectionChange.emit(true)
 
-      this.userService.publishOnlineStatus(currentUser)
-      this.userService.requestSync(currentUser)
+      this.userService.updateUserStatus(MqttTopics.status, 'online')
+      this.userService.updateUserStatus(MqttTopics.status, 'sync_request')
 
       this.connectionManager.startHeartbeat(() => {
         this.sendHeartbeat()
@@ -120,7 +122,7 @@ export class PageHeaderComponent implements OnInit, OnDestroy {
   disconnect() {
     const currentUser = this.appState.user
     if (this.appState.connected && currentUser) {
-      this.userService.publishOfflineStatus(currentUser)
+      this.userService.updateUserStatus(MqttTopics.status, 'offline', currentUser)
     }
 
     this.invitationService.onDisconnect()
@@ -130,35 +132,6 @@ export class PageHeaderComponent implements OnInit, OnDestroy {
     this.appState.setConnected(false)
     this.connectionManager.setConnected(false, '')
     this.connectionChange.emit(false)
-  }
-
-  clearAllData() {
-    if (confirm('Tem certeza que deseja limpar todos os dados? Esta ação não pode ser desfeita.')) {
-      if (this.appState.connected) {
-        this.disconnect()
-      }
-
-      const keysToRemove = [
-        'mqtt-chat-messages',
-        'mqtt-chat-pending-messages',
-        'mqtt-chat-users',
-        'mqtt-chat-groups',
-        'mqtt-chat-invitations',
-        'mqtt-chat-conversation-requests',
-        'mqtt-chat-conversation-sessions',
-        'mqtt-chat-debug-history',
-        'mqtt-chat-selected-chat'
-      ]
-
-      keysToRemove.forEach((key) => {
-        localStorage.removeItem(key)
-      })
-
-      this.chatService.clearMessages()
-
-      alert('Todos os dados foram limpos! A página será recarregada.')
-      window.location.reload()
-    }
   }
 
   private sendHeartbeat() {
