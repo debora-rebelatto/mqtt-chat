@@ -1,3 +1,4 @@
+import { IdGeneratorService } from './id-generator.service'
 import { Injectable } from '@angular/core'
 import { BehaviorSubject } from 'rxjs'
 import { Group } from '../models/group.model'
@@ -11,13 +12,13 @@ import { MqttTopics } from '../config/mqtt-topics'
 export class GroupService {
   private groupsSubject = new BehaviorSubject<Group[]>([])
   public groups$ = this.groupsSubject.asObservable()
-  private readonly STORAGE_KEY = 'mqtt-chat-groups'
   private currentUser!: User
   private processedMessages = new Set<string>()
 
-  constructor(private mqttService: MqttService) {
-    this.loadGroupsFromStorage()
-  }
+  constructor(
+    private mqttService: MqttService,
+    private idGeneratorService: IdGeneratorService
+  ) {}
 
   setCurrentUser(user: User) {
     this.currentUser = user
@@ -57,7 +58,6 @@ export class GroupService {
     const currentGroups = this.groupsSubject.value
     const updatedGroups = [...currentGroups, newGroup]
     this.groupsSubject.next(updatedGroups)
-    this.saveGroupsToStorage(updatedGroups)
     this.updateGroup(newGroup)
 
     return newGroup
@@ -101,7 +101,6 @@ export class GroupService {
     updatedGroups[groupIndex] = updatedGroup
 
     this.groupsSubject.next(updatedGroups)
-    this.saveGroupsToStorage(updatedGroups)
     this.updateGroup(updatedGroup)
 
     this.mqttService.publish(MqttTopics.groupList, JSON.stringify(updatedGroup), true)
@@ -124,8 +123,10 @@ export class GroupService {
       return false
     }
 
+    const invitationId = this.idGeneratorService.generateInvitationId()
+
     const invitation = {
-      id: `inv_${Date.now()}_${Math.random().toString(16).substring(2, 8)}`,
+      id: invitationId,
       groupId: groupId,
       groupName: group.name,
       invitedBy: this.currentUser,
@@ -186,7 +187,6 @@ export class GroupService {
       }
 
       this.groupsSubject.next(updatedGroups)
-      this.saveGroupsToStorage(updatedGroups)
     }
   }
 
@@ -203,79 +203,40 @@ export class GroupService {
     }
 
     if (response.accepted) {
-      const userToAdd = new User(
-        response.invitee,
-        response.invitee,
-      )
+      const userToAdd = new User(response.invitee, response.invitee)
 
       const success = this.addMemberToGroup(response.groupId, userToAdd)
 
       if (success) {
-        this.mqttService.publish(
-          MqttTopics.groupUpdates,
-          JSON.stringify({
-            type: 'member_added',
-            groupId: response.groupId,
-            timestamp: new Date()
-          })
-        )
+        const payload = {
+          type: 'member_added',
+          groupId: response.groupId,
+          timestamp: new Date()
+        }
+
+        this.mqttService.publish(MqttTopics.groupUpdates, JSON.stringify(payload))
       }
     }
   }
 
   private handleGroupUpdate(message: string) {
-    try {
-      const update = JSON.parse(message)
+    const update = JSON.parse(message)
 
-      const messageKey = `${update.type}_${update.invitationId}_${update.timestamp}`
-      if (this.processedMessages.has(messageKey)) {
-        return
-      }
-
-      this.processedMessages.add(messageKey)
-      if (this.processedMessages.size > 100) {
-        const first = this.processedMessages.values().next().value
-        this.processedMessages.delete(first!)
-      }
-
-
-      if (update.type === 'member_added' && update.accepted === true) {
-        const userToAdd = new User(
-          update.invitee,
-          update.invitee,
-        )
-
-        this.addMemberToGroup(update.groupId, userToAdd)
-      }
-    } catch (error) {
-      console.error('Error handling group update:', error)
+    const messageKey = `${update.type}_${update.invitationId}_${update.timestamp}`
+    if (this.processedMessages.has(messageKey)) {
+      return
     }
-  }
 
-  private loadGroupsFromStorage() {
-    const stored = localStorage.getItem(this.STORAGE_KEY)
-    if (stored) {
-      const groupsData = JSON.parse(stored)
-      const groups = groupsData.map((groupData: Group) => {
-        const leader = new User(groupData.leader.id, groupData.leader.name)
-
-        const members = groupData.members.map(
-          (memberData: User) => new User(memberData.id, memberData.name)
-        )
-
-        return new Group(
-          groupData.id,
-          groupData.name,
-          leader,
-          members,
-          new Date(groupData.createdAt)
-        )
-      })
-      this.groupsSubject.next(groups)
+    this.processedMessages.add(messageKey)
+    if (this.processedMessages.size > 100) {
+      const first = this.processedMessages.values().next().value
+      this.processedMessages.delete(first!)
     }
-  }
 
-  private saveGroupsToStorage(groups: Group[]) {
-    localStorage.setItem(this.STORAGE_KEY, JSON.stringify(groups))
+    if (update.type === 'member_added' && update.accepted === true) {
+      const userToAdd = new User(update.invitee, update.invitee)
+
+      this.addMemberToGroup(update.groupId, userToAdd)
+    }
   }
 }

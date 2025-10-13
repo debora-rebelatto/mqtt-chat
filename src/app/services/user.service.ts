@@ -71,7 +71,7 @@ export class UserService {
       timestamp: timestamp ?? new Date()
     }
 
-    this.mqttService.publish(topic, JSON.stringify(message))
+    this.mqttService.publish(topic, JSON.stringify(message), true)
   }
 
   private startSendingHeartbeats() {
