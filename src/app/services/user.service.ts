@@ -4,6 +4,7 @@ import { MqttService } from './mqtt.service'
 import { User } from '../models'
 import { MqttTopics } from '../config/mqtt-topics'
 import { AppStateService } from './app-state.service'
+import { ConnectionManagerService } from './connection-manager.service'
 
 @Injectable({
   providedIn: 'root'
@@ -13,20 +14,31 @@ export class UserService {
   public users$ = this.usersSubject.asObservable()
   private currentUser: User | null = null
   private readonly OFFLINE_RETENTION_PERIOD = 7 * 24 * 60 * 60 * 1000
-  private readonly HEARTBEAT_TIMEOUT = 200
+  private readonly HEARTBEAT_TIMEOUT = 30000
+  private readonly HEARTBEAT_INTERVAL = 5000
+  private heartbeatTimer: ReturnType<typeof setInterval> | null = null
 
   constructor(
     private mqttService: MqttService,
-    private appState: AppStateService
+    private appState: AppStateService,
+    private connectionManager: ConnectionManagerService
   ) {
     this.startHeartbeatMonitor()
   }
 
   initialize() {
-    this.currentUser = this.appState.user
-    this.setupSubscriptions(this.currentUser!)
+    if (this.appState.user) {
+      this.currentUser = this.appState.user
+      this.setupSubscriptions(this.currentUser)
 
-    this.updateUserStatus(MqttTopics.status, 'online', this.currentUser!)
+      const localUser = new User(this.currentUser.id, this.currentUser.name, true, new Date())
+      this.addOrUpdateUser(localUser)
+
+      this.updateUserStatus(MqttTopics.status, 'online', this.currentUser)
+      this.sendHeartbeat()
+
+      this.startSendingHeartbeats()
+    }
   }
 
   private setupSubscriptions(user: User) {
@@ -60,15 +72,41 @@ export class UserService {
     this.mqttService.publish(topic, JSON.stringify(message))
   }
 
+  private startSendingHeartbeats() {
+    if (this.heartbeatTimer) {
+      clearInterval(this.heartbeatTimer)
+    }
+
+    this.heartbeatTimer = setInterval(() => {
+      this.sendHeartbeat()
+    }, this.HEARTBEAT_INTERVAL)
+  }
+
+  private sendHeartbeat() {
+    if (this.currentUser && this.connectionManager.connected) {
+      const heartbeatMessage = {
+        type: 'heartbeat',
+        user: this.currentUser,
+        timestamp: new Date().toISOString()
+      }
+
+      this.mqttService.publish(MqttTopics.heartbeat, JSON.stringify(heartbeatMessage))
+
+      const updatedUser = new User(this.currentUser.id, this.currentUser.name, true, new Date())
+      this.addOrUpdateUser(updatedUser)
+    }
+  }
+
   private handleStatusMessage(message: string) {
     const status = JSON.parse(message)
 
     const isOnline = status.type === 'online'
-    const user = new User(status.user.id, status.user.name, isOnline, new Date())
+    const timestamp = status.timestamp ? new Date(status.timestamp) : new Date()
+    const user = new User(status.user.id, status.user.name, isOnline, timestamp)
 
     this.addOrUpdateUser(user)
 
-    if (isOnline) {
+    if (isOnline && status.user.id !== this.currentUser?.id) {
       this.updateUserStatus(MqttTopics.pendingSync(status.user.id), 'request_pending', status.user)
     }
   }
@@ -86,9 +124,8 @@ export class UserService {
     const heartbeat = JSON.parse(message)
 
     if (heartbeat.type === 'heartbeat') {
-      this.addOrUpdateUser(
-        new User(heartbeat.user.id, heartbeat.user.name, true, new Date(heartbeat.timestamp))
-      )
+      const timestamp = heartbeat.timestamp ? new Date(heartbeat.timestamp) : new Date()
+      this.addOrUpdateUser(new User(heartbeat.user.id, heartbeat.user.name, true, timestamp))
     }
   }
 
@@ -150,6 +187,10 @@ export class UserService {
     let hasChanges = false
 
     const updatedUsers = currentUsers.map((user) => {
+      if (user.id === this.currentUser?.id) {
+        return user
+      }
+
       if (user.online && user.lastSeen) {
         const timeSinceHeartbeat = now - user.lastSeen.getTime()
 
@@ -163,6 +204,16 @@ export class UserService {
 
     if (hasChanges) {
       this.usersSubject.next(updatedUsers)
+    }
+  }
+
+  ngOnDestroy() {
+    if (this.heartbeatTimer) {
+      clearInterval(this.heartbeatTimer)
+    }
+
+    if (this.currentUser) {
+      this.updateUserStatus(MqttTopics.disconnected, 'offline', this.currentUser)
     }
   }
 }

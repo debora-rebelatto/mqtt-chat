@@ -15,7 +15,8 @@ import {
   ChatService,
   InvitationService,
   ConnectionManagerService,
-  AppStateService
+  AppStateService,
+  IdGeneratorService
 } from '../../services'
 import { User } from '../../models'
 import { MqttTopics } from '../../config/mqtt-topics'
@@ -51,7 +52,8 @@ export class PageHeaderComponent implements OnInit, OnDestroy {
     private chatService: ChatService,
     private invitationService: InvitationService,
     private connectionManager: ConnectionManagerService,
-    public appState: AppStateService
+    public appState: AppStateService,
+    public idGeneratorService: IdGeneratorService
   ) {}
 
   ngOnInit() {
@@ -86,7 +88,7 @@ export class PageHeaderComponent implements OnInit, OnDestroy {
       const currentUser = new User(this._username, this._username, true, new Date())
       this.appState.setUser(currentUser)
 
-      const clientId = this.connectionManager.generateClientId(this.appState.user!.id)
+      const clientId = this.idGeneratorService.generateClientId(this.appState.user!.id)
       await this.mqttService.connect(clientId)
 
       await new Promise((resolve) => setTimeout(resolve, 500))
