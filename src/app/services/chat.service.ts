@@ -98,15 +98,15 @@ export class ChatService {
       this.groupService.initialize()
     }
 
-    this.mqttService.subscribe(MqttTopics.privateMessage(currentUser.name), (message) => {
+    this.mqttService.subscribe(MqttTopics.messages.privateMessage(currentUser.name), (message) => {
       this.handleUserMessage(message, currentUser.name)
     })
 
-    this.mqttService.subscribe(MqttTopics.groupMessages, (message) => {
+    this.mqttService.subscribe(MqttTopics.messages.groupMessages, (message) => {
       this.handleGroupMessage(message)
     })
 
-    this.mqttService.subscribe(MqttTopics.confirmation(currentUser.name), (message) => {
+    this.mqttService.subscribe(MqttTopics.invitation.confirmation(currentUser.name), (message) => {
       this.handleMessageConfirmation(message)
     })
 
@@ -131,7 +131,12 @@ export class ChatService {
       lastSeen: this.getLastMessageTimestamp(username)
     }
 
-    this.mqttService.publish(MqttTopics.syncByUser(username), JSON.stringify(syncRequest), false, 1)
+    this.mqttService.publish(
+      MqttTopics.sync.syncByUser(username),
+      JSON.stringify(syncRequest),
+      false,
+      1
+    )
   }
 
   private getLastMessageTimestamp(username: string): string {
@@ -189,7 +194,7 @@ export class ChatService {
     }
 
     this.mqttService.publish(
-      MqttTopics.confirmation(senderId),
+      MqttTopics.invitation.confirmation(senderId),
       JSON.stringify(confirmation),
       false,
       1
@@ -258,7 +263,7 @@ export class ChatService {
 
     if (targetUser && targetUser.online) {
       const success = this.mqttService.publish(
-        MqttTopics.privateMessage(to.id),
+        MqttTopics.messages.privateMessage(to.id),
         JSON.stringify(mqttPayload),
         false,
         1
@@ -295,11 +300,11 @@ export class ChatService {
       chatId: groupId
     }
 
-    this.mqttService.publish(MqttTopics.specificGroup(groupId), JSON.stringify(mqttPayload))
+    this.mqttService.publish(MqttTopics.groups.specificGroup(groupId), JSON.stringify(mqttPayload))
   }
 
   subscribeToGroup(groupId: string): void {
-    this.mqttService.subscribe(MqttTopics.specificGroup(groupId), (message) => {
+    this.mqttService.subscribe(MqttTopics.groups.specificGroup(groupId), (message) => {
       this.handleGroupMessage(message)
     })
   }
@@ -481,7 +486,7 @@ export class ChatService {
     groups.forEach((group) => {
       const isMember = group.members.some((member) => member.id === currentUser.id)
       if (isMember) {
-        this.mqttService.subscribe(MqttTopics.specificGroup(group.id), (message) => {
+        this.mqttService.subscribe(MqttTopics.groups.specificGroup(group.id), (message) => {
           this.handleGroupMessage(message)
         })
       }

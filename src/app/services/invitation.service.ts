@@ -25,11 +25,14 @@ export class InvitationService {
   initialize() {
     this.currentUser = this.appState.user!
 
-    this.mqttService.subscribe(MqttTopics.sendInvitation(this.currentUser.id), (message) => {
-      this.handleInvitation(message)
-    })
+    this.mqttService.subscribe(
+      MqttTopics.invitation.sendInvitation(this.currentUser.id),
+      (message) => {
+        this.handleInvitation(message)
+      }
+    )
 
-    this.mqttService.subscribe(MqttTopics.invitationResponses, (message) => {
+    this.mqttService.subscribe(MqttTopics.invitation.invitationResponses, (message) => {
       console.log(message)
     })
   }
@@ -62,7 +65,10 @@ export class InvitationService {
     }
 
     this.pendingRequests.add(requestKey)
-    this.mqttService.publish(MqttTopics.sendInvitation(group.leader.id), JSON.stringify(payload))
+    this.mqttService.publish(
+      MqttTopics.invitation.sendInvitation(group.leader.id),
+      JSON.stringify(payload)
+    )
 
     return true
   }
@@ -77,8 +83,8 @@ export class InvitationService {
       timestamp: new Date().toISOString()
     }
 
-    this.mqttService.publish(MqttTopics.invitationResponses, JSON.stringify(response))
-    this.mqttService.publish(MqttTopics.groupUpdates, JSON.stringify(response))
+    this.mqttService.publish(MqttTopics.invitation.invitationResponses, JSON.stringify(response))
+    this.mqttService.publish(MqttTopics.groups.groupUpdates, JSON.stringify(response))
 
     this.removeInvitation(invitation.id)
 
@@ -95,7 +101,7 @@ export class InvitationService {
       timestamp: new Date()
     }
 
-    this.mqttService.publish(MqttTopics.invitationResponses, JSON.stringify(response))
+    this.mqttService.publish(MqttTopics.invitation.invitationResponses, JSON.stringify(response))
     this.removeInvitation(invitation.id)
 
     const requestKey = `${invitation.invitee}_${invitation.groupId}`

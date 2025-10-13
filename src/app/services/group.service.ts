@@ -24,7 +24,7 @@ export class GroupService {
     this.currentUser = user
 
     if (user) {
-      this.mqttService.subscribe(MqttTopics.groupUpdates, (message) => {
+      this.mqttService.subscribe(MqttTopics.groups.groupUpdates, (message) => {
         this.handleGroupUpdate(message)
       })
     }
@@ -35,15 +35,15 @@ export class GroupService {
   }
 
   initialize() {
-    this.mqttService.subscribe(MqttTopics.groupList, (message) => {
+    this.mqttService.subscribe(MqttTopics.groups.groupList, (message) => {
       this.handleGroupMessage(message)
     })
 
-    this.mqttService.subscribe(MqttTopics.invitationResponses, (message) => {
+    this.mqttService.subscribe(MqttTopics.invitation.invitationResponses, (message) => {
       this.handleInvitationResponse(message)
     })
 
-    this.mqttService.subscribe(MqttTopics.groupUpdates, (message) => {
+    this.mqttService.subscribe(MqttTopics.groups.groupUpdates, (message) => {
       this.handleGroupUpdate(message)
     })
 
@@ -74,7 +74,7 @@ export class GroupService {
       }))
     }
 
-    this.mqttService.publish(MqttTopics.groupList, JSON.stringify(groupForMqtt), true)
+    this.mqttService.publish(MqttTopics.groups.groupList, JSON.stringify(groupForMqtt), true)
   }
 
   addMemberToGroup(groupId: string, user: User) {
@@ -103,7 +103,7 @@ export class GroupService {
     this.groupsSubject.next(updatedGroups)
     this.updateGroup(updatedGroup)
 
-    this.mqttService.publish(MqttTopics.groupList, JSON.stringify(updatedGroup), true)
+    this.mqttService.publish(MqttTopics.groups.groupList, JSON.stringify(updatedGroup), true)
 
     return true
   }
@@ -134,13 +134,16 @@ export class GroupService {
       to: username
     }
 
-    this.mqttService.publish(MqttTopics.sendInvitation(username), JSON.stringify(invitation))
+    this.mqttService.publish(
+      MqttTopics.invitation.sendInvitation(username),
+      JSON.stringify(invitation)
+    )
 
     return true
   }
 
   private requestGroups() {
-    this.mqttService.publish(MqttTopics.groupList, 'REQUEST_GROUPS')
+    this.mqttService.publish(MqttTopics.groups.groupList, 'REQUEST_GROUPS')
   }
 
   private handleGroupMessage(message: string) {
@@ -214,7 +217,7 @@ export class GroupService {
           timestamp: new Date()
         }
 
-        this.mqttService.publish(MqttTopics.groupUpdates, JSON.stringify(payload))
+        this.mqttService.publish(MqttTopics.groups.groupUpdates, JSON.stringify(payload))
       }
     }
   }

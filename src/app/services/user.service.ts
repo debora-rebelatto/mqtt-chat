@@ -36,7 +36,7 @@ export class UserService {
       const localUser = new User(this.currentUser.id, this.currentUser.name, true, new Date())
       this.addOrUpdateUser(localUser)
 
-      this.updateUserStatus(MqttTopics.status, 'online', this.currentUser)
+      this.updateUserStatus(MqttTopics.status.status, 'online', this.currentUser)
       this.sendHeartbeat()
 
       this.startSendingHeartbeats()
@@ -44,19 +44,19 @@ export class UserService {
   }
 
   private setupSubscriptions(user: User) {
-    this.mqttService.subscribe(MqttTopics.status, (message) => {
+    this.mqttService.subscribe(MqttTopics.status.status, (message) => {
       this.handleStatusMessage(message)
     })
 
-    this.mqttService.subscribe(MqttTopics.disconnected, (message) => {
+    this.mqttService.subscribe(MqttTopics.status.disconnected, (message) => {
       this.handleDisconnectMessage(message)
     })
 
-    this.mqttService.subscribe(MqttTopics.heartbeat, (message) => {
+    this.mqttService.subscribe(MqttTopics.heartbeat.heartbeat, (message) => {
       this.handleHeartbeatMessage(message)
     })
 
-    this.mqttService.subscribe(MqttTopics.sync, (message) => {
+    this.mqttService.subscribe(MqttTopics.sync.sync, (message) => {
       this.handleSyncMessage(message, user)
     })
   }
@@ -92,7 +92,7 @@ export class UserService {
         timestamp: new Date().toISOString()
       }
 
-      this.mqttService.publish(MqttTopics.heartbeat, JSON.stringify(heartbeatMessage))
+      this.mqttService.publish(MqttTopics.heartbeat.heartbeat, JSON.stringify(heartbeatMessage))
 
       const updatedUser = new User(this.currentUser.id, this.currentUser.name, true, new Date())
       this.addOrUpdateUser(updatedUser)
@@ -109,7 +109,11 @@ export class UserService {
     this.addOrUpdateUser(user)
 
     if (isOnline && status.user.id !== this.currentUser?.id) {
-      this.updateUserStatus(MqttTopics.pendingSync(status.user.id), 'request_pending', status.user)
+      this.updateUserStatus(
+        MqttTopics.sync.pendingSync(status.user.id),
+        'request_pending',
+        status.user
+      )
       this.pendingMessagesService.sendPendingMessagesToUser(status.user.id)
     }
   }
@@ -135,7 +139,7 @@ export class UserService {
   private handleSyncMessage(message: string, currentUser: User) {
     const sync = JSON.parse(message)
     if (sync.type === 'sync_request' && sync.from.id !== currentUser.id) {
-      this.updateUserStatus(MqttTopics.status, 'online', currentUser)
+      this.updateUserStatus(MqttTopics.status.status, 'online', currentUser)
     }
   }
 
@@ -216,7 +220,7 @@ export class UserService {
     }
 
     if (this.currentUser) {
-      this.updateUserStatus(MqttTopics.disconnected, 'offline', this.currentUser)
+      this.updateUserStatus(MqttTopics.status.disconnected, 'offline', this.currentUser)
     }
   }
 }

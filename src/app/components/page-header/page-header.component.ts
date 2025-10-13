@@ -105,8 +105,8 @@ export class PageHeaderComponent implements OnInit, OnDestroy {
       this.usernameChange.emit(this.appState.user!.id)
       this.connectionChange.emit(true)
 
-      this.userService.updateUserStatus(MqttTopics.status, 'online')
-      this.userService.updateUserStatus(MqttTopics.status, 'sync_request')
+      this.userService.updateUserStatus(MqttTopics.status.status, 'online')
+      this.userService.updateUserStatus(MqttTopics.status.status, 'sync_request')
 
       this.connectionManager.startHeartbeat(() => {
         this.sendHeartbeat()
@@ -122,7 +122,7 @@ export class PageHeaderComponent implements OnInit, OnDestroy {
   disconnect() {
     const currentUser = this.appState.user
     if (this.appState.connected && currentUser) {
-      this.userService.updateUserStatus(MqttTopics.status, 'offline', currentUser)
+      this.userService.updateUserStatus(MqttTopics.status.status, 'offline', currentUser)
     }
 
     this.invitationService.onDisconnect()
@@ -142,7 +142,7 @@ export class PageHeaderComponent implements OnInit, OnDestroy {
         clientId: this.connectionManager.clientId,
         timestamp: Date.now()
       }
-      this.mqttService.publish(MqttTopics.heartbeat, JSON.stringify(heartbeatMessage))
+      this.mqttService.publish(MqttTopics.heartbeat.heartbeat, JSON.stringify(heartbeatMessage))
     }
   }
 

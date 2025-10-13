@@ -114,7 +114,7 @@ export class PendingMessagesService {
     }
 
     return this.mqttService.publish(
-      MqttTopics.privateMessage(userId),
+      MqttTopics.messages.privateMessage(userId),
       JSON.stringify(mqttPayload),
       false,
       1
