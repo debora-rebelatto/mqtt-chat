@@ -31,10 +31,6 @@ export class ChatService {
   private groups: Group[] = []
   private allMessages: Message[] = []
 
-  private readonly MESSAGES_STORAGE_KEY = 'mqtt-chat-messages'
-  private storageDebounceTimer: any = null
-  private readonly STORAGE_DEBOUNCE_DELAY = 1000
-
   constructor(
     private mqttService: MqttService,
     private userService: UserService,
@@ -42,7 +38,6 @@ export class ChatService {
     private appState: AppStateService,
     private pendingMessagesService: PendingMessagesService
   ) {
-    this.loadMessagesFromStorage()
     this.setupSubscriptions()
   }
 
@@ -58,7 +53,9 @@ export class ChatService {
       this.groups = groups
       this.updateGroupChats()
       this.updateAvailableGroups()
+      this.subscribeToUserGroups(groups)
     })
+
     this.messages$.subscribe((messages: Message[]) => {
       this.allMessages = messages
       this.updateUserChats()
@@ -203,12 +200,16 @@ export class ChatService {
     const confirmation = JSON.parse(message)
 
     if (confirmation.type === 'message_received') {
-      console.log('Mensagem entregue:', confirmation.messageId)
+      this.pendingMessagesService.removePendingMessage(
+        confirmation.messageId,
+        confirmation.receivedBy
+      )
     }
   }
 
   private handleGroupMessage(message: string): void {
     const messageData = JSON.parse(message)
+
     const senderId =
       typeof messageData.sender === 'string' ? messageData.sender : messageData.sender.id
 
@@ -226,7 +227,6 @@ export class ChatService {
 
     this.addMessage(chatMessage)
   }
-
   private addMessage(message: Message): void {
     const currentMessages = this.messagesSubject.value
     const messageExists = currentMessages.some((m) => m.id === message.id)
@@ -234,66 +234,6 @@ export class ChatService {
     if (!messageExists) {
       const updatedMessages = [...currentMessages, message]
       this.messagesSubject.next(updatedMessages)
-      this.saveMessagesToStorage(updatedMessages)
-    }
-  }
-
-  private saveMessagesToStorage(messages: Message[]): void {
-    if (this.storageDebounceTimer) {
-      clearTimeout(this.storageDebounceTimer)
-    }
-
-    this.storageDebounceTimer = setTimeout(() => {
-      this.debouncedSaveMessages(messages)
-    }, this.STORAGE_DEBOUNCE_DELAY)
-  }
-
-  private debouncedSaveMessages(messages: Message[]): void {
-    const messagesData = messages.map((msg) => ({
-      id: msg.id,
-      sender: {
-        id: msg.sender.id,
-        name: msg.sender.name,
-        online: msg.sender.online,
-        lastSeen: msg.sender.lastSeen
-      },
-      content: msg.content,
-      timestamp: msg.timestamp,
-      chatType: msg.chatType,
-      chatId: msg.chatId
-    }))
-
-    localStorage.setItem(this.MESSAGES_STORAGE_KEY, JSON.stringify(messagesData))
-  }
-
-  private loadMessagesFromStorage(): void {
-    const stored = localStorage.getItem(this.MESSAGES_STORAGE_KEY)
-    if (stored) {
-      try {
-        const messagesData = JSON.parse(stored)
-        const messages = messagesData.map((msgData: any) => {
-          const sender = new User(
-            msgData.sender.id,
-            msgData.sender.name,
-            msgData.sender.online || false,
-            msgData.sender.lastSeen ? new Date(msgData.sender.lastSeen) : new Date()
-          )
-
-          return new Message(
-            msgData.id,
-            sender,
-            msgData.content,
-            new Date(msgData.timestamp),
-            msgData.chatType,
-            msgData.chatId
-          )
-        })
-
-        this.messagesSubject.next(messages)
-      } catch (error) {
-        console.error('Erro ao carregar mensagens do localStorage:', error)
-        localStorage.removeItem(this.MESSAGES_STORAGE_KEY)
-      }
     }
   }
 
@@ -355,7 +295,7 @@ export class ChatService {
       chatId: groupId
     }
 
-    this.mqttService.publish(MqttTopics.groupList, JSON.stringify(mqttPayload))
+    this.mqttService.publish(MqttTopics.specificGroup(groupId), JSON.stringify(mqttPayload))
   }
 
   subscribeToGroup(groupId: string): void {
@@ -498,7 +438,6 @@ export class ChatService {
   clearMessages(): void {
     this.messagesSubject.next([])
     this.pendingMessagesService.clearAll()
-    localStorage.removeItem(this.MESSAGES_STORAGE_KEY)
   }
 
   private sortMessagesByTimestamp(messages: Message[], descending: boolean = true): Message[] {
@@ -533,5 +472,19 @@ export class ChatService {
       pendingMessages: this.getPendingMessagesCount(),
       currentChat: this.appState.selectedChat
     }
+  }
+
+  private subscribeToUserGroups(groups: Group[]): void {
+    const currentUser = this.appState.user
+    if (!currentUser) return
+
+    groups.forEach((group) => {
+      const isMember = group.members.some((member) => member.id === currentUser.id)
+      if (isMember) {
+        this.mqttService.subscribe(MqttTopics.specificGroup(group.id), (message) => {
+          this.handleGroupMessage(message)
+        })
+      }
+    })
   }
 }

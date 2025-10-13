@@ -69,14 +69,17 @@ export class InvitationService {
 
   acceptInvitation(invitation: GroupInvitation) {
     const response = {
+      type: 'member_added',
       invitationId: invitation.id,
       groupId: invitation.groupId,
       invitee: invitation.invitee,
       accepted: true,
-      timestamp: new Date()
+      timestamp: new Date().toISOString()
     }
 
     this.mqttService.publish(MqttTopics.invitationResponses, JSON.stringify(response))
+    this.mqttService.publish(MqttTopics.groupUpdates, JSON.stringify(response))
+
     this.removeInvitation(invitation.id)
 
     const requestKey = `${invitation.invitee}_${invitation.groupId}`
