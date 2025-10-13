@@ -203,10 +203,7 @@ export class ChatService {
     const confirmation = JSON.parse(message)
 
     if (confirmation.type === 'message_received') {
-      this.pendingMessagesService.removePendingMessage(
-        confirmation.messageId,
-        confirmation.receivedBy
-      )
+      console.log('Mensagem entregue:', confirmation.messageId)
     }
   }
 
