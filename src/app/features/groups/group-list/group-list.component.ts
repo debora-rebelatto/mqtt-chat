@@ -52,7 +52,7 @@ export class GroupListComponent implements OnInit, OnDestroy {
   }
 
   private setupSubscriptions() {
-    this.groupService.groups$.pipe(takeUntil(this.destroy$)).subscribe((groups) => {
+    this.chatService.groupChats$.pipe(takeUntil(this.destroy$)).subscribe((groups) => {
       this.groupChats = groups
     })
   }

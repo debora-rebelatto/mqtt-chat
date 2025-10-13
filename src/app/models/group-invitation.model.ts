@@ -1,17 +1,15 @@
-import { User } from "./user.model"
-
 export class GroupInvitation {
   id: string
   groupId: string
   groupName: string
-  invitee: User
+  invitee: string
   timestamp: Date
 
   constructor(
     id: string,
     groupId: string,
     groupName: string,
-    invitee: User,
+    invitee: string,
     timestamp: Date = new Date()
   ) {
     this.id = id

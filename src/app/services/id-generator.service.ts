@@ -4,7 +4,6 @@ import { Injectable } from '@angular/core'
   providedIn: 'root'
 })
 export class IdGeneratorService {
-  
   generateId(prefix: string = 'id'): string {
     const timestamp = Date.now()
     const random = Math.random().toString(16).substring(2, 8)
@@ -15,10 +14,6 @@ export class IdGeneratorService {
     return this.generateId('group')
   }
 
-  generateInvitationId(): string {
-    return this.generateId('inv')
-  }
-
   generateRequestId(): string {
     return this.generateId('req')
   }
@@ -27,8 +22,11 @@ export class IdGeneratorService {
     return this.generateId('msg')
   }
 
+  generateInvitationId(): string {
+    return this.generateId('inv')
+  }
+
   generateClientId(username: string): string {
-    const random = Math.random().toString(16).substring(2, 8)
-    return `chat_${username}_${random}`
+    return this.generateId(`chat_${username}_`)
   }
 }

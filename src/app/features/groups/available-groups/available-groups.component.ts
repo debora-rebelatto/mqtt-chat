@@ -79,10 +79,8 @@ export class AvailableGroupsComponent implements OnInit, OnDestroy {
     this.requestingGroups.add(groupId)
 
     const success = this.invitationService.requestJoinGroup(
-      group.id,
-      group.name,
-      currentUser,
-      group.leader
+      group,
+
     )
 
     if (!success) {

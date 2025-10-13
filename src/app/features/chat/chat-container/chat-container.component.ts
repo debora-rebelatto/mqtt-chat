@@ -120,12 +120,7 @@ export class ChatContainerComponent implements OnInit, OnDestroy {
     this.groupService.groups$.pipe(takeUntil(this.destroy$)).subscribe((groups) => {
       const group = groups.find((g) => g.id === groupId)
       if (group && this.appState.user) {
-        this.invitationService.requestJoinGroup(
-          group.id,
-          group.name,
-          this.appState.user,
-          group.leader
-        )
+        this.invitationService.requestJoinGroup(group)
       }
     })
   }
