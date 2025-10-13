@@ -29,7 +29,7 @@ export class UserListComponent implements OnInit, OnDestroy {
 
   constructor(
     private appState: AppStateService,
-    private userService: UserService,
+    private userService: UserService
   ) {}
 
   ngOnInit() {
@@ -43,7 +43,7 @@ export class UserListComponent implements OnInit, OnDestroy {
 
   private setupSubscriptions() {
     this.userService.users$.pipe(takeUntil(this.destroy$)).subscribe((userChats) => {
-      this.userChats = userChats
+      this.userChats = userChats.filter((user) => user.id !== this.appState.user?.id)
     })
   }
 
