@@ -1,3 +1,4 @@
+import { PendingMessagesService } from './pending-messages.service'
 import { Injectable } from '@angular/core'
 import { BehaviorSubject } from 'rxjs'
 import { MqttService } from './mqtt.service'
@@ -21,7 +22,8 @@ export class UserService {
   constructor(
     private mqttService: MqttService,
     private appState: AppStateService,
-    private connectionManager: ConnectionManagerService
+    private connectionManager: ConnectionManagerService,
+    private pendingMessagesService: PendingMessagesService
   ) {
     this.startHeartbeatMonitor()
   }
@@ -108,6 +110,7 @@ export class UserService {
 
     if (isOnline && status.user.id !== this.currentUser?.id) {
       this.updateUserStatus(MqttTopics.pendingSync(status.user.id), 'request_pending', status.user)
+      this.pendingMessagesService.sendPendingMessagesToUser(status.user.id)
     }
   }
 

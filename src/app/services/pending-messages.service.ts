@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core'
-import { Message, User } from '../models'
+import { Message } from '../models'
 import { MqttService } from './mqtt.service'
 import { MqttTopics } from '../config/mqtt-topics'
 
@@ -8,11 +8,9 @@ import { MqttTopics } from '../config/mqtt-topics'
 })
 export class PendingMessagesService {
   private pendingMessages: Map<string, Message[]> = new Map()
-  private readonly STORAGE_KEY = 'mqtt-chat-pending-messages'
+  private sendingInProgress: Set<string> = new Set()
 
-  constructor(private mqttService: MqttService) {
-    this.loadFromStorage()
-  }
+  constructor(private mqttService: MqttService) {}
 
   addPendingMessage(toUserId: string, message: Message): void {
     if (!this.pendingMessages.has(toUserId)) {
@@ -23,7 +21,6 @@ export class PendingMessagesService {
 
     if (!userPendingMessages.some((msg) => msg.id === message.id)) {
       userPendingMessages.push(message)
-      this.saveToStorage()
     }
   }
 
@@ -35,7 +32,6 @@ export class PendingMessagesService {
 
       if (filteredMessages.length !== initialLength) {
         this.pendingMessages.set(userId, filteredMessages)
-        this.saveToStorage()
         return true
       }
     }
@@ -49,7 +45,6 @@ export class PendingMessagesService {
   clearPendingMessagesForUser(userId: string): void {
     if (this.pendingMessages.has(userId)) {
       this.pendingMessages.delete(userId)
-      this.saveToStorage()
     }
   }
 
@@ -73,24 +68,36 @@ export class PendingMessagesService {
   }
 
   async sendPendingMessagesToUser(userId: string): Promise<void> {
+    if (this.sendingInProgress.has(userId)) {
+      return
+    }
+
     const pending = this.pendingMessages.get(userId)
-    if (!pending || pending.length === 0) return
+    if (!pending || pending.length === 0) {
+      return
+    }
+
+    this.sendingInProgress.add(userId)
 
     const messagesToSend = [...pending]
-
     this.clearPendingMessagesForUser(userId)
 
-    for (let i = 0; i < messagesToSend.length; i++) {
-      const message = messagesToSend[i]
-      const success = await this.sendSinglePendingMessage(userId, message)
+    try {
+      for (let i = 0; i < messagesToSend.length; i++) {
+        const message = messagesToSend[i]
 
-      if (!success) {
-        this.addPendingMessage(userId, message)
-      }
+        const success = await this.sendSinglePendingMessage(userId, message)
 
-      if (i < messagesToSend.length - 1) {
-        await this.delay(200)
+        if (!success) {
+          this.addPendingMessage(userId, message)
+        }
+
+        if (i < messagesToSend.length - 1) {
+          await this.delay(300)
+        }
       }
+    } finally {
+      this.sendingInProgress.delete(userId)
     }
   }
 
@@ -98,6 +105,7 @@ export class PendingMessagesService {
     const mqttPayload = {
       id: message.id,
       sender: message.sender.id,
+      senderName: message.sender.name,
       content: message.content,
       timestamp: message.timestamp.toISOString(),
       chatType: message.chatType,
@@ -115,68 +123,6 @@ export class PendingMessagesService {
 
   clearAll(): void {
     this.pendingMessages.clear()
-    localStorage.removeItem(this.STORAGE_KEY)
-  }
-
-  private saveToStorage(): void {
-    const pendingData: { [key: string]: any[] } = {}
-
-    this.pendingMessages.forEach((messages, userId) => {
-      pendingData[userId] = messages.map((msg) => this.serializeMessage(msg))
-    })
-
-    localStorage.setItem(this.STORAGE_KEY, JSON.stringify(pendingData))
-  }
-
-  private loadFromStorage(): void {
-    const stored = localStorage.getItem(this.STORAGE_KEY)
-    if (stored) {
-      try {
-        const pendingData = JSON.parse(stored)
-
-        Object.entries(pendingData).forEach(([userId, messages]: [string, any]) => {
-          const parsedMessages = messages.map((msgData: any) => this.deserializeMessage(msgData))
-          this.pendingMessages.set(userId, parsedMessages)
-        })
-      } catch (error) {
-        console.error('Erro ao carregar mensagens pendentes:', error)
-        localStorage.removeItem(this.STORAGE_KEY)
-      }
-    }
-  }
-
-  private serializeMessage(message: Message): any {
-    return {
-      id: message.id,
-      sender: {
-        id: message.sender.id,
-        name: message.sender.name,
-        online: message.sender.online,
-        lastSeen: message.sender.lastSeen
-      },
-      content: message.content,
-      timestamp: message.timestamp.toISOString(),
-      chatType: message.chatType,
-      chatId: message.chatId
-    }
-  }
-
-  private deserializeMessage(msgData: any): Message {
-    const sender = new User(
-      msgData.sender.id,
-      msgData.sender.name,
-      msgData.sender.online || false,
-      msgData.sender.lastSeen ? new Date(msgData.sender.lastSeen) : new Date()
-    )
-
-    return new Message(
-      msgData.id,
-      sender,
-      msgData.content,
-      new Date(msgData.timestamp),
-      msgData.chatType,
-      msgData.chatId
-    )
   }
 
   private delay(ms: number): Promise<void> {
