@@ -17,22 +17,4 @@ export class SelectedChat {
   isGroup(): boolean {
     return this.type === ChatType.Group
   }
-
-  getMembers(): User[] {
-    if (this.isGroup() && this.group) {
-      return this.group.members || []
-    }
-    return []
-  }
-
-  getMembersCount(): number {
-    return this.getMembers().length
-  }
-
-  isGroupLeader(user: User): boolean {
-    if (this.isGroup() && this.group) {
-      return this.group.leader.id === user.id
-    }
-    return false
-  }
 }

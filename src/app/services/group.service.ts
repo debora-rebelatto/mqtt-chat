@@ -252,12 +252,4 @@ export class GroupService {
   refreshGroups(): void {
     this.mqttService.publish('meu-chat-mqtt/groups', 'REQUEST_GROUPS');
   }
-
-  getGroupDataForModal(groupId: string): { group: Group | undefined, members: User[] } {
-    const group = this.getGroupById(groupId);
-    return {
-      group: group,
-      members: group ? group.members : []
-    };
-  }
 }

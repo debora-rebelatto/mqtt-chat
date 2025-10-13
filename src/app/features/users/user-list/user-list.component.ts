@@ -4,7 +4,7 @@ import { TranslateModule } from '@ngx-translate/core'
 import { UserListItemComponent } from '../user-list-item/user-list-item.component'
 import { ListContainerComponent } from '../../../components/list-container/list-container.component'
 import { Subject, takeUntil } from 'rxjs'
-import { AppStateService, UserService, ChatService } from '../../../services'
+import { AppStateService, UserService } from '../../../services'
 import { ChatType, User } from '../../../models'
 import { LucideAngularModule, MessageCircle } from 'lucide-angular'
 
@@ -29,8 +29,7 @@ export class UserListComponent implements OnInit, OnDestroy {
 
   constructor(
     private appState: AppStateService,
-    private userService: UserService,
-    private chatService: ChatService
+    private userService: UserService
   ) {}
 
   ngOnInit() {

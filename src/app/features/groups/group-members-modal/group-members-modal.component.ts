@@ -41,8 +41,8 @@ export class GroupMembersModalComponent implements OnChanges {
       const groupId = this.selectedChat?.group?.id || this.selectedChat?.id
       
       if (groupId) {
-        const groupData = this.groupService.getGroupDataForModal(groupId)
-        this.members = groupData.members || []
+        const groupData = this.groupService.getGroupById(groupId)
+        this.members = groupData?.members || []
       }
       
       this.isLoading = false
