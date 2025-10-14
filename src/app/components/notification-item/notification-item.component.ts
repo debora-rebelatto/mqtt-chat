@@ -13,12 +13,10 @@ export class ListContainerComponent {
   @Input() isProcessing = false
 
   onAccept(): void {
-      this.accept.emit()
-
+    this.accept.emit()
   }
 
   onReject(): void {
-      this.reject.emit()
-
+    this.reject.emit()
   }
 }

@@ -40,7 +40,6 @@ export class ChatService {
     private appState: AppStateService,
     private pendingMessagesService: PendingMessagesService,
     private privateChatRequestService: PrivateChatRequestService,
-
     private idGeneratorService: IdGeneratorService
   ) {
     this.setupSubscriptions()

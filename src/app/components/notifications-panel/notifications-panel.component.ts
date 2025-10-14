@@ -1,8 +1,8 @@
 import { Component, Input, Output, EventEmitter, OnInit } from '@angular/core'
 import { CommonModule } from '@angular/common'
 import { TranslateModule } from '@ngx-translate/core'
-import { GroupInvitation } from '../../models'
-import { InvitationService, PrivateChatRequest, PrivateChatRequestService } from '../../services'
+import { GroupInvitation, PrivateChatRequest } from '../../models'
+import { InvitationService, PrivateChatRequestService } from '../../services'
 import { ListContainerComponent } from '../notification-item/notification-item.component'
 import { DateFormatPipe } from '../../pipes/date-format.pipe'
 

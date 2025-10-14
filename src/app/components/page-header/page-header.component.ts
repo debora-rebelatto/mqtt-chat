@@ -2,7 +2,6 @@ import { Component, OnInit, OnDestroy, Output, EventEmitter } from '@angular/cor
 import { CommonModule } from '@angular/common'
 import { FormsModule } from '@angular/forms'
 import { TranslateModule } from '@ngx-translate/core'
-
 import { Subject, takeUntil } from 'rxjs'
 import { LucideAngularModule, MessageCircle } from 'lucide-angular'
 import { GroupInvitation } from '../../models/group-invitation.model'
@@ -20,10 +19,9 @@ import {
   ConnectionManagerService,
   AppStateService,
   IdGeneratorService,
-  PrivateChatRequest,
   PrivateChatRequestService
 } from '../../services'
-import { User } from '../../models'
+import { PrivateChatRequest, User } from '../../models'
 import { MqttTopics } from '../../config/mqtt-topics'
 
 @Component({

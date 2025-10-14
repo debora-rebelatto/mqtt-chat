@@ -3,14 +3,7 @@ import { BehaviorSubject } from 'rxjs'
 import { MqttTopics } from '../config/mqtt-topics'
 import { User } from '../models'
 import { MqttService, AppStateService, IdGeneratorService } from '.'
-
-export interface PrivateChatRequest {
-  id: string
-  from: User
-  to: string
-  timestamp: Date
-  status: 'pending' | 'accepted' | 'rejected'
-}
+import { PrivateChatRequest } from '../models/private-chat-request.model'
 
 @Injectable({
   providedIn: 'root'
