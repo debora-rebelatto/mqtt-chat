@@ -17,6 +17,7 @@
   "NO_USERS_ONLINE": "Nenhum usuário online ainda",
   "NO_GROUPS_CREATED": "Nenhum grupo criado ainda",
   "NO_GROUPS_AVAILABLE": "Nenhum grupo disponível no momento",
+  "NO_USERS_AVAILABLE": "Nenhum usuário disponível no momento.",
   "SELECT_CONVERSATION": "Selecione uma conversa para começar",
   "LAST_SEEN": "Visto {{time}}",
   "NOW": "agora",
@@ -36,7 +37,6 @@
   "TYPE_MESSAGE": "Digite sua mensagem...",
   "SEND": "Enviar",
   "DISCONNECT": "Sair",
-  "GROUP_INVITE": "Convite para grupo",
   "ACCEPT": "Aceitar",
   "REJECT": "Rejeitar",
   "NO_NOTIFICATION": "Nenhuma notificação",
@@ -44,8 +44,11 @@
   "NO-NOTIFICATION": "Nenhuma notificação",
   "REQUEST_JOIN": "Solicitar entrada",
   "REQUESTING": "Solicitando...",
-  "GROUP-INVITE": "Convite para grupo",
+  "GROUP_INVITE": "Convite para grupo",
+  "CHAT_INVITE": "Convite para chat",
   "CLEAR_DATA": "Limpar dados",
   "CLEAR_ALL_DATA": "Limpar todos os dados",
-  "FROM": "De"
+  "FROM": "De",
+  "PENDING_REQUEST": "Solicitação pendente",
+  "SENDING": "Enviando..."
 }
