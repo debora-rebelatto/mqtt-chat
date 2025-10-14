@@ -50,5 +50,7 @@
   "CLEAR_ALL_DATA": "Limpar todos os dados",
   "FROM": "De",
   "PENDING_REQUEST": "Solicitação pendente",
-  "SENDING": "Enviando..."
+  "SENDING": "Enviando...",
+  "LOADING_MEMBERS": "Carregando membros...",
+  "YOU": "Você"
 }

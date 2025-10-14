@@ -6,7 +6,6 @@ import { HttpClient } from '@angular/common/http'
 import { importProvidersFrom } from '@angular/core'
 import { Observable } from 'rxjs'
 
-// Loader customizado
 export class CustomTranslateLoader implements TranslateLoader {
   constructor(private http: HttpClient) {}
 
