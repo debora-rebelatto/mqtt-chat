@@ -32,13 +32,11 @@
 
     @if (appState.connected) {
       <div class="flex items-center gap-4">
-        <app-notifications-panel
-          [notifications]="notifications"
-          [showNotifications]="showNotifications"
-          (acceptInvite)="acceptInvite($event)"
-          (rejectInvite)="rejectInvite($event)"
+        <notifications-panel
+          [groupNotifications]="groupNotifications"
+          [chatNotifications]="chatNotifications"
           (toggleNotifications)="onToggleNotifications()"
-        ></app-notifications-panel>
+        />
 
         <div class="flex items-center gap-2">
           <div class="w-3 h-3 bg-green-400 rounded-full animate-pulse"></div>

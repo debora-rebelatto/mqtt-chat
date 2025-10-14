@@ -7,7 +7,10 @@ import { Subject, takeUntil } from 'rxjs'
 import { LucideAngularModule, MessageCircle } from 'lucide-angular'
 import { GroupInvitation } from '../../models/group-invitation.model'
 import { Group } from '../../models/group.model'
-import { NotificationsPanelComponent } from '../notifications-panel/notifications-panel.component'
+import {
+  NotificationItem,
+  NotificationsPanelComponent
+} from '../notifications-panel/notifications-panel.component'
 import {
   MqttService,
   UserService,
@@ -16,7 +19,9 @@ import {
   InvitationService,
   ConnectionManagerService,
   AppStateService,
-  IdGeneratorService
+  IdGeneratorService,
+  PrivateChatRequest,
+  PrivateChatRequestService
 } from '../../services'
 import { User } from '../../models'
 import { MqttTopics } from '../../config/mqtt-topics'
@@ -38,9 +43,10 @@ export class PageHeaderComponent implements OnInit, OnDestroy {
   readonly MessageCircle = MessageCircle
 
   isConnecting = false
-  showNotifications = false
-  notifications: GroupInvitation[] = []
   private _username = ''
+  groupNotifications: GroupInvitation[] = []
+  chatNotifications: PrivateChatRequest[] = []
+  showNotificationPanel = false
 
   @Output() usernameChange = new EventEmitter<string>()
   @Output() connectionChange = new EventEmitter<boolean>()
@@ -50,10 +56,11 @@ export class PageHeaderComponent implements OnInit, OnDestroy {
     private userService: UserService,
     private groupService: GroupService,
     private chatService: ChatService,
-    private invitationService: InvitationService,
     private connectionManager: ConnectionManagerService,
     public appState: AppStateService,
-    public idGeneratorService: IdGeneratorService
+    public idGeneratorService: IdGeneratorService,
+    private invitationService: InvitationService,
+    public privateChatRequestService: PrivateChatRequestService
   ) {}
 
   ngOnInit() {
@@ -71,12 +78,18 @@ export class PageHeaderComponent implements OnInit, OnDestroy {
     })
 
     this.invitationService.invitations$.pipe(takeUntil(this.destroy$)).subscribe((invitations) => {
-      this.notifications = invitations.filter((invitation) => {
+      this.groupNotifications = invitations.filter((invitation) => {
         const group = this.groupService.getGroups().find((g: Group) => g.id === invitation.groupId)
         const isLeader = group && group.leader.id === this.appState.user?.id
         return isLeader
       })
     })
+
+    this.privateChatRequestService.requests$
+      .pipe(takeUntil(this.destroy$))
+      .subscribe((requests) => {
+        this.chatNotifications = requests.filter((req) => req.status === 'pending')
+      })
   }
 
   async connect() {
@@ -99,6 +112,7 @@ export class PageHeaderComponent implements OnInit, OnDestroy {
       this.groupService.initialize()
       this.chatService.initialize()
       this.invitationService.initialize()
+      this.privateChatRequestService.initialize()
 
       this.appState.setConnected(true)
 
@@ -126,7 +140,7 @@ export class PageHeaderComponent implements OnInit, OnDestroy {
     }
 
     this.invitationService.onDisconnect()
-
+    this.privateChatRequestService.onDisconnect()
     this.connectionManager.stopHeartbeat()
     this.mqttService.disconnect()
     this.appState.setConnected(false)
@@ -146,16 +160,8 @@ export class PageHeaderComponent implements OnInit, OnDestroy {
     }
   }
 
-  acceptInvite(invitation: GroupInvitation) {
-    this.invitationService.acceptInvitation(invitation)
-  }
-
-  rejectInvite(invitation: GroupInvitation) {
-    this.invitationService.rejectInvitation(invitation)
-  }
-
   onToggleNotifications() {
-    this.showNotifications = !this.showNotifications
+    this.showNotificationPanel = !this.showNotificationPanel
   }
 
   get username(): string {
@@ -164,5 +170,19 @@ export class PageHeaderComponent implements OnInit, OnDestroy {
 
   set username(value: string) {
     this._username = value
+  }
+
+  get allNotifications(): NotificationItem[] {
+    const groupItems: NotificationItem[] = this.groupNotifications.map((notification) => ({
+      type: 'group-invitation',
+      data: notification
+    }))
+
+    const chatItems: NotificationItem[] = this.chatNotifications.map((notification) => ({
+      type: 'private-chat-request',
+      data: notification
+    }))
+
+    return [...groupItems, ...chatItems]
   }
 }

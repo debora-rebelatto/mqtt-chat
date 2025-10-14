@@ -12,6 +12,32 @@ import { AppStateService, GroupService, PrivateChatRequestService } from '../../
 import { ToggleButtonComponent } from './toggle-button/toggle-button.component'
 import { AvailableUsersComponent } from '../../features/users/available-users/available-users.component'
 
+export type SidebarView = 'chat' | 'available-users' | 'available-groups'
+
+export interface SidebarViewConfig {
+  key: SidebarView
+  icon: typeof MessageCircle
+  translateKey: string
+}
+
+export const SIDEBAR_VIEWS: SidebarViewConfig[] = [
+  {
+    key: 'chat',
+    icon: MessageCircle,
+    translateKey: 'CONVERSATIONS'
+  },
+  {
+    key: 'available-users',
+    icon: UserIcon,
+    translateKey: 'AVAILABLE_USERS'
+  },
+  {
+    key: 'available-groups',
+    icon: UsersRound,
+    translateKey: 'AVAILABLE_GROUPS'
+  }
+]
+
 @Component({
   selector: 'app-sidebar',
   templateUrl: './sidebar.component.html',
@@ -34,8 +60,9 @@ export class SidebarComponent implements OnInit, OnDestroy {
   readonly MessageCircle = MessageCircle
   readonly UserIcon = UserIcon
   readonly UsersRound = UsersRound
+  readonly sidebarViews = SIDEBAR_VIEWS
 
-  activeView = 'chat'
+  activeView: SidebarView = 'chat'
   showCreateGroupModal = false
   newGroupName = ''
   pendingRequestCount = 0
@@ -57,7 +84,7 @@ export class SidebarComponent implements OnInit, OnDestroy {
     this.destroy$.complete()
   }
 
-  onViewChange(view: string) {
+  onViewChange(view: SidebarView): void {
     this.activeView = view
   }
 

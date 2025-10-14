@@ -1,33 +1,61 @@
-import { Component, Input, Output, EventEmitter } from '@angular/core'
+import { Component, Input, Output, EventEmitter, OnInit } from '@angular/core'
 import { CommonModule } from '@angular/common'
 import { TranslateModule } from '@ngx-translate/core'
-
-import { GroupInvitation } from '../../models/group-invitation.model'
+import { GroupInvitation } from '../../models'
+import { InvitationService, PrivateChatRequest, PrivateChatRequestService } from '../../services'
+import { ListContainerComponent } from '../notification-item/notification-item.component'
 import { DateFormatPipe } from '../../pipes/date-format.pipe'
 
+export type NotificationItem =
+  | { type: 'group-invitation'; data: GroupInvitation }
+  | { type: 'private-chat-request'; data: PrivateChatRequest }
+
 @Component({
-  selector: 'app-notifications-panel',
+  selector: 'notifications-panel',
   templateUrl: './notifications-panel.component.html',
   standalone: true,
-  imports: [CommonModule, DateFormatPipe, TranslateModule]
+  imports: [CommonModule, TranslateModule, ListContainerComponent, DateFormatPipe]
 })
-export class NotificationsPanelComponent {
-  @Input() notifications: GroupInvitation[] = []
-  @Input() showNotifications = false
+export class NotificationsPanelComponent implements OnInit {
+  @Input() groupNotifications: GroupInvitation[] = []
+  @Input() chatNotifications: PrivateChatRequest[] = []
+  @Output() togglePanel = new EventEmitter<void>()
 
-  @Output() acceptInvite = new EventEmitter<GroupInvitation>()
-  @Output() rejectInvite = new EventEmitter<GroupInvitation>()
-  @Output() toggleNotifications = new EventEmitter<void>()
+  showNotificationPanel = false
+  chatRequests: PrivateChatRequest[] = []
+
+  constructor(
+    private invitationService: InvitationService,
+    private privateChatRequestService: PrivateChatRequestService
+  ) {}
+
+  ngOnInit() {
+    this.privateChatRequestService.requests$.subscribe((requests) => {
+      this.chatRequests = requests
+    })
+  }
+
+  get notificationsCount(): number {
+    return this.groupNotifications.length + this.chatNotifications.length
+  }
+
+  onToggleNotifications(): void {
+    this.showNotificationPanel = !this.showNotificationPanel
+  }
 
   onAcceptInvite(invitation: GroupInvitation) {
-    this.acceptInvite.emit(invitation)
+    this.invitationService.acceptInvitation(invitation)
   }
 
   onRejectInvite(invitation: GroupInvitation) {
-    this.rejectInvite.emit(invitation)
+    this.invitationService.rejectInvitation(invitation)
   }
 
-  onToggleNotifications() {
-    this.toggleNotifications.emit()
+  onAcceptChatRequest(request: PrivateChatRequest) {
+    this.privateChatRequestService.acceptRequest(request)
+  }
+
+  onRejectChatRequest(request: PrivateChatRequest) {
+    this.privateChatRequestService.rejectRequest(request)
   }
 }

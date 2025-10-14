@@ -4,16 +4,16 @@
     class="relative p-2 hover:bg-gray-800 rounded-lg transition-colors"
   >
     🔔
-    @if (notifications.length > 0) {
+    @if (notificationsCount > 0) {
       <span
         class="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center"
       >
-        {{ notifications.length }}
+        {{ notificationsCount }}
       </span>
     }
   </button>
 
-  @if (showNotifications) {
+  @if (showNotificationPanel) {
     <div
       class="absolute right-0 mt-2 w-80 bg-gray-800 border border-gray-700 rounded-lg shadow-lg z-10"
     >
@@ -21,36 +21,38 @@
         <h3 class="font-semibold">{{ 'NOTIFICATIONS' | translate }}</h3>
       </div>
       <div class="max-h-60 overflow-y-auto">
-        @for (invitation of notifications; track invitation.id) {
-          <div class="p-3 border-b border-gray-700 last:border-b-0">
-            <div class="flex justify-between items-start">
-              <div>
-                <p class="font-medium">{{ 'GROUP-INVITE' | translate }}</p>
-                <p class="text-sm text-gray-300">{{ invitation.groupName }}</p>
-                <p class="text-xs text-gray-400">
-                  {{ 'FROM' | translate }}: {{ invitation.invitee.name }} •
-                  {{ invitation.timestamp | dateFormat }}
-                </p>
-              </div>
-              <div class="flex gap-2">
-                <button
-                  (click)="onAcceptInvite(invitation)"
-                  class="bg-green-600 hover:bg-green-700 px-2 py-1 rounded text-xs"
-                >
-                  {{ 'ACCEPT' | translate }}
-                </button>
-                <button
-                  (click)="onRejectInvite(invitation)"
-                  class="bg-red-600 hover:bg-red-700 px-2 py-1 rounded text-xs"
-                >
-                  {{ 'REJECT' | translate }}
-                </button>
-              </div>
+        @for (invitation of groupNotifications; track invitation.id) {
+          <notification-item
+            (accept)="onAcceptInvite(invitation)"
+            (reject)="onRejectInvite(invitation)"
+          >
+            <div class="flex flex-col">
+              <p class="font-medium">{{ 'GROUP_INVITE' | translate }}</p>
+              <p class="text-sm text-gray-300">{{ invitation.groupName }}</p>
+              <p class="text-xs text-gray-400">
+                {{ 'FROM' | translate }}: {{ invitation.invitee }} •
+                {{ invitation.timestamp | dateFormat }}
+              </p>
             </div>
-          </div>
+          </notification-item>
         }
-        @if (notifications.length === 0) {
-          <div class="p-4 text-center text-gray-400">{{ 'NO-NOTIFICATION' | translate }}</div>
+        @for (request of chatNotifications; track request.id) {
+          <notification-item
+            (accept)="onAcceptChatRequest(request)"
+            (reject)="onRejectChatRequest(request)"
+          >
+            <div class="flex flex-col">
+              <p class="font-medium">{{ 'CHAT_INVITE' | translate }}</p>
+              <p class="text-sm text-gray-300">De: {{ request.from.name }}</p>
+              <p class="text-xs text-gray-400">
+                {{ request.timestamp | dateFormat }}
+              </p>
+            </div>
+          </notification-item>
+        }
+
+        @if (notificationsCount === 0) {
+          <div class="p-4 text-center text-gray-400">Nenhuma notificação</div>
         }
       </div>
     </div>
