@@ -3,8 +3,8 @@ import { CommonModule } from '@angular/common'
 import { TranslateModule } from '@ngx-translate/core'
 import { UserListItemComponent } from '../user-list-item/user-list-item.component'
 import { ListContainerComponent } from '../../../components/list-container/list-container.component'
-import { Subject, takeUntil } from 'rxjs'
-import { AppStateService, UserService } from '../../../services'
+import { Subject, takeUntil, combineLatest } from 'rxjs'
+import { AppStateService, UserService, PrivateChatRequestService } from '../../../services'
 import { ChatType, User } from '../../../models'
 import { LucideAngularModule, MessageCircle } from 'lucide-angular'
 
@@ -29,7 +29,8 @@ export class UserListComponent implements OnInit, OnDestroy {
 
   constructor(
     private appState: AppStateService,
-    private userService: UserService
+    private userService: UserService,
+    private chatRequestService: PrivateChatRequestService
   ) {}
 
   ngOnInit() {
@@ -42,9 +43,17 @@ export class UserListComponent implements OnInit, OnDestroy {
   }
 
   private setupSubscriptions() {
-    this.userService.users$.pipe(takeUntil(this.destroy$)).subscribe((userChats) => {
-      this.userChats = userChats.filter((user) => user.id !== this.appState.user?.id)
-    })
+    combineLatest([this.userService.users$, this.chatRequestService.allowedChats$])
+      .pipe(takeUntil(this.destroy$))
+      .subscribe(([users, allowedChats]) => {
+        this.userChats = users.filter((user) => {
+          if (user.id === this.appState.user?.id) {
+            return false
+          }
+
+          return allowedChats.has(user.id)
+        })
+      })
   }
 
   onUserClick(user: User): void {

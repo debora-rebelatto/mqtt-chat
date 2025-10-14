@@ -34,7 +34,6 @@ export class PrivateChatRequestService {
   ) {}
 
   initialize() {
-    console.log('======initialize')
     this.currentUser = this.appState.user!
     this.mqttService.subscribe(MqttTopics.privateChat.request(this.currentUser.id), (message) => {
       this.handleIncomingRequest(message)
@@ -279,5 +278,21 @@ export class PrivateChatRequestService {
   onDisconnect() {
     this.requestsSubject.next([])
     this.sentRequestsSubject.next([])
+  }
+
+  canSendRequestTo(userId: string): boolean {
+    if (userId === this.currentUser.id) {
+      return false
+    }
+
+    if (this.isAllowedToChat(userId)) {
+      return false
+    }
+
+    if (this.hasPendingRequest(userId)) {
+      return false
+    }
+
+    return true
   }
 }

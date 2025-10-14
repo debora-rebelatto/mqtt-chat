@@ -4,14 +4,14 @@
     {{ 'AVAILABLE_USERS' | translate }}
   </h3>
 
-  @if (users.length === 0) {
+  @if (availableUsers.length === 0) {
     <div class="text-gray-400 text-sm text-center py-8 px-4">
       {{ 'NO_USERS_AVAILABLE' | translate }}
     </div>
   }
 
   <div class="flex flex-col gap-2">
-    @for (user of users; track user.id) {
+    @for (user of availableUsers; track user.id) {
       <div class="mx-2">
         <div class="bg-gray-800 hover:bg-gray-750 rounded-lg transition-colors overflow-hidden">
           <div class="p-3 flex items-center justify-between">
