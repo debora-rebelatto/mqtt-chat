@@ -6,10 +6,17 @@
       </toggle-button>
 
       <toggle-button
+        [isActive]="activeView === 'available-users'"
+        (onClick)="onViewChange('available-users')"
+      >
+        {{ 'AVAILABLE_USERS' | translate }}
+      </toggle-button>
+
+      <toggle-button
         [isActive]="activeView === 'available-groups'"
         (onClick)="onViewChange('available-groups')"
       >
-        {{ 'SEARCH' | translate }}
+        {{ 'AVAILABLE_GROUPS' | translate }}
       </toggle-button>
     </div>
   </div>
@@ -18,6 +25,10 @@
     @if (activeView === 'chat') {
       <user-list />
       <group-list />
+    }
+
+    @if (activeView === 'available-users') {
+      <available-users />
     }
 
     @if (activeView === 'available-groups') {
