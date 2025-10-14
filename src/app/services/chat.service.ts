@@ -1,3 +1,4 @@
+import { IdGeneratorService } from './id-generator.service'
 import { Injectable } from '@angular/core'
 import { BehaviorSubject } from 'rxjs'
 import { MqttService } from './mqtt.service'
@@ -7,6 +8,7 @@ import { GroupService } from './group.service'
 import { UserService } from './user.service'
 import { PendingMessagesService } from './pending-messages.service'
 import { MqttTopics } from '../config/mqtt-topics'
+import { PrivateChatRequestService } from './private-chat.service'
 
 @Injectable({
   providedIn: 'root'
@@ -36,7 +38,10 @@ export class ChatService {
     private userService: UserService,
     private groupService: GroupService,
     private appState: AppStateService,
-    private pendingMessagesService: PendingMessagesService
+    private pendingMessagesService: PendingMessagesService,
+    private privateChatRequestService: PrivateChatRequestService,
+
+    private idGeneratorService: IdGeneratorService
   ) {
     this.setupSubscriptions()
   }
@@ -96,6 +101,7 @@ export class ChatService {
     if (currentUser) {
       this.groupService.setCurrentUser(currentUser)
       this.groupService.initialize()
+      this.privateChatRequestService.initialize()
     }
 
     this.mqttService.subscribe(MqttTopics.privateMessage(currentUser.name), (message) => {
@@ -240,9 +246,12 @@ export class ChatService {
   sendUserMessage(from: User, to: User, content: string): void {
     if (!content.trim()) return
 
-    const messageId = `msg_${Date.now()}_${Math.random().toString(16).substring(2, 8)}`
-    const message: Message = new Message(messageId, from, content, new Date(), ChatType.User, to.id)
+    if (!this.privateChatRequestService.isAllowedToChat(to.id)) {
+      return
+    }
 
+    const messageId = this.idGeneratorService.generateMessageId()
+    const message: Message = new Message(messageId, from, content, new Date(), ChatType.User, to.id)
     this.addMessage(message)
 
     const mqttPayload = {
@@ -275,15 +284,8 @@ export class ChatService {
   sendGroupMessage(groupId: string, from: User, content: string): void {
     if (!content.trim()) return
 
-    const message: Message = new Message(
-      `msg_${Date.now()}_${Math.random().toString(16).substring(2, 8)}`,
-      from,
-      content,
-      new Date(),
-      ChatType.Group,
-      groupId
-    )
-
+    const msgId = this.idGeneratorService.generateMessageId()
+    const message: Message = new Message(msgId, from, content, new Date(), ChatType.Group, groupId)
     this.addMessage(message)
 
     const mqttPayload = {
@@ -486,5 +488,9 @@ export class ChatService {
         })
       }
     })
+  }
+
+  canChatWithUser(userId: string): boolean {
+    return this.privateChatRequestService.isAllowedToChat(userId)
   }
 }
