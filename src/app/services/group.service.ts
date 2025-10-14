@@ -239,4 +239,17 @@ export class GroupService {
       this.addMemberToGroup(update.groupId, userToAdd)
     }
   }
+
+  getGroupById(groupId: string): Group | undefined {
+    return this.groupsSubject.value.find(g => g.id === groupId);
+  }
+
+  getGroupMembers(groupId: string): User[] {
+    const group = this.getGroupById(groupId);
+    return group ? group.members : [];
+  }
+
+  refreshGroups(): void {
+    this.mqttService.publish('meu-chat-mqtt/groups', 'REQUEST_GROUPS');
+  }
 }

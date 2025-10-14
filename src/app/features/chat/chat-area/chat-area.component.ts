@@ -16,12 +16,20 @@ import { LucideAngularModule, MessageCircle } from 'lucide-angular'
 import { SelectedChat } from '../../../models/selected-chat.models'
 import { Message, User } from '../../../models'
 import { TimeFormatPipe } from '../../../pipes/time-format.pipe'
+import { GroupMembersModalComponent } from '../../groups/group-members-modal/group-members-modal.component'
 
 @Component({
   selector: 'chat-area',
   templateUrl: 'chat-area.component.html',
   standalone: true,
-  imports: [CommonModule, FormsModule, LucideAngularModule, TimeFormatPipe, TranslateModule]
+  imports: [
+    CommonModule,
+    FormsModule,
+    LucideAngularModule,
+    TimeFormatPipe,
+    TranslateModule,
+    GroupMembersModalComponent
+  ]
 })
 export class ChatAreaComponent implements AfterViewInit, OnChanges {
   readonly MessageCircle = MessageCircle
@@ -37,6 +45,7 @@ export class ChatAreaComponent implements AfterViewInit, OnChanges {
   @Output() messageSend = new EventEmitter<void>()
   @Output() messageInputChange = new EventEmitter<string>()
   @Output() keyPress = new EventEmitter<KeyboardEvent>()
+  showMembersModal = false
 
   onSendMessage() {
     this.messageSend.emit()
@@ -71,5 +80,15 @@ export class ChatAreaComponent implements AfterViewInit, OnChanges {
 
   isCurrentUser(msg: Message): boolean {
     return msg.sender.id === this.currentUser?.id
+  }
+
+  openGroupMembers() {
+    if (this.selectedChat?.isGroup()) {
+      this.showMembersModal = true
+    }
+  }
+
+  closeMembersModal() {
+    this.showMembersModal = false
   }
 }
