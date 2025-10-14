@@ -2,7 +2,7 @@ import { CommonModule } from '@angular/common'
 import { Component, OnDestroy, OnInit } from '@angular/core'
 import { FormsModule } from '@angular/forms'
 import { TranslateModule } from '@ngx-translate/core'
-import { LucideAngularModule } from 'lucide-angular'
+import { LucideAngularModule, MessageCircle, User as UserIcon, UsersRound } from 'lucide-angular'
 import { Subject, takeUntil } from 'rxjs'
 import { AvailableGroupsComponent } from '../../features/groups/available-groups/available-groups.component'
 import { GroupListComponent } from '../../features/groups/group-list/group-list.component'
@@ -31,6 +31,9 @@ import { AvailableUsersComponent } from '../../features/users/available-users/av
 })
 export class SidebarComponent implements OnInit, OnDestroy {
   private destroy$ = new Subject<void>()
+  readonly MessageCircle = MessageCircle
+  readonly UserIcon = UserIcon
+  readonly UsersRound = UsersRound
 
   activeView = 'chat'
   showCreateGroupModal = false
