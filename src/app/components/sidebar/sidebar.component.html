@@ -1,23 +1,25 @@
 <div class="w-80 h-full bg-gray-900 border-r border-gray-700 flex flex-col">
-  <div class="p-4 border-b border-gray-700">
-    <div class="flex gap-2">
-      <toggle-button [isActive]="activeView === 'chat'" (onClick)="onViewChange('chat')">
-        {{ 'CONVERSATIONS' | translate }}
-      </toggle-button>
-
-      <toggle-button
-        [isActive]="activeView === 'available-groups'"
-        (onClick)="onViewChange('available-groups')"
-      >
-        {{ 'SEARCH' | translate }}
-      </toggle-button>
+  <div class="p-3 border-b border-gray-700">
+    <div class="flex flex-col gap-1">
+      @for (view of sidebarViews; track view.key) {
+        <toggle-button [isActive]="activeView === view.key" (onClick)="onViewChange(view.key)">
+          <lucide-icon [img]="view.icon" class="w-4 h-4"></lucide-icon>
+          {{ view.translateKey | translate }}
+        </toggle-button>
+      }
     </div>
   </div>
 
-  <div class="flex-1 overflow-y-auto">
+  <div
+    class="flex-1 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-700 scrollbar-track-transparent"
+  >
     @if (activeView === 'chat') {
       <user-list />
       <group-list />
+    }
+
+    @if (activeView === 'available-users') {
+      <available-users />
     }
 
     @if (activeView === 'available-groups') {

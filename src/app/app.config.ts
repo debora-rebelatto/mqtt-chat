@@ -1,6 +1,5 @@
 import { ApplicationConfig } from '@angular/core'
 import { provideRouter } from '@angular/router'
-import { routes } from './app.routes'
 import { provideHttpClient } from '@angular/common/http'
 import { TranslateModule, TranslateLoader } from '@ngx-translate/core'
 import { HttpClient } from '@angular/common/http'
@@ -21,7 +20,6 @@ export function HttpLoaderFactory(http: HttpClient): TranslateLoader {
 
 export const appConfig: ApplicationConfig = {
   providers: [
-    provideRouter(routes),
     provideHttpClient(),
     importProvidersFrom(
       TranslateModule.forRoot({

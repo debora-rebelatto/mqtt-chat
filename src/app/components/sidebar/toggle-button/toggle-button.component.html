@@ -1,11 +1,10 @@
 <button
   (click)="onClick.emit()"
-  class="w-full flex-1 py-2 px-3 rounded-lg font-medium transition-colors"
+  class="w-full py-2 px-3 rounded-lg font-medium transition-colors text-sm text-left flex items-center gap-2"
   [ngClass]="{
     'bg-blue-600 text-white': isActive,
-    'bg-gray-800 text-gray-300 hover:bg-gray-700': !isActive
+    'bg-transparent text-gray-400 hover:bg-gray-800 hover:text-gray-300': !isActive
   }"
-  [disabled]="disabled"
 >
   <ng-content></ng-content>
 </button>
