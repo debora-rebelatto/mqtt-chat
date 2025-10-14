@@ -1,19 +1,20 @@
 import { Component, Input, Output, EventEmitter, OnChanges } from '@angular/core'
+import { TranslateModule } from '@ngx-translate/core'
 import { CommonModule } from '@angular/common'
 import { Subscription } from 'rxjs'
-
-import { SelectedChat } from '../../../models/selected-chat.models'
-import { AppStateService, GroupService } from '../../../services'
-import { User } from '../../../models/user.model'
 import { DateFormatPipe } from '../../../pipes/date-format.pipe'
+import { AppStateService, GroupService } from '../../../services'
+import { SelectedChat, User } from '../../../models'
+import { LucideAngularModule, X } from 'lucide-angular'
 
 @Component({
   selector: 'group-members-modal',
   templateUrl: 'group-members-modal.component.html',
   standalone: true,
-  imports: [CommonModule, DateFormatPipe]
+  imports: [CommonModule, DateFormatPipe, TranslateModule, LucideAngularModule]
 })
 export class GroupMembersModalComponent implements OnChanges {
+  readonly X = X
   @Input() isOpen = false
   @Input() selectedChat: SelectedChat | null = null
   @Output() closed = new EventEmitter<void>()
@@ -34,21 +35,14 @@ export class GroupMembersModalComponent implements OnChanges {
   }
 
   private loadMembers() {
-    this.subscription?.unsubscribe()
-    this.isLoading = true
+    const groupId = this.selectedChat?.group?.id || this.selectedChat?.id
+    if (!groupId) {
+      this.members = []
+      return
+    }
 
-    this.subscription = this.groupService.groups$.subscribe(groups => {
-      const groupId = this.selectedChat?.group?.id || this.selectedChat?.id
-      
-      if (groupId) {
-        const groupData = this.groupService.getGroupById(groupId)
-        this.members = groupData?.members || []
-      }
-      
-      this.isLoading = false
-    })
-
-    this.groupService.refreshGroups()
+    const group = this.groupService.getGroupById(groupId)
+    this.members = group?.members || []
   }
 
   closeModal() {
@@ -64,7 +58,7 @@ export class GroupMembersModalComponent implements OnChanges {
   }
 
   get groupName(): string {
-    return this.selectedChat?.name || 'Grupo'
+    return this.selectedChat?.name ?? ''
   }
 
   isCurrentUser(member: User): boolean {

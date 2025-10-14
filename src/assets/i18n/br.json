@@ -44,5 +44,7 @@
   "GROUP-INVITE": "Convite para grupo",
   "CLEAR_DATA": "Limpar dados",
   "CLEAR_ALL_DATA": "Limpar todos os dados",
-  "FROM": "De"
+  "FROM": "De",
+  "LOADING_MEMBERS": "Carregando membros...",
+  "YOU": "Você"
 }
