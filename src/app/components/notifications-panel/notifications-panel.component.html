@@ -39,10 +39,7 @@
 
       <div class="max-h-60 overflow-y-auto">
         @for (invitation of groupNotifications; track invitation.id) {
-          <notification-item
-            (accept)="onAcceptInvite(invitation)"
-            (reject)="onRejectInvite(invitation)"
-          >
+          <div class="flex flex-row">
             <div class="flex flex-col">
               <span class="font-medium">{{ 'GROUP_INVITE' | translate }}</span>
               <span class="bg-purple-600 px-2 py-0.5 text-xs rounded">{{
@@ -54,14 +51,15 @@
                 {{ invitation.timestamp | dateFormat }}
               </p>
             </div>
-          </notification-item>
+            <notification-item
+              (accept)="onAcceptInvite(invitation)"
+              (reject)="onRejectInvite(invitation)"
+            />
+          </div>
         }
 
         @for (notification of privateChatNotifications; track notification.id) {
-          <notification-item
-            (accept)="onAcceptChatRequest(notification)"
-            (reject)="onRejectChatRequest(notification)"
-          >
+          <div class="flex flex-row">
             <div class="flex flex-col gap-1">
               <span class="font-medium">{{ 'CHAT_INVITE' | translate }}</span>
               <span
@@ -74,7 +72,13 @@
                 {{ notification.timestamp | dateFormat }}
               </span>
             </div>
-          </notification-item>
+            @if (notification.status.isPending) {
+              <notification-item
+                (accept)="onAcceptChatRequest(notification)"
+                (reject)="onRejectChatRequest(notification)"
+              />
+            }
+          </div>
         }
 
         @if (
