@@ -46,7 +46,7 @@ export class InvitationService {
       return false
     }
 
-    const invitationId = this.idGenerator.generateRequestId()
+    const invitationId = this.idGenerator.generateId('req_')
     const joinRequest = new GroupInvitation(
       invitationId,
       group.id,

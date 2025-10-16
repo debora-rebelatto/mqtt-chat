@@ -9,24 +9,4 @@ export class IdGeneratorService {
     const random = Math.random().toString(16).substring(2, 8)
     return `${prefix}_${timestamp}_${random}`
   }
-
-  generateGroupId(): string {
-    return this.generateId('group')
-  }
-
-  generateRequestId(): string {
-    return this.generateId('req')
-  }
-
-  generateMessageId(): string {
-    return this.generateId('msg')
-  }
-
-  generateInvitationId(): string {
-    return this.generateId('inv')
-  }
-
-  generateClientId(username: string): string {
-    return this.generateId(`chat_${username}_`)
-  }
 }

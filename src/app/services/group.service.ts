@@ -51,7 +51,7 @@ export class GroupService {
   }
 
   createGroup(name: string, leader: User) {
-    const groupId = `group_${Date.now()}_${Math.random().toString(16).substring(2, 8)}`
+    const groupId = this.idGeneratorService.generateId('group_')
 
     const newGroup = new Group(groupId, name, leader, [leader], new Date())
 
@@ -104,37 +104,6 @@ export class GroupService {
     this.updateGroup(updatedGroup)
 
     this.mqttService.publish(MqttTopics.groupList, JSON.stringify(updatedGroup), true)
-
-    return true
-  }
-
-  inviteUserToGroup(groupId: string, username: string) {
-    const group = this.groupsSubject.value.find((g) => g.id === groupId)
-
-    if (!group) {
-      return false
-    }
-
-    if (group.leader.id !== this.currentUser.id) {
-      return false
-    }
-
-    if (group.members.some((member) => member.id === username)) {
-      return false
-    }
-
-    const invitationId = this.idGeneratorService.generateInvitationId()
-
-    const invitation = {
-      id: invitationId,
-      groupId: groupId,
-      groupName: group.name,
-      invitedBy: this.currentUser,
-      timestamp: new Date(),
-      to: username
-    }
-
-    this.mqttService.publish(MqttTopics.sendInvitation(username), JSON.stringify(invitation))
 
     return true
   }
@@ -241,15 +210,6 @@ export class GroupService {
   }
 
   getGroupById(groupId: string): Group | undefined {
-    return this.groupsSubject.value.find(g => g.id === groupId);
-  }
-
-  getGroupMembers(groupId: string): User[] {
-    const group = this.getGroupById(groupId);
-    return group ? group.members : [];
-  }
-
-  refreshGroups(): void {
-    this.mqttService.publish('meu-chat-mqtt/groups', 'REQUEST_GROUPS');
+    return this.groupsSubject.value.find((g) => g.id === groupId)
   }
 }
