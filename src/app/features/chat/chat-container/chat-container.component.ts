@@ -7,7 +7,6 @@ import { PageHeaderComponent } from '../../../components/page-header/page-header
 import { ChatAreaComponent } from '../chat-area/chat-area.component'
 import { Group, Message, User } from '../../../models'
 import { GroupService, ChatService, AppStateService, InvitationService } from '../../../services'
-import { ChatType } from '../../../models/chat-type.component'
 
 @Component({
   selector: 'app-chat-container',
@@ -60,21 +59,8 @@ export class ChatContainerComponent implements OnInit, OnDestroy {
     })
   }
 
-  onUserChange(user: User) {
-    this.appState.setUser(user)
-  }
-
   onConnectionChange(connected: boolean) {
     this.appState.setConnected(connected)
-  }
-
-  onGroupCreate(groupName: string) {
-    if (!this.appState.user) return
-    this.groupService.createGroup(groupName, this.appState.user)
-  }
-
-  onJoinGroup(groupId: string) {
-    this.joinGroup(groupId)
   }
 
   onMessageInputChange(value: string) {
@@ -85,10 +71,6 @@ export class ChatContainerComponent implements OnInit, OnDestroy {
     if (event.key === 'Enter') {
       this.sendMessage()
     }
-  }
-
-  selectChat(type: ChatType, id: string, name: string) {
-    this.appState.selectChat(type, id, name)
   }
 
   sendMessage() {

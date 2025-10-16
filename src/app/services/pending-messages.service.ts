@@ -38,33 +38,10 @@ export class PendingMessagesService {
     return false
   }
 
-  getPendingMessagesForUser(userId: string): Message[] {
-    return this.pendingMessages.get(userId) || []
-  }
-
   clearPendingMessagesForUser(userId: string): void {
     if (this.pendingMessages.has(userId)) {
       this.pendingMessages.delete(userId)
     }
-  }
-
-  hasPendingMessages(userId: string): boolean {
-    const pending = this.pendingMessages.get(userId)
-    return pending ? pending.length > 0 : false
-  }
-
-  getTotalPendingCount(): number {
-    let total = 0
-    this.pendingMessages.forEach((messages) => {
-      total += messages.length
-    })
-    return total
-  }
-
-  getUsersWithPendingMessages(): string[] {
-    return Array.from(this.pendingMessages.keys()).filter((userId) =>
-      this.hasPendingMessages(userId)
-    )
   }
 
   async sendPendingMessagesToUser(userId: string): Promise<void> {
@@ -91,10 +68,6 @@ export class PendingMessagesService {
         if (!success) {
           this.addPendingMessage(userId, message)
         }
-
-        if (i < messagesToSend.length - 1) {
-          await this.delay(300)
-        }
       }
     } finally {
       this.sendingInProgress.delete(userId)
@@ -119,13 +92,5 @@ export class PendingMessagesService {
       false,
       1
     )
-  }
-
-  clearAll(): void {
-    this.pendingMessages.clear()
-  }
-
-  private delay(ms: number): Promise<void> {
-    return new Promise((resolve) => setTimeout(resolve, ms))
   }
 }

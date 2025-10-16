@@ -232,6 +232,7 @@ export class ChatService {
 
     this.addMessage(chatMessage)
   }
+
   private addMessage(message: Message): void {
     const currentMessages = this.messagesSubject.value
     const messageExists = currentMessages.some((m) => m.id === message.id)
@@ -249,7 +250,7 @@ export class ChatService {
       return
     }
 
-    const messageId = this.idGeneratorService.generateMessageId()
+    const messageId = this.idGeneratorService.generateId('msg_')
     const message: Message = new Message(messageId, from, content, new Date(), ChatType.User, to.id)
     this.addMessage(message)
 
@@ -283,7 +284,7 @@ export class ChatService {
   sendGroupMessage(groupId: string, from: User, content: string): void {
     if (!content.trim()) return
 
-    const msgId = this.idGeneratorService.generateMessageId()
+    const msgId = this.idGeneratorService.generateId('msg_')
     const message: Message = new Message(msgId, from, content, new Date(), ChatType.Group, groupId)
     this.addMessage(message)
 
@@ -424,23 +425,6 @@ export class ChatService {
     this.availableGroupsSubject.next(this.groups)
   }
 
-  getPendingMessagesCount(): number {
-    return this.pendingMessagesService.getTotalPendingCount()
-  }
-
-  getUsersWithPendingMessages(): string[] {
-    return this.pendingMessagesService.getUsersWithPendingMessages()
-  }
-
-  hasPendingMessagesForUser(userId: string): boolean {
-    return this.pendingMessagesService.hasPendingMessages(userId)
-  }
-
-  clearMessages(): void {
-    this.messagesSubject.next([])
-    this.pendingMessagesService.clearAll()
-  }
-
   private sortMessagesByTimestamp(messages: Message[], descending: boolean = true): Message[] {
     return messages.sort((a, b) => {
       const timeA = a.timestamp.getTime()
@@ -465,16 +449,6 @@ export class ChatService {
     })
   }
 
-  getServiceState(): any {
-    return {
-      users: this.users.length,
-      groups: this.groups.length,
-      messages: this.messagesSubject.value.length,
-      pendingMessages: this.getPendingMessagesCount(),
-      currentChat: this.appState.selectedChat
-    }
-  }
-
   private subscribeToUserGroups(groups: Group[]): void {
     const currentUser = this.appState.user
     if (!currentUser) return
@@ -487,9 +461,5 @@ export class ChatService {
         })
       }
     })
-  }
-
-  canChatWithUser(userId: string): boolean {
-    return this.privateChatRequestService.isAllowedToChat(userId)
   }
 }

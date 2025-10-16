@@ -79,7 +79,7 @@ export class PageHeaderComponent implements OnInit, OnDestroy {
       const currentUser = new User(this._username, this._username, true, new Date())
       this.appState.setUser(currentUser)
 
-      const clientId = this.idGeneratorService.generateClientId(this.appState.user!.id)
+      const clientId = this.idGeneratorService.generateId(`chat_${this.appState.user!.id}`)
       await this.mqttService.connect(clientId)
 
       await new Promise((resolve) => setTimeout(resolve, 500))

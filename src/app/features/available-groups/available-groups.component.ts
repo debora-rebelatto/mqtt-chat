@@ -3,8 +3,8 @@ import { CommonModule } from '@angular/common'
 import { TranslateModule } from '@ngx-translate/core'
 
 import { LucideAngularModule, Search } from 'lucide-angular'
-import { Group } from '../../../models'
-import { AppStateService, GroupService, InvitationService } from '../../../services'
+import { Group } from '../../models'
+import { AppStateService, GroupService, InvitationService } from '../../services'
 import { Subject, takeUntil } from 'rxjs'
 
 @Component({
@@ -78,10 +78,7 @@ export class AvailableGroupsComponent implements OnInit, OnDestroy {
 
     this.requestingGroups.add(groupId)
 
-    const success = this.invitationService.requestJoinGroup(
-      group,
-
-    )
+    const success = this.invitationService.requestJoinGroup(group)
 
     if (!success) {
       this.requestingGroups.delete(groupId)
@@ -91,5 +88,4 @@ export class AvailableGroupsComponent implements OnInit, OnDestroy {
   isRequesting(groupId: string): boolean {
     return this.requestingGroups.has(groupId)
   }
-
 }
