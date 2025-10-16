@@ -75,7 +75,7 @@ export class SidebarComponent implements OnInit, OnDestroy {
 
   ngOnInit() {
     this.requestService.requests$.pipe(takeUntil(this.destroy$)).subscribe((requests) => {
-      this.pendingRequestCount = requests.filter((r) => r.status === 'pending').length
+      this.pendingRequestCount = requests.filter((r) => r.status.isPending).length
     })
   }
 
