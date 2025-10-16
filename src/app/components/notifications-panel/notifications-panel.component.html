@@ -39,18 +39,23 @@
 
       <div class="max-h-60 overflow-y-auto">
         @for (invitation of groupNotifications; track invitation.id) {
-          <div class="flex flex-row">
-            <div class="flex flex-col">
+          <div class="flex flex-col gap-2 p-4">
+            <div class="flex justify-between items-center">
               <span class="font-medium">{{ 'GROUP_INVITE' | translate }}</span>
               <span class="bg-purple-600 px-2 py-0.5 text-xs rounded">{{
                 'GROUP' | translate
               }}</span>
-              <p class="text-sm text-gray-300">{{ invitation.groupName }}</p>
-              <p class="text-xs text-gray-400">
-                {{ 'FROM' | translate }}: {{ invitation.invitee }} •
-                {{ invitation.timestamp | dateFormat }}
-              </p>
             </div>
+            <div class="flex flex-col gap-2">
+              <span>
+                {{ invitation.invitee }} {{ 'TO_GROUP' | translate }}
+                {{ invitation.groupName }}
+              </span>
+              <span>
+                {{ invitation.timestamp | dateFormat }}
+              </span>
+            </div>
+
             <notification-item
               (accept)="onAcceptInvite(invitation)"
               (reject)="onRejectInvite(invitation)"
@@ -84,9 +89,7 @@
           </div>
         }
 
-        @if (
-          allNotifications.length === 0 || (selectedFilter === 'pending' && pendingCount === 0)
-        ) {
+        @if (allNotifications.length === 0) {
           <div class="p-4 text-center text-gray-400">{{ 'NO_NOTIFICATIONS' | translate }}</div>
         }
       </div>
