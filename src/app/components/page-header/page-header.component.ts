@@ -6,10 +6,7 @@ import { Subject, takeUntil } from 'rxjs'
 import { LucideAngularModule, MessageCircle } from 'lucide-angular'
 import { GroupInvitation } from '../../models/group-invitation.model'
 import { Group } from '../../models/group.model'
-import {
-  NotificationItem,
-  NotificationsPanelComponent
-} from '../notifications-panel/notifications-panel.component'
+import { NotificationsPanelComponent } from '../notifications-panel/notifications-panel.component'
 import {
   MqttService,
   UserService,
@@ -21,7 +18,7 @@ import {
   IdGeneratorService,
   PrivateChatRequestService
 } from '../../services'
-import { PrivateChatRequest, User } from '../../models'
+import { User } from '../../models'
 import { MqttTopics } from '../../config/mqtt-topics'
 
 @Component({
@@ -42,9 +39,6 @@ export class PageHeaderComponent implements OnInit, OnDestroy {
 
   isConnecting = false
   private _username = ''
-  groupNotifications: GroupInvitation[] = []
-  chatNotifications: PrivateChatRequest[] = []
-  showNotificationPanel = false
 
   @Output() usernameChange = new EventEmitter<string>()
   @Output() connectionChange = new EventEmitter<boolean>()
@@ -74,20 +68,6 @@ export class PageHeaderComponent implements OnInit, OnDestroy {
     this.connectionManager.connected$.pipe(takeUntil(this.destroy$)).subscribe(() => {
       this.isConnecting = false
     })
-
-    this.invitationService.invitations$.pipe(takeUntil(this.destroy$)).subscribe((invitations) => {
-      this.groupNotifications = invitations.filter((invitation) => {
-        const group = this.groupService.getGroups().find((g: Group) => g.id === invitation.groupId)
-        const isLeader = group && group.leader.id === this.appState.user?.id
-        return isLeader
-      })
-    })
-
-    this.privateChatRequestService.requests$
-      .pipe(takeUntil(this.destroy$))
-      .subscribe((requests) => {
-        this.chatNotifications = requests.filter((req) => req.status === 'pending')
-      })
   }
 
   async connect() {
@@ -158,29 +138,11 @@ export class PageHeaderComponent implements OnInit, OnDestroy {
     }
   }
 
-  onToggleNotifications() {
-    this.showNotificationPanel = !this.showNotificationPanel
-  }
-
   get username(): string {
     return this._username
   }
 
   set username(value: string) {
     this._username = value
-  }
-
-  get allNotifications(): NotificationItem[] {
-    const groupItems: NotificationItem[] = this.groupNotifications.map((notification) => ({
-      type: 'group-invitation',
-      data: notification
-    }))
-
-    const chatItems: NotificationItem[] = this.chatNotifications.map((notification) => ({
-      type: 'private-chat-request',
-      data: notification
-    }))
-
-    return [...groupItems, ...chatItems]
   }
 }

@@ -1,21 +1,30 @@
 import { Injectable } from '@angular/core'
-import { BehaviorSubject } from 'rxjs'
+import { BehaviorSubject, map } from 'rxjs'
 import { MqttTopics } from '../config/mqtt-topics'
-import { User } from '../models'
+import { NotificationStatus, User } from '../models'
 import { MqttService, AppStateService, IdGeneratorService } from '.'
-import { PrivateChatRequest } from '../models/private-chat-request.model'
+import { PrivateChatNotification } from '../models'
 
 @Injectable({
   providedIn: 'root'
 })
 export class PrivateChatRequestService {
-  private requestsSubject = new BehaviorSubject<PrivateChatRequest[]>([])
-  private sentRequestsSubject = new BehaviorSubject<PrivateChatRequest[]>([])
   private allowedChatsSubject = new BehaviorSubject<Set<string>>(new Set())
+  private notificationsSubject = new BehaviorSubject<PrivateChatNotification[]>([])
 
-  public requests$ = this.requestsSubject.asObservable()
-  public sentRequests$ = this.sentRequestsSubject.asObservable()
   public allowedChats$ = this.allowedChatsSubject.asObservable()
+  public notifications$ = this.notificationsSubject.asObservable()
+
+  public requests$ = this.notifications$.pipe(
+    map((notifications) =>
+      notifications.filter((n) => n.type === 'request_received' && n.status.isPending)
+    )
+  )
+  public sentRequests$ = this.notifications$.pipe(
+    map((notifications) =>
+      notifications.filter((n) => n.type === 'request_sent' && n.status.isPending)
+    )
+  )
 
   private currentUser!: User
   private processedRequestIds = new Set<string>()
@@ -40,27 +49,20 @@ export class PrivateChatRequestService {
   }
 
   sendChatRequest(targetUser: User): boolean {
-    if (this.isAllowedToChat(targetUser.id)) {
-      return true
-    }
-
-    const existingRequest = this.sentRequestsSubject.value.find(
-      (req) => req.to === targetUser.id && req.status === 'pending'
-    )
-
-    if (existingRequest) {
+    if (!this.canSendRequestTo(targetUser.id)) {
       return false
     }
 
-    const requestId = this.idGenerator.generateId('chat_req')
+    const requestId = this.idGenerator.generateId('chat_req_')
 
-    const request: PrivateChatRequest = {
-      id: requestId,
-      from: this.currentUser,
-      to: targetUser.id,
+    this.addNotification({
+      id: this.idGenerator.generateId('notif_'),
+      type: 'request_sent',
+      relatedUser: targetUser,
+      requestId: requestId,
       timestamp: new Date(),
-      status: 'pending'
-    }
+      status: NotificationStatus.pending
+    })
 
     const payload = {
       id: requestId,
@@ -69,12 +71,9 @@ export class PrivateChatRequestService {
         name: this.currentUser.name
       },
       to: targetUser.id,
-      timestamp: request.timestamp.toISOString(),
+      timestamp: new Date().toISOString(),
       type: 'chat_request'
     }
-
-    const sentRequests = [...this.sentRequestsSubject.value, request]
-    this.sentRequestsSubject.next(sentRequests)
 
     this.mqttService.publish(
       MqttTopics.privateChat.request(targetUser.id),
@@ -86,73 +85,68 @@ export class PrivateChatRequestService {
     return true
   }
 
-  acceptRequest(request: PrivateChatRequest) {
-    this.processedRequestIds.add(request.id)
+  acceptRequest(notificationId: string) {
+    const notification = this.notificationsSubject.value.find((n) => n.id === notificationId)
+    if (!notification || notification.type !== 'request_received') {
+      return
+    }
+
+    this.processedRequestIds.add(notification.requestId)
 
     const response = {
-      requestId: request.id,
+      requestId: notification.requestId,
       from: this.currentUser.id,
-      to: request.from.id,
+      to: notification.relatedUser.id,
       accepted: true,
       timestamp: new Date().toISOString(),
       type: 'chat_response'
     }
 
-    this.addAllowedChat(request.from.id)
+    this.addAllowedChat(notification.relatedUser.id)
 
-    this.removeRequest(request.id)
+    this.updateNotificationStatus(notificationId, NotificationStatus.accepted)
 
     this.mqttService.publish(
-      MqttTopics.privateChat.response(request.from.id),
+      MqttTopics.privateChat.response(notification.relatedUser.id),
       JSON.stringify(response),
       false,
       1
     )
 
-    this.publishAllowedChat(request.from.id)
+    this.publishAllowedChat(notification.relatedUser.id)
   }
 
-  rejectRequest(request: PrivateChatRequest) {
-    this.processedRequestIds.add(request.id)
+  rejectRequest(notificationId: string) {
+    const notification = this.notificationsSubject.value.find((n) => n.id === notificationId)
+    if (!notification || notification.type !== 'request_received') {
+      return
+    }
+
+    this.processedRequestIds.add(notification.requestId)
 
     const response = {
-      requestId: request.id,
+      requestId: notification.requestId,
       from: this.currentUser.id,
-      to: request.from.id,
+      to: notification.relatedUser.id,
       accepted: false,
       timestamp: new Date().toISOString(),
       type: 'chat_response'
     }
 
-    this.removeRequest(request.id)
+    this.updateNotificationStatus(notificationId, NotificationStatus.rejected)
 
     this.mqttService.publish(
-      MqttTopics.privateChat.response(request.from.id),
+      MqttTopics.privateChat.response(notification.relatedUser.id),
       JSON.stringify(response),
       false,
       1
     )
   }
 
-  cancelRequest(request: PrivateChatRequest) {
-    const payload = {
-      requestId: request.id,
-      from: this.currentUser.id,
-      to: request.to,
-      cancelled: true,
-      timestamp: new Date().toISOString(),
-      type: 'chat_cancel'
-    }
-
-    const sentRequests = this.sentRequestsSubject.value.filter((r) => r.id !== request.id)
-    this.sentRequestsSubject.next(sentRequests)
-
-    this.mqttService.publish(
-      MqttTopics.privateChat.request(request.to),
-      JSON.stringify(payload),
-      false,
-      1
-    )
+  getPendingReceivedCount(): number {
+    return this.notificationsSubject.value.filter(
+      (notif) => notif.type === 'request_received' && notif.status.isPending
+    ).length
   }
 
   isAllowedToChat(userId: string): boolean {
@@ -160,50 +154,40 @@ export class PrivateChatRequestService {
   }
 
   hasPendingRequest(userId: string): boolean {
-    const received = this.requestsSubject.value.some(
-      (req) => req.from.id === userId && req.status === 'pending'
+    return this.notificationsSubject.value.some(
+      (notif) =>
+        notif.relatedUser.id === userId &&
+        notif.status.isPending &&
+        (notif.type === 'request_received' || notif.type === 'request_sent')
     )
-    const sent = this.sentRequestsSubject.value.some(
-      (req) => req.to === userId && req.status === 'pending'
-    )
-    return received || sent
-  }
-
-  getPendingRequestCount(): number {
-    return this.requestsSubject.value.filter((req) => req.status === 'pending').length
   }
 
   private handleIncomingRequest(message: string) {
     const data = JSON.parse(message)
 
-    if (data.type === 'chat_cancel') {
-      this.removeRequest(data.requestId)
-      return
-    }
-
     if (this.processedRequestIds.has(data.id)) {
       return
     }
 
-    if (data.from.id === this.currentUser.id) {
+    if (data.from.id === this.currentUser.id || data.to !== this.currentUser.id) {
       return
     }
 
-    const exists = this.requestsSubject.value.some((req) => req.id === data.id)
+    const exists = this.notificationsSubject.value.some((notif) => notif.requestId === data.id)
     if (exists) {
       return
     }
 
-    const request: PrivateChatRequest = {
-      id: data.id,
-      from: new User(data.from.id, data.from.name, true, new Date()),
-      to: data.to,
-      timestamp: new Date(data.timestamp),
-      status: 'pending'
-    }
+    const user = new User(data.from.id, data.from.name)
 
-    const requests = [...this.requestsSubject.value, request]
-    this.requestsSubject.next(requests)
+    this.addNotification({
+      id: this.idGenerator.generateId('notif'),
+      type: 'request_received',
+      relatedUser: user,
+      requestId: data.id,
+      timestamp: new Date(data.timestamp),
+      status: NotificationStatus.pending
+    })
   }
 
   private handleRequestResponse(message: string) {
@@ -213,29 +197,48 @@ export class PrivateChatRequestService {
       return
     }
 
-    const sentRequest = this.sentRequestsSubject.value.find((req) => req.id === data.requestId)
+    const notification = this.notificationsSubject.value.find(
+      (notif) => notif.requestId === data.requestId && notif.type === 'request_sent'
+    )
 
-    if (!sentRequest) {
+    if (!notification) {
       return
     }
 
     if (data.accepted) {
       this.addAllowedChat(data.from)
 
-      sentRequest.status = 'accepted'
+      this.updateNotificationByRequestId(data.requestId, NotificationStatus.accepted)
     } else {
-      sentRequest.status = 'rejected'
+      this.updateNotificationByRequestId(data.requestId, NotificationStatus.rejected)
     }
-
-    setTimeout(() => {
-      const sentRequests = this.sentRequestsSubject.value.filter((req) => req.id !== data.requestId)
-      this.sentRequestsSubject.next(sentRequests)
-    }, 3000)
   }
 
-  private removeRequest(requestId: string) {
-    const requests = this.requestsSubject.value.filter((req) => req.id !== requestId)
-    this.requestsSubject.next(requests)
+  private updateNotificationStatus(notificationId: string, status: NotificationStatus) {
+    const notifications: PrivateChatNotification[] = this.notificationsSubject.value.map((notif) =>
+      notif.id === notificationId
+        ? {
+            ...notif,
+            status: status as NotificationStatus,
+            timestamp: new Date()
+          }
+        : notif
+    )
+    this.notificationsSubject.next(notifications)
+  }
+
+  private updateNotificationByRequestId(requestId: string, status: NotificationStatus) {
+    const notifications: PrivateChatNotification[] = this.notificationsSubject.value.map((notif) =>
+      notif.requestId === requestId
+        ? {
+            ...notif,
+            status: status as NotificationStatus,
+            timestamp: new Date(),
+            read: false
+          }
+        : notif
+    )
+    this.notificationsSubject.next(notifications)
   }
 
   private addAllowedChat(userId: string) {
@@ -254,7 +257,7 @@ export class PrivateChatRequestService {
     this.mqttService.publish(
       MqttTopics.privateChat.allowed(this.currentUser.id),
       JSON.stringify(payload),
-      true, // retained
+      true,
       1
     )
   }
@@ -268,9 +271,18 @@ export class PrivateChatRequestService {
     })
   }
 
+  private addNotification(notification: PrivateChatNotification) {
+    const notifications = [...this.notificationsSubject.value, notification]
+    this.notificationsSubject.next(notifications)
+  }
+
   onDisconnect() {
-    this.requestsSubject.next([])
-    this.sentRequestsSubject.next([])
+    const notifications: PrivateChatNotification[] = this.notificationsSubject.value.map((notif) =>
+      notif.status.isPending
+        ? { ...notif, status: NotificationStatus.expired, message: 'Sessão encerrada' }
+        : notif
+    )
+    this.notificationsSubject.next(notifications)
   }
 
   canSendRequestTo(userId: string): boolean {

@@ -44,10 +44,10 @@ export class AvailableUsersComponent implements OnInit, OnDestroy {
           }
 
           const hasPendingReceived = requests.some(
-            (req) => req.from.id === user.id && req.status === 'pending'
+            (req) => req.relatedUser.id === user.id && req.status.isPending
           )
           const hasPendingSent = sentRequests.some(
-            (req) => req.to === user.id && req.status === 'pending'
+            (req) => req.relatedUser.id === user.id && req.status.isPending
           )
 
           return !hasPendingReceived && !hasPendingSent

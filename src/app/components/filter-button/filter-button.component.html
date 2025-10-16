@@ -1,0 +1,3 @@
+<button (click)="onFilterClick()" [class]="getButtonClasses()">
+  {{ (filterType === 'all' ? 'ALL' : 'PENDING') | translate }} ({{ count }})
+</button>

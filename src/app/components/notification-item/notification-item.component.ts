@@ -7,7 +7,7 @@ import { TranslateModule } from '@ngx-translate/core'
   standalone: true,
   imports: [TranslateModule]
 })
-export class ListContainerComponent {
+export class NotificationItemComponent {
   @Output() accept = new EventEmitter<void>()
   @Output() reject = new EventEmitter<void>()
   @Input() isProcessing = false

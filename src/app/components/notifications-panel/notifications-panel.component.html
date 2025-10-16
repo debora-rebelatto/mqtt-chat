@@ -4,11 +4,11 @@
     class="relative p-2 hover:bg-gray-800 rounded-lg transition-colors"
   >
     🔔
-    @if (notificationsCount > 0) {
+    @if (pendingCount > 0) {
       <span
         class="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center"
       >
-        {{ notificationsCount }}
+        {{ pendingCount }}
       </span>
     }
   </button>
@@ -17,9 +17,26 @@
     <div
       class="absolute right-0 mt-2 w-80 bg-gray-800 border border-gray-700 rounded-lg shadow-lg z-10"
     >
-      <div class="p-3 border-b border-gray-700">
+      <div class="p-3 border-b border-gray-700 flex justify-between items-center">
         <h3 class="font-semibold">{{ 'NOTIFICATIONS' | translate }}</h3>
       </div>
+
+      <div class="p-2 border-b border-gray-700 flex gap-1 flex-wrap">
+        <filter-button
+          filterType="all"
+          [count]="allNotifications.length"
+          [isSelected]="selectedFilter === 'all'"
+          (filterChange)="onFilterChange($event)"
+        />
+
+        <filter-button
+          filterType="pending"
+          [count]="pendingCount"
+          [isSelected]="selectedFilter === 'pending'"
+          (filterChange)="onFilterChange($event)"
+        />
+      </div>
+
       <div class="max-h-60 overflow-y-auto">
         @for (invitation of groupNotifications; track invitation.id) {
           <notification-item
@@ -27,7 +44,10 @@
             (reject)="onRejectInvite(invitation)"
           >
             <div class="flex flex-col">
-              <p class="font-medium">{{ 'GROUP_INVITE' | translate }}</p>
+              <span class="font-medium">{{ 'GROUP_INVITE' | translate }}</span>
+              <span class="bg-purple-600 px-2 py-0.5 text-xs rounded">{{
+                'GROUP' | translate
+              }}</span>
               <p class="text-sm text-gray-300">{{ invitation.groupName }}</p>
               <p class="text-xs text-gray-400">
                 {{ 'FROM' | translate }}: {{ invitation.invitee }} •
@@ -36,23 +56,31 @@
             </div>
           </notification-item>
         }
-        @for (request of chatNotifications; track request.id) {
+
+        @for (notification of privateChatNotifications; track notification.id) {
           <notification-item
-            (accept)="onAcceptChatRequest(request)"
-            (reject)="onRejectChatRequest(request)"
+            (accept)="onAcceptChatRequest(notification)"
+            (reject)="onRejectChatRequest(notification)"
           >
-            <div class="flex flex-col">
-              <p class="font-medium">{{ 'CHAT_INVITE' | translate }}</p>
-              <p class="text-sm text-gray-300">De: {{ request.from.name }}</p>
-              <p class="text-xs text-gray-400">
-                {{ request.timestamp | dateFormat }}
-              </p>
+            <div class="flex flex-col gap-1">
+              <span class="font-medium">{{ 'CHAT_INVITE' | translate }}</span>
+              <span
+                [class]="getStatusColor(notification.status)"
+                class="inline-flex items-center rounded-md px-2 py-1 text-xs font-medium text-white"
+              >
+                {{ getStatusLabel(notification.status) }}
+              </span>
+              <span class="text-xs text-gray-400">
+                {{ notification.timestamp | dateFormat }}
+              </span>
             </div>
           </notification-item>
         }
 
-        @if (notificationsCount === 0) {
-          <div class="p-4 text-center text-gray-400">Nenhuma notificação</div>
+        @if (
+          allNotifications.length === 0 || (selectedFilter === 'pending' && pendingCount === 0)
+        ) {
+          <div class="p-4 text-center text-gray-400">{{ 'NO_NOTIFICATIONS' | translate }}</div>
         }
       </div>
     </div>
