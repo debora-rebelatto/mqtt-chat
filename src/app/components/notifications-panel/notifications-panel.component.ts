@@ -117,26 +117,13 @@ export class NotificationsPanelComponent implements OnInit, OnDestroy {
   }
 
   get pendingCount(): number {
-    console.log('allGroupInvitations:', this.allGroupInvitations)
-    console.log('allPrivateChatNotifications:', this.allPrivateChatNotifications)
-
-    const pendingGroupInvitations = this.allGroupInvitations.filter((inv) => {
-      console.log(
-        'Checking invitation:',
-        inv.id,
-        'status:',
-        inv.status,
-        'isPending:',
-        inv.status?.isPending
-      )
-      return inv.status?.isPending ?? false
-    }).length
+    const pendingGroupInvitations = this.allGroupInvitations.filter(
+      (inv) => inv.status?.isPending ?? false
+    ).length
 
     const pendingPrivateChat = this.allPrivateChatNotifications.filter(
       (notif) => notif.status?.isPending ?? false
     ).length
-
-    console.log('Pending counts - Groups:', pendingGroupInvitations, 'Private:', pendingPrivateChat)
 
     return pendingGroupInvitations + pendingPrivateChat
   }
