@@ -39,7 +39,6 @@ export class NotificationsPanelComponent implements OnInit, OnDestroy {
     [NotificationStatus.pending.id, { color: 'bg-amber-500', label: 'Pendente' }],
     [NotificationStatus.accepted.id, { color: 'bg-emerald-500', label: 'Aceita' }],
     [NotificationStatus.rejected.id, { color: 'bg-rose-500', label: 'Recusada' }],
-    [NotificationStatus.expired.id, { color: 'bg-slate-400', label: 'Expirada' }]
   ])
 
   constructor(
