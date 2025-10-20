@@ -47,5 +47,9 @@
   "VIEW_HISTORY": "Ver Histórico",
   "NOTIFICATION": "Notificação",
   "GROUP": "Grupo",
-  "TO_GROUP": "quer acessar o grupo"
+  "TO_GROUP": "quer acessar o grupo",
+  "PASSWORD": "Senha",
+  "CREATE_ACCOUNT": "Criar Conta",
+  "SIGNUP": "Cadastrar",
+  "BACK_TO_LOGIN": "Voltar para Login"
 }
