@@ -52,8 +52,17 @@ export class GroupListComponent implements OnInit, OnDestroy {
   }
 
   private setupSubscriptions() {
-    this.chatService.groupChats$.pipe(takeUntil(this.destroy$)).subscribe((groups) => {
+    this.groupService.groups$.pipe(takeUntil(this.destroy$)).subscribe((groups) => {
       this.groupChats = groups
+
+      const currentUserId = this.appState.user?.id
+      if (currentUserId) {
+        this.groupChats = groups.filter(
+          (group) =>
+            group.leader.id === currentUserId ||
+            group.members.some((member) => member.id === currentUserId)
+        )
+      }
     })
   }
 

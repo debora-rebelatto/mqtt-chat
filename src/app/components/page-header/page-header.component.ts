@@ -10,8 +10,7 @@ import {
   InvitationService,
   ConnectionManagerService,
   AppStateService,
-  IdGeneratorService,
-  PrivateChatRequestService
+  IdGeneratorService
 } from '../../services'
 import { MqttTopics } from '../../config/mqtt-topics'
 import { LoginComponent } from '../login/login.component'
@@ -40,7 +39,6 @@ export class PageHeaderComponent {
     public appState: AppStateService,
     public idGeneratorService: IdGeneratorService,
     private invitationService: InvitationService,
-    public privateChatRequestService: PrivateChatRequestService
   ) {}
 
   disconnect() {
@@ -50,7 +48,6 @@ export class PageHeaderComponent {
     }
 
     this.invitationService.onDisconnect()
-    this.privateChatRequestService.onDisconnect()
     this.connectionManager.stopHeartbeat()
     this.mqttService.disconnect()
     this.appState.setConnected(false)

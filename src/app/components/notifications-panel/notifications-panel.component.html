@@ -19,12 +19,13 @@
     >
       <div class="p-3 border-b border-gray-700 flex justify-between items-center">
         <h3 class="font-semibold">{{ 'NOTIFICATIONS' | translate }}</h3>
+        <span class="text-xs text-gray-400">{{ totalCount }} total</span>
       </div>
 
       <div class="p-2 border-b border-gray-700 flex gap-1 flex-wrap">
         <filter-button
           filterType="all"
-          [count]="allNotifications.length"
+          [count]="totalCount"
           [isSelected]="selectedFilter === 'all'"
           (filterChange)="onFilterChange($event)"
         />
@@ -38,33 +39,41 @@
       </div>
 
       <div class="max-h-60 overflow-y-auto">
-        @for (invitation of groupNotifications; track invitation.id) {
-          <div class="flex flex-col gap-2 p-4">
+        @for (invitation of filteredGroupInvitations; track invitation.id) {
+          <div class="flex flex-col gap-2 p-4 border-b border-gray-700">
             <div class="flex justify-between items-center">
               <span class="font-medium">{{ 'GROUP_INVITE' | translate }}</span>
-              <span class="bg-purple-600 px-2 py-0.5 text-xs rounded">{{
-                'GROUP' | translate
-              }}</span>
+              <div class="flex items-center gap-2">
+                <span
+                  [class]="getStatusColor(invitation.status || NotificationStatus.pending)"
+                  class="inline-flex items-center rounded-md px-2 py-1 text-xs font-medium text-white"
+                >
+                  {{ getStatusLabel(invitation.status || NotificationStatus.pending) }}
+                </span>
+              </div>
             </div>
-            <div class="flex flex-col gap-2">
+            <div class="flex flex-col gap-1 text-sm">
               <span>
-                {{ invitation.invitee }} {{ 'TO_GROUP' | translate }}
+                {{ invitation.invitee.name }} {{ 'TO_GROUP' | translate }}
                 {{ invitation.groupName }}
               </span>
-              <span>
+              <span class="text-gray-400 text-xs">
                 {{ invitation.timestamp | dateFormat }}
               </span>
             </div>
 
-            <notification-item
-              (accept)="onAcceptInvite(invitation)"
-              (reject)="onRejectInvite(invitation)"
-            />
+            @if (canShowActions(invitation)) {
+              <notification-item
+                (accept)="onAcceptInvite(invitation)"
+                (reject)="onRejectInvite(invitation)"
+              />
+            }
           </div>
         }
 
-        @for (notification of privateChatNotifications; track notification.id) {
-          <div class="flex flex-col gap-2 p-4">
+        <!-- Notificações de Chat Privado -->
+        @for (notification of filteredPrivateChatNotifications; track notification.id) {
+          <div class="flex flex-col gap-2 p-4 border-b border-gray-700">
             <div class="flex justify-between items-center">
               <span class="font-medium">{{ 'CHAT_INVITE' | translate }}</span>
               <span
@@ -74,13 +83,13 @@
                 {{ getStatusLabel(notification.status) }}
               </span>
             </div>
-            <div class="flex items-center">
-              <span class="pr-1"> {{ notification.relatedUser.name }} • </span>
-              <span>
+            <div class="flex flex-col gap-1 text-sm">
+              <span>{{ notification.relatedUser.name }}</span>
+              <span class="text-gray-400 text-xs">
                 {{ notification.timestamp | dateFormat }}
               </span>
             </div>
-            @if (notification.status.isPending) {
+            @if (canShowActions(notification)) {
               <notification-item
                 (accept)="onAcceptChatRequest(notification)"
                 (reject)="onRejectChatRequest(notification)"
@@ -89,7 +98,7 @@
           </div>
         }
 
-        @if (allNotifications.length === 0) {
+        @if (notificationsCount === 0) {
           <div class="p-4 text-center text-gray-400">{{ 'NO_NOTIFICATIONS' | translate }}</div>
         }
       </div>

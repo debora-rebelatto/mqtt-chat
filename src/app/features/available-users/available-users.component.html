@@ -1,5 +1,5 @@
-<div class="flex flex-col h-full p-2">
-  <h3 class="font-bold text-gray-300 flex items-center gap-2">
+<div class="flex flex-col h-full p-4">
+  <h3 class="font-bold text-gray-300 flex items-center gap-2 pb-2">
     <lucide-icon [img]="UserIcon" class="w-4 h-4"></lucide-icon>
     {{ 'AVAILABLE_USERS' | translate }}
   </h3>
@@ -12,45 +12,43 @@
 
   <div class="flex flex-col gap-2">
     @for (user of availableUsers; track user.id) {
-      <div class="mx-2">
-        <div class="bg-gray-800 hover:bg-gray-750 rounded-lg transition-colors overflow-hidden">
-          <div class="p-3 flex items-center justify-between">
-            <div class="flex items-center gap-2">
-              <div
-                [class]="user.online ? 'bg-green-500' : 'bg-gray-500'"
-                class="w-2 h-2 rounded-full"
-              ></div>
-              <span class="font-medium text-white">{{ user.name }}</span>
-            </div>
-
-            <div class="flex items-center gap-2">
-              <span class="text-xs text-gray-400">
-                {{ user.online ? 'Online' : 'Offline' }}
-              </span>
-            </div>
+      <div class="bg-gray-800 hover:bg-gray-750 rounded-lg transition-colors overflow-hidden">
+        <div class="p-3 flex items-center justify-between">
+          <div class="flex items-center gap-2">
+            <div
+              [class]="user.online ? 'bg-green-500' : 'bg-gray-500'"
+              class="w-2 h-2 rounded-full"
+            ></div>
+            <span class="font-medium text-white">{{ user.name }}</span>
           </div>
 
-          <div class="px-3 pb-3">
-            @if (canSendRequest(user)) {
-              <button
-                (click)="sendChatRequest(user)"
-                [disabled]="isSendingRequest(user.id)"
-                class="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-gray-600 disabled:cursor-not-allowed text-white font-medium py-2 px-4 rounded-lg transition-colors text-sm"
-              >
-                {{
-                  isSendingRequest(user.id) ? ('SENDING' | translate) : ('REQUEST_CHAT' | translate)
-                }}
-              </button>
-            }
-
-            @if (hasPendingRequest(user.id)) {
-              <div
-                class="w-full bg-yellow-600/20 border border-yellow-600/50 text-yellow-500 font-medium py-2 px-4 rounded-lg text-sm text-center"
-              >
-                {{ 'PENDING_REQUEST' | translate }}
-              </div>
-            }
+          <div class="flex items-center gap-2">
+            <span class="text-xs text-gray-400">
+              {{ user.online ? 'Online' : 'Offline' }}
+            </span>
           </div>
+        </div>
+
+        <div class="px-3 pb-3">
+          @if (canSendRequest(user)) {
+            <button
+              (click)="sendChatRequest(user)"
+              [disabled]="isSendingRequest(user.id)"
+              class="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-gray-600 disabled:cursor-not-allowed text-white font-medium py-2 px-4 rounded-lg transition-colors text-sm"
+            >
+              {{
+                isSendingRequest(user.id) ? ('SENDING' | translate) : ('REQUEST_CHAT' | translate)
+              }}
+            </button>
+          }
+
+          @if (hasPendingRequest(user.id)) {
+            <div
+              class="w-full bg-yellow-600/20 border border-yellow-600/50 text-yellow-500 font-medium py-2 px-4 rounded-lg text-sm text-center"
+            >
+              {{ 'PENDING_REQUEST' | translate }}
+            </div>
+          }
         </div>
       </div>
     }
