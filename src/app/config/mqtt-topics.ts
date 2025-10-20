@@ -28,5 +28,6 @@ export const MqttTopics = {
     request: (username: string) => `${BASE_TOPIC}/private-chat/request/${username}`,
     response: (username: string) => `${BASE_TOPIC}/private-chat/response/${username}`,
     allowed: (username: string) => `${BASE_TOPIC}/private-chat/allowed/${username}`
-  }
+  },
+  auth: 'chat/auth',
 }
