@@ -49,8 +49,15 @@ export class LoginComponent {
     public privateChatRequestService: PrivateChatRequestService
   ) {}
 
-  ngOnInit() {
+  async ngOnInit() {
     this.setupSubscriptions()
+    await this.connectForAuth()
+  }
+
+  private async connectForAuth() {
+    const authClientId = this.idGeneratorService.generateId('auth_temp')
+    await this.mqttService.connect(authClientId)
+    this.authService.initialize()
   }
 
   ngOnDestroy() {
