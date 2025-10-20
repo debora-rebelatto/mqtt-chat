@@ -15,6 +15,7 @@ export class InvitationService {
   public invitations$ = this.invitationsSubject.asObservable()
   private currentUser!: User
   private pendingRequests = new Set<string>()
+  private processedInvitations = new Set<string>()
 
   constructor(
     private mqttService: MqttService,
@@ -22,7 +23,7 @@ export class InvitationService {
     private idGenerator: IdGeneratorService
   ) {}
 
-  initialize() {
+  initialize(): void {
     this.currentUser = this.appState.user!
 
     this.mqttService.subscribe(MqttTopics.sendInvitation(this.currentUser.id), (message) => {
@@ -30,11 +31,11 @@ export class InvitationService {
     })
 
     this.mqttService.subscribe(MqttTopics.invitationResponses, (message) => {
-      console.log(message)
+      console.log('Resposta de convite recebida:', message)
     })
   }
 
-  requestJoinGroup(group: Group) {
+  requestJoinGroup(group: Group): boolean {
     const requesterId = this.currentUser.id
     const requestKey = `${requesterId}_${group.id}`
 
@@ -67,32 +68,47 @@ export class InvitationService {
     return true
   }
 
-  acceptInvitation(invitation: GroupInvitation) {
+  acceptInvitation(invitation: GroupInvitation): void {
+    const processKey = `accept_${invitation.id}`
+    if (this.processedInvitations.has(processKey)) {
+      return
+    }
+    this.processedInvitations.add(processKey)
+
     const response = {
       type: 'member_added',
       invitationId: invitation.id,
       groupId: invitation.groupId,
       invitee: invitation.invitee,
-      accepted: true,
       timestamp: new Date().toISOString()
     }
 
-    this.mqttService.publish(MqttTopics.invitationResponses, JSON.stringify(response))
     this.mqttService.publish(MqttTopics.groupUpdates, JSON.stringify(response))
 
     this.removeInvitation(invitation.id)
 
     const requestKey = `${invitation.invitee}_${invitation.groupId}`
     this.pendingRequests.delete(requestKey)
+
+    setTimeout(() => {
+      this.processedInvitations.delete(processKey)
+    }, 5000)
   }
 
-  rejectInvitation(invitation: GroupInvitation) {
+  rejectInvitation(invitation: GroupInvitation): void {
+    const processKey = `reject_${invitation.id}`
+    if (this.processedInvitations.has(processKey)) {
+      return
+    }
+    this.processedInvitations.add(processKey)
+
     const response = {
+      type: 'invitation_response',
       invitationId: invitation.id,
       groupId: invitation.groupId,
       invitee: invitation.invitee,
       accepted: false,
-      timestamp: new Date()
+      timestamp: new Date().toISOString()
     }
 
     this.mqttService.publish(MqttTopics.invitationResponses, JSON.stringify(response))
@@ -102,16 +118,19 @@ export class InvitationService {
     this.pendingRequests.delete(requestKey)
   }
 
-  private handleInvitation(message: string) {
+  private handleInvitation(message: string): void {
     const data = JSON.parse(message)
 
-    const invitee = data.invitee
+    if (this.processedInvitations.has(`received_${data.id}`)) {
+      return
+    }
+    this.processedInvitations.add(`received_${data.id}`)
 
     const invitation = new GroupInvitation(
       data.id,
       data.groupId,
       data.groupName,
-      invitee,
+      data.invitee,
       new Date(data.timestamp)
     )
 
@@ -122,14 +141,20 @@ export class InvitationService {
       const updatedInvitations = [...invitations, invitation]
       this.invitationsSubject.next(updatedInvitations)
     }
+
+    setTimeout(() => {
+      this.processedInvitations.delete(`received_${data.id}`)
+    }, 60000) // 1 minuto
   }
 
-  private removeInvitation(invitationId: string) {
+  private removeInvitation(invitationId: string): void {
     const invitations = this.invitationsSubject.value.filter((i) => i.id !== invitationId)
     this.invitationsSubject.next(invitations)
   }
 
-  onDisconnect() {
+  onDisconnect(): void {
     this.invitationsSubject.next([])
+    this.pendingRequests.clear()
+    this.processedInvitations.clear()
   }
 }

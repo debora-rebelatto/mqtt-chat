@@ -1,5 +1,7 @@
-import { IdGeneratorService } from './id-generator.service'
+import { MqttTopics } from './../config/mqtt-topics'
 import { Injectable } from '@angular/core'
+import { MqttService } from './mqtt.service'
+import { IdGeneratorService } from './id-generator.service'
 
 export interface AuthResponse {
   success: boolean
@@ -17,13 +19,24 @@ interface UserData {
 })
 export class AuthService {
   private users: Map<string, UserData> = new Map()
-  private authTimeout: any = null
+  private authTimeout: ReturnType<typeof setTimeout> | null = null
 
-  constructor(private idGeneratorService: IdGeneratorService) {
+  constructor(
+    private mqttService: MqttService,
+    private idGeneratorService: IdGeneratorService
+  ) {}
+
+  initialize(): void {
     this.initializeDefaultUsers()
+
+    this.mqttService.subscribe(MqttTopics.authRegistry, (message) => {
+      this.handleUserRegistry(message)
+    })
+
+    this.publishUsers()
   }
 
-  private initializeDefaultUsers() {
+  private initializeDefaultUsers(): void {
     this.users.set('debora', {
       password: '123',
       userId: 'user_debora'
@@ -35,8 +48,46 @@ export class AuthService {
     })
   }
 
+  private handleUserRegistry(message: string): void {
+    const data = JSON.parse(message)
+
+    if (data.type === 'user_registered' && data.username && data.userId) {
+      if (!this.users.has(data.username)) {
+        this.users.set(data.username, {
+          password: data.password || '',
+          userId: data.userId
+        })
+      }
+    } else if (data.type === 'users_sync' && Array.isArray(data.users)) {
+      data.users.forEach((user: { username: string; userId: string; password: string }) => {
+        if (!this.users.has(user.username)) {
+          this.users.set(user.username, {
+            password: user.password || '',
+            userId: user.userId
+          })
+        }
+      })
+    }
+  }
+
+  private publishUsers(): void {
+    const usersArray = Array.from(this.users.entries()).map(([username, data]) => ({
+      username,
+      userId: data.userId,
+      password: data.password
+    }))
+
+    const payload = {
+      type: 'users_sync',
+      users: usersArray,
+      timestamp: new Date().toISOString()
+    }
+
+    this.mqttService.publish(MqttTopics.authRegistry, JSON.stringify(payload), true)
+  }
+
   async authenticate(username: string, password: string): Promise<AuthResponse> {
-    return new Promise((resolve, reject) => {
+    return new Promise<AuthResponse>((resolve, reject) => {
       if (this.authTimeout) {
         clearTimeout(this.authTimeout)
       }
@@ -94,6 +145,16 @@ export class AuthService {
       userId: userId
     })
 
+    const payload = {
+      type: 'user_registered',
+      username,
+      userId,
+      password,
+      timestamp: new Date().toISOString()
+    }
+
+    this.mqttService.publish(MqttTopics.authRegistry, JSON.stringify(payload), true)
+
     return {
       success: true,
       userId: userId,
@@ -101,7 +162,7 @@ export class AuthService {
     }
   }
 
-  clearAuthTimeout() {
+  clearAuthTimeout(): void {
     if (this.authTimeout) {
       clearTimeout(this.authTimeout)
       this.authTimeout = null

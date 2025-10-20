@@ -30,4 +30,5 @@ export const MqttTopics = {
     allowed: (username: string) => `${BASE_TOPIC}/private-chat/allowed/${username}`
   },
   auth: 'chat/auth',
+  authRegistry: 'chat/users/registry'
 }
