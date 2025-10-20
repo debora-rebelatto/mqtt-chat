@@ -1,10 +1,10 @@
-import { IdGeneratorService } from './id-generator.service'
 import { Injectable } from '@angular/core'
 import { BehaviorSubject } from 'rxjs'
 import { Group } from '../models/group.model'
 import { User } from '../models/user.model'
 import { MqttService } from './mqtt.service'
 import { MqttTopics } from '../config/mqtt-topics'
+import { IdGeneratorService } from './id-generator.service'
 
 @Injectable({
   providedIn: 'root'
@@ -20,7 +20,7 @@ export class GroupService {
     private idGeneratorService: IdGeneratorService
   ) {}
 
-  setCurrentUser(user: User) {
+  setCurrentUser(user: User): void {
     this.currentUser = user
 
     if (user) {
@@ -34,7 +34,7 @@ export class GroupService {
     return this.groupsSubject.value
   }
 
-  initialize() {
+  initialize(): void {
     this.mqttService.subscribe(MqttTopics.groupList, (message) => {
       this.handleGroupMessage(message)
     })
@@ -50,7 +50,7 @@ export class GroupService {
     this.requestGroups()
   }
 
-  createGroup(name: string, leader: User) {
+  createGroup(name: string, leader: User): Group {
     const groupId = this.idGeneratorService.generateId('group_')
 
     const newGroup = new Group(groupId, name, leader, [leader], new Date())
@@ -63,7 +63,7 @@ export class GroupService {
     return newGroup
   }
 
-  updateGroup(group: Group) {
+  updateGroup(group: Group): void {
     const groupForMqtt = {
       ...group,
       members: group.members.map((member) => ({
@@ -77,16 +77,21 @@ export class GroupService {
     this.mqttService.publish(MqttTopics.groupList, JSON.stringify(groupForMqtt), true)
   }
 
-  addMemberToGroup(groupId: string, user: User) {
+  addMemberToGroup(groupId: string, user: User): boolean {
     const groups = this.groupsSubject.value
     const groupIndex = groups.findIndex((g) => g.id === groupId)
 
     if (groupIndex === -1) {
-      console.error(`Group ${groupId} not found`)
+      console.error(`Grupo ${groupId} não encontrado`)
       return false
     }
 
     const group = groups[groupIndex]
+
+    const memberExists = group.members.some((member) => member.id === user.id)
+    if (memberExists) {
+      return false
+    }
 
     const updatedGroup = new Group(
       group.id,
@@ -103,16 +108,14 @@ export class GroupService {
     this.groupsSubject.next(updatedGroups)
     this.updateGroup(updatedGroup)
 
-    this.mqttService.publish(MqttTopics.groupList, JSON.stringify(updatedGroup), true)
-
     return true
   }
 
-  private requestGroups() {
+  private requestGroups(): void {
     this.mqttService.publish(MqttTopics.groupList, 'REQUEST_GROUPS')
   }
 
-  private handleGroupMessage(message: string) {
+  private handleGroupMessage(message: string): void {
     if (message === 'REQUEST_GROUPS') return
 
     const groupData = JSON.parse(message)
@@ -159,8 +162,12 @@ export class GroupService {
     }
   }
 
-  private handleInvitationResponse(message: string) {
+  private handleInvitationResponse(message: string): void {
     const response = JSON.parse(message)
+
+    if (response.type !== 'invitation_response') {
+      return
+    }
 
     const group = this.groupsSubject.value.find((g) => g.id === response.groupId)
     if (!group) {
@@ -172,39 +179,50 @@ export class GroupService {
     }
 
     if (response.accepted) {
-      const userToAdd = new User(response.invitee, response.invitee)
-
-      const success = this.addMemberToGroup(response.groupId, userToAdd)
-
-      if (success) {
-        const payload = {
-          type: 'member_added',
-          groupId: response.groupId,
-          timestamp: new Date()
-        }
-
-        this.mqttService.publish(MqttTopics.groupUpdates, JSON.stringify(payload))
+      const payload = {
+        type: 'member_added',
+        invitationId: response.invitationId,
+        groupId: response.groupId,
+        invitee: response.invitee,
+        timestamp: new Date().toISOString()
       }
+
+      this.mqttService.publish(MqttTopics.groupUpdates, JSON.stringify(payload))
     }
   }
 
-  private handleGroupUpdate(message: string) {
+  private handleGroupUpdate(message: string): void {
     const update = JSON.parse(message)
 
-    const messageKey = `${update.type}_${update.invitationId}_${update.timestamp}`
+    const messageKey = `${update.type}_${update.invitationId || update.groupId}_${update.timestamp}`
+
     if (this.processedMessages.has(messageKey)) {
       return
     }
 
     this.processedMessages.add(messageKey)
+
     if (this.processedMessages.size > 100) {
       const first = this.processedMessages.values().next().value
-      this.processedMessages.delete(first!)
+      if (first) {
+        this.processedMessages.delete(first)
+      }
     }
 
-    if (update.type === 'member_added' && update.accepted === true) {
-      const userToAdd = new User(update.invitee, update.invitee)
+    if (update.type === 'member_added') {
+      const group = this.getGroupById(update.groupId)
 
+      if (!group) {
+        return
+      }
+
+      const memberExists = group.members.some((m) => m.id === update.invitee)
+
+      if (memberExists) {
+        return
+      }
+
+      const userToAdd = new User(update.invitee, update.invitee)
       this.addMemberToGroup(update.groupId, userToAdd)
     }
   }
