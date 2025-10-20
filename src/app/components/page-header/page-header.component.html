@@ -5,30 +5,7 @@
       {{ 'CHAT_TITLE' | translate }}
     </h1>
 
-    @if (!appState.connected && !isConnecting) {
-      <div class="flex items-center gap-2">
-        <input
-          [(ngModel)]="username"
-          [placeholder]="'USERNAME' | translate"
-          class="px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white"
-        />
-        <button
-          (click)="connect()"
-          class="bg-green-600 hover:bg-green-700 px-4 py-2 rounded-lg font-semibold transition-colors"
-        >
-          {{ 'CONNECT' | translate }}
-        </button>
-      </div>
-    }
-
-    @if (isConnecting) {
-      <div class="flex items-center gap-2">
-        <div
-          class="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"
-        ></div>
-        <span class="text-gray-300">{{ 'CONNECTING' | translate }}</span>
-      </div>
-    }
+      <login />
 
     @if (appState.connected) {
       <div class="flex items-center gap-4">
