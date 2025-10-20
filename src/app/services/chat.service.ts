@@ -32,6 +32,7 @@ export class ChatService {
   private users: User[] = []
   private groups: Group[] = []
   private allMessages: Message[] = []
+  currentUser?: User
 
   constructor(
     private mqttService: MqttService,
@@ -72,14 +73,14 @@ export class ChatService {
   }
 
   private updateGroupChats(): void {
-    const currentUser = this.appState.user
-    if (!currentUser) {
+    this.currentUser = this.appState.user!
+    if (!this.currentUser) {
       this.groupChatsSubject.next([])
       return
     }
 
     const userGroups = this.groups.filter((group) =>
-      group.members.some((member) => member.id === currentUser.id)
+      group.members.some((member) => member.id === this.currentUser!.id)
     )
 
     this.groupChatsSubject.next(userGroups)
@@ -103,19 +104,19 @@ export class ChatService {
       this.privateChatRequestService.initialize()
     }
 
-    this.mqttService.subscribe(MqttTopics.privateMessage(currentUser.name), (message) => {
-      this.handleUserMessage(message, currentUser.name)
+    this.mqttService.subscribe(MqttTopics.privateMessage(currentUser.id), (message) => {
+      this.handleUserMessage(message)
     })
 
     this.mqttService.subscribe(MqttTopics.groupMessages, (message) => {
       this.handleGroupMessage(message)
     })
 
-    this.mqttService.subscribe(MqttTopics.confirmation(currentUser.name), (message) => {
+    this.mqttService.subscribe(MqttTopics.confirmation(currentUser.id), (message) => {
       this.handleMessageConfirmation(message)
     })
 
-    this.requestMissedMessages(currentUser.name)
+    this.requestMissedMessages(currentUser.id)
 
     setInterval(() => {
       if (!this.mqttService.isConnected()) {
@@ -157,12 +158,12 @@ export class ChatService {
     })
   }
 
-  private handleUserMessage(message: string, currentUsername: string): void {
+  private handleUserMessage(message: string): void {
     const messageData = JSON.parse(message)
     const senderId =
       typeof messageData.sender === 'string' ? messageData.sender : messageData.sender.id
 
-    if (messageData.chatId !== currentUsername) {
+    if (messageData.chatId !== this.currentUser!.id) {
       return
     }
 

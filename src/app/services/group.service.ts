@@ -212,13 +212,16 @@ export class GroupService {
       return
     }
 
-    const memberExists = group.members.some((m) => m.id === update.invitee)
+    const inviteeId = update.invitee.id || update.invitee
+    const inviteeName = update.invitee.name || update.invitee.id || 'Unknown User'
+
+    const memberExists = group.members.some((m) => m.id === inviteeId)
 
     if (memberExists) {
       return
     }
 
-    const userToAdd = new User(update.invitee, update.invitee)
+    const userToAdd = new User(inviteeId, inviteeName)
     this.addMemberToGroup(update.groupId, userToAdd)
   }
 

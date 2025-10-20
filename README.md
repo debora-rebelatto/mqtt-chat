@@ -16,18 +16,30 @@
 ## INSTALAÇÃO DO BROKER MQTT:
 
 1. Instalar Mosquitto:
-   sudo apt-get install mosquitto mosquitto-clients
+
+```bash
+sudo apt-get install mosquitto mosquitto-clients
+```
 
 2. Configurar WebSocket (criar arquivo mosquitto.conf):
-   listener 8081
-   protocol websockets
-   allow_anonymous true
+
+```bash
+listener 8081
+protocol websockets
+allow_anonymous true
+```
 
 3. Iniciar broker:
-   sudo systemctl start mosquitto
+
+```bash
+sudo systemctl start mosquitto
+```
 
 4. Verificar status:
-   sudo systemctl status mosquitto
+
+```bash
+sudo systemctl status mosquitto
+```
 
 ## Development server
 

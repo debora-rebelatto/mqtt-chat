@@ -1,7 +1,7 @@
 import { CommonModule } from '@angular/common'
 import { OnInit, OnDestroy, Component } from '@angular/core'
 import { TranslateModule } from '@ngx-translate/core'
-import { Subject, takeUntil } from 'rxjs'
+import { Subject, takeUntil, combineLatest } from 'rxjs'
 import { GroupInvitation, PrivateChatNotification, NotificationStatus, Group } from '../../models'
 import { DateFormatPipe } from '../../pipes/date-format.pipe'
 import {
@@ -27,19 +27,19 @@ import { FilterButtonComponent } from '../filter-button/filter-button.component'
 })
 export class NotificationsPanelComponent implements OnInit, OnDestroy {
   private destroy$ = new Subject<void>()
+  public NotificationStatus = NotificationStatus
 
   showNotificationPanel = false
-  showHistory = false
-  groupNotifications: GroupInvitation[] = []
-  allNotifications: PrivateChatNotification[] = []
-  privateChatNotifications: PrivateChatNotification[] = []
+  allGroupInvitations: GroupInvitation[] = []
+  allPrivateChatNotifications: PrivateChatNotification[] = []
+  filteredPrivateChatNotifications: PrivateChatNotification[] = []
+  filteredGroupInvitations: GroupInvitation[] = []
   selectedFilter: 'all' | 'pending' = 'all'
 
   private statusConfig = new Map([
     [NotificationStatus.pending.id, { color: 'bg-amber-500', label: 'Pendente' }],
     [NotificationStatus.accepted.id, { color: 'bg-emerald-500', label: 'Aceita' }],
-    [NotificationStatus.rejected.id, { color: 'bg-rose-500', label: 'Recusada' }],
-    [NotificationStatus.expired.id, { color: 'bg-slate-400', label: 'Expirada' }]
+    [NotificationStatus.rejected.id, { color: 'bg-rose-500', label: 'Recusada' }]
   ])
 
   constructor(
@@ -59,34 +59,52 @@ export class NotificationsPanelComponent implements OnInit, OnDestroy {
   }
 
   private setupSubscriptions() {
-    this.invitationService.invitations$.pipe(takeUntil(this.destroy$)).subscribe((invitations) => {
-      this.groupNotifications = invitations.filter((invitation) => {
-        const group = this.groupService.getGroups().find((g: Group) => g.id === invitation.groupId)
-        const isLeader = group && group.leader.id === this.appState.user?.id
-        return isLeader
-      })
-    })
-
-    this.privateChatRequestService.notifications$
+    combineLatest([
+      this.invitationService.invitations$,
+      this.privateChatRequestService.notifications$,
+      this.groupService.groups$
+    ])
       .pipe(takeUntil(this.destroy$))
-      .subscribe((notifications) => {
-        this.allNotifications = [...notifications].sort(
-          (a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
+      .subscribe(([invitations, privateNotifications, groups]) => {
+        this.allGroupInvitations = invitations.filter((invitation) => {
+          const group = groups.find((g: Group) => g.id === invitation.groupId)
+          const isLeader = group && group.leader.id === this.appState.user?.id
+          return isLeader
+        })
+
+        this.allPrivateChatNotifications = privateNotifications.filter(
+          (notif) => notif.type === 'request_received'
         )
+
         this.applyFilter()
       })
+
+    this.invitationService.pendingInvitations$.pipe(takeUntil(this.destroy$)).subscribe(() => {
+      this.applyFilter()
+    })
   }
 
   applyFilter() {
     if (this.selectedFilter === 'all') {
-      this.privateChatNotifications = this.allNotifications.filter(
-        (notif) => notif.type === 'request_received'
-      )
+      this.filteredGroupInvitations = this.allGroupInvitations
+      this.filteredPrivateChatNotifications = this.allPrivateChatNotifications
     } else {
-      this.privateChatNotifications = this.allNotifications.filter(
-        (notif) => notif.type === 'request_received' && notif.status.isPending
+      this.filteredGroupInvitations = this.allGroupInvitations.filter(
+        (inv) => inv.status?.isPending
+      )
+
+      this.filteredPrivateChatNotifications = this.allPrivateChatNotifications.filter(
+        (notif) => notif.status.isPending
       )
     }
+
+    this.filteredPrivateChatNotifications = [...this.filteredPrivateChatNotifications].sort(
+      (a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
+    )
+
+    this.filteredGroupInvitations = [...this.filteredGroupInvitations].sort(
+      (a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
+    )
   }
 
   onFilterChange(filter: 'all' | 'pending') {
@@ -95,25 +113,27 @@ export class NotificationsPanelComponent implements OnInit, OnDestroy {
   }
 
   get notificationsCount(): number {
-    return this.groupNotifications.length + this.privateChatNotifications.length
-  }
-
-  getCountByStatus(status: NotificationStatus): number {
-    return this.allNotifications.filter((notif) => {
-      console.log(notif, this.appState.user?.id)
-      return notif.status === status && notif.relatedUser.id == this.appState.user!.id
-    }).length
+    return this.filteredGroupInvitations.length + this.filteredPrivateChatNotifications.length
   }
 
   get pendingCount(): number {
-    return this.privateChatRequestService.getPendingReceivedCount()
+    const pendingGroupInvitations = this.allGroupInvitations.filter(
+      (inv) => inv.status?.isPending ?? false
+    ).length
+
+    const pendingPrivateChat = this.allPrivateChatNotifications.filter(
+      (notif) => notif.status?.isPending ?? false
+    ).length
+
+    return pendingGroupInvitations + pendingPrivateChat
+  }
+
+  get totalCount(): number {
+    return this.allGroupInvitations.length + this.allPrivateChatNotifications.length
   }
 
   onToggleNotifications(): void {
     this.showNotificationPanel = !this.showNotificationPanel
-    if (this.showNotificationPanel) {
-      this.showHistory = false
-    }
   }
 
   onAcceptInvite(invitation: GroupInvitation) {
@@ -138,5 +158,17 @@ export class NotificationsPanelComponent implements OnInit, OnDestroy {
 
   getStatusLabel(status: NotificationStatus): string {
     return this.statusConfig.get(status.id)?.label || status.id
+  }
+
+  canShowActions(notification: PrivateChatNotification | GroupInvitation): boolean {
+    if (this.isGroupInvitation(notification)) {
+      return (notification as GroupInvitation).status?.isPending ?? true
+    } else {
+      return (notification as PrivateChatNotification).status.isPending
+    }
+  }
+
+  private isGroupInvitation(item: any): item is GroupInvitation {
+    return item.groupId !== undefined
   }
 }

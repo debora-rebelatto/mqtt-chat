@@ -325,15 +325,6 @@ export class PrivateChatRequestService {
     this.notificationsSubject.next(notifications)
   }
 
-  onDisconnect() {
-    const notifications: PrivateChatNotification[] = this.notificationsSubject.value.map((notif) =>
-      notif.status.isPending
-        ? { ...notif, status: NotificationStatus.expired, message: 'Sessão encerrada' }
-        : notif
-    )
-    this.notificationsSubject.next(notifications)
-  }
-
   canSendRequestTo(userId: string): boolean {
     if (userId === this.currentUser.id) {
       return false
