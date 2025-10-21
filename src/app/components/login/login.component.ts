@@ -213,4 +213,27 @@ export class LoginComponent {
     this.errorMessage = ''
     this.successMessage = ''
   }
+
+  canSubmit(): boolean {
+    return !!this.username.trim() && !!this.password.trim()
+  }
+
+  handleEnterKey(): void {
+    if (this.canSubmit()) {
+      if (this.isSignupMode) {
+        this.signup()
+      } else {
+        this.connect()
+      }
+    }
+  }
+
+  getToggleButtonClass(): string {
+    const baseClasses = 'text-sm transition-colors'
+    const colorClasses = this.isSignupMode
+      ? 'text-blue-400 hover:text-blue-300'
+      : 'text-green-400 hover:text-green-300'
+
+    return `${baseClasses} ${colorClasses}`
+  }
 }

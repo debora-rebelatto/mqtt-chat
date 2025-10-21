@@ -18,17 +18,13 @@ export const MqttTopics = {
   pendingSync: (userId: string) => `${BASE_TOPIC}/sync/pending/${userId}`,
 
   groupList: `${BASE_TOPIC}/groups`,
-  // groupUpdates: (userId: string) => `${BASE_TOPIC}/group-updates/${userId}`,
   sendInvitation: (username: string) => `${BASE_TOPIC}/invitations/${username}`,
   invitationResponses: `${BASE_TOPIC}/invitations/responses`,
-  typing: (chatId: string) => `${BASE_TOPIC}/typing/${chatId}`,
-  presence: (userId: string) => `${BASE_TOPIC}/presence/${userId}`,
   groupUpdates: `${BASE_TOPIC}/group-updates`,
   privateChat: {
     request: (username: string) => `${BASE_TOPIC}/private-chat/request/${username}`,
     response: (username: string) => `${BASE_TOPIC}/private-chat/response/${username}`,
     allowed: (username: string) => `${BASE_TOPIC}/private-chat/allowed/${username}`
   },
-  auth: 'chat/auth',
   authRegistry: 'chat/users/registry'
 }
