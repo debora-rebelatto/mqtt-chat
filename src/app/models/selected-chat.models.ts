@@ -1,5 +1,5 @@
-import { ChatType } from "./chat-type.component"
-import { Group } from "./group.model"
+import { ChatType } from './chat-type.model'
+import { Group } from './group.model'
 
 export class SelectedChat {
   constructor(

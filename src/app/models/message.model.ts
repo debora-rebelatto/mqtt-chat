@@ -1,4 +1,4 @@
-import { ChatType } from './chat-type.component'
+import { ChatType } from './chat-type.model'
 import { User } from './user.model'
 
 export class Message {

@@ -51,39 +51,4 @@ bun run start
 
 Once the server is running, open your browser and navigate to `http://localhost:4200/`. The application will automatically reload whenever you modify any of the source files.
 
-## UTILIZAÇÃO:
-
-1. Inserir nome de usuário na tela inicial
-2. Para chat individual: selecionar usuário na lista lateral
-3. Para criar grupo: usar formulário "Criar Grupo"
-4. Para entrar em grupo: solicitar entrada via "Procurar Grupos"
-5. Para aceitar convites: usar painel de notificações (sino)
-
-## TÓPICOS MQTT UTILIZADOS:
-
-- meu-chat-mqtt/status (status de usuários)
-- meu-chat-mqtt/messages/{userId} (mensagens individuais)
-- meu-chat-mqtt/messages/groups (mensagens de grupo)
-- meu-chat-mqtt/groups (informações de grupos)
-- meu-chat-mqtt/invitations/requests (convites)
-- meu-chat-mqtt/invitations/responses (respostas)
-- meu-chat-mqtt/group-updates/{userId} (notificações)
-
-ESTRUTURA DO PROJETO:
-
-```bash
-src/app/
-├── components/     # Componentes reutilizáveis
-├── features/       # Funcionalidades principais
-├── models/         # Classes de domínio
-├── services/       # Lógica de negócio
-└── pipes/         # Pipes customizados
-```
-
-OBSERVAÇÕES:
-
-- Broker MQTT deve estar rodando em localhost:8081
-- Aplicação salva dados no localStorage do navegador
-- Interface otimizada para navegadores modernos
-
 Para mais detalhes, consulte DOCUMENTACAO.md
