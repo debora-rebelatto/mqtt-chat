@@ -84,7 +84,7 @@ export class GroupMembersModalComponent implements OnChanges, OnDestroy {
   }
 
   isGroupLeader(member: User): boolean {
-    return member.id === this.selectedChat?.group?.leader?.id
+    return member.id === this.groupService.getGroupById(this.selectedChat!.id)?.leader?.id
   }
 
   ngOnDestroy() {
