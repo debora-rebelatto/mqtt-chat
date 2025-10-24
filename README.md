@@ -41,14 +41,29 @@ sudo systemctl start mosquitto
 sudo systemctl status mosquitto
 ```
 
-## Development server
-
-To start a local development server, run:
+5. Instalar o Bun.js (Linux):
 
 ```bash
-bun run start
+curl -fsSL https://bun.sh/install | bash
 ```
 
-Once the server is running, open your browser and navigate to `http://localhost:4200/`. The application will automatically reload whenever you modify any of the source files.
+6. Instalar o Angular:
 
-Para mais detalhes, consulte DOCUMENTACAO.md
+```bash
+npm install -g @angular/cli
+```
+
+7. Instalar as dependências:
+
+```bash
+bun install
+```
+
+8. Rodar o projeto:
+```bash
+bun start
+```
+
+Quando o servidor estiver rodando, abra seu navegador e navegue para  `http://localhost:4200/`. A aplicação vai fazer reload automaticamente quando você mudar qualquer coisa do código fonte.
+
+Para mais detalhes, consulte DOCUMENTACAO.md.
