@@ -1,5 +1,7 @@
 # Mqtt Chat App
 
+Sistema de chat em tempo real utilizando protocolo MQTT, desenvolvido em Angular com TypeScript. A aplicação permite comunicação um-a-um e em grupo, com interface web moderna e persistência de dados para usuários offline.
+
 ## Informações
 
 - Disciplina: GEX635 - TÓPICOS ESPECIAIS EM COMPUTAÇÃO XIII
@@ -59,11 +61,19 @@ npm install -g @angular/cli
 bun install
 ```
 
-8. Rodar o projeto:
+8. Clonar o repositório
+
 ```bash
+git clone https://github.com/debora-rebelatto/mqtt-chat.git
+```
+
+9. Rodar o projeto:
+
+```bash
+cd mqtt-chat
 bun start
 ```
 
-Quando o servidor estiver rodando, abra seu navegador e navegue para  `http://localhost:4200/`. A aplicação vai fazer reload automaticamente quando você mudar qualquer coisa do código fonte.
+Quando o servidor estiver rodando, abra seu navegador e navegue para `http://localhost:4200/`. A aplicação vai fazer reload automaticamente quando você mudar qualquer coisa do código fonte.
 
 Para mais detalhes, consulte DOCUMENTACAO.md.

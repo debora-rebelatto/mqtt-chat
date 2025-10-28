@@ -14,15 +14,16 @@
 
 ## Introdução
 
-O MQTT Chat é uma aplicação de mensagens instantâneas que utiliza o protocolo MQTT para comunicação em tempo real. Permite conversas individuais e em grupo com persistência de mensagens.
+O MQTT Chat é uma aplicação de mensagens instantâneas que utiliza o protocolo MQTT para comunicação em tempo real. Desenvolvido para ser leve e eficiente, oferece conversas individuais e em grupo com sincronização em tempo real.
 
 ### Características Principais
-- ✅ **Mensagens em tempo real** via protocolo MQTT
-- ✅ **Chat individual** entre usuários
-- ✅ **Grupos de chat** com sistema de convites
-- ✅ **Persistência** de conversas
-- ✅ **Status online/offline** dos usuários
-- ✅ **Interface responsiva** para desktop e mobile
+- ⚡ **Comunicação em tempo real** via protocolo MQTT
+- 💬 **Chat individual** entre usuários
+- 👥 **Grupos de chat** com sistema de convites
+- 🔄 **Sincronização automática** entre dispositivos
+- 🔔 **Notificações em tempo real**
+- 🌐 **Status online/offline** dos usuários
+- 📱 **Interface responsiva** para desktop e mobile
 
 ---
 
@@ -46,7 +47,8 @@ O MQTT Chat é uma aplicação de mensagens instantâneas que utiliza o protocol
 ### 3. Primeira Configuração
 - Seu status será automaticamente definido como **online**
 - Outros usuários poderão ver que você está disponível
-- Suas mensagens anteriores (se houver) serão carregadas automaticamente
+- Suas mensagens serão sincronizadas automaticamente do servidor
+- Conexão automática se a sessão for perdida
 
 ---
 
@@ -98,6 +100,7 @@ O MQTT Chat é uma aplicação de mensagens instantâneas que utiliza o protocol
 ### Iniciando uma Conversa
 1. **Clique em um usuário** na seção "USUÁRIOS"
 2. A área principal mostrará o chat com esse usuário
+3. As mensagens são sincronizadas automaticamente com o servidor
 3. **Digite sua mensagem** na caixa de texto inferior
 4. **Pressione Enter** ou clique no botão ➤ para enviar
 
@@ -251,17 +254,15 @@ O MQTT Chat é uma aplicação de mensagens instantâneas que utiliza o protocol
 - **Offline:** Definido automaticamente ao fechar a aplicação
 - **Último visto:** Atualizado automaticamente
 
-### Persistência de Dados
-- **Mensagens:** Salvas automaticamente no navegador
-- **Grupos:** Sincronizados via MQTT
-- **Configurações:** Mantidas entre sessões
+### Sincronização de Dados
+- **Mensagens:** Sincronizadas automaticamente do servidor
+- **Grupos:** Atualizados em tempo real via MQTT
+- **Estado:** Mantido durante a sessão ativa
 
-### Limpeza de Dados
-Para limpar todos os dados salvos:
-1. **Abra as ferramentas do desenvolvedor** (F12)
-2. **Vá para Application → Storage → Local Storage**
-3. **Delete as chaves que começam com "mqtt-chat"**
-4. **Recarregue a página**
+### Gerenciamento de Sessão
+- **Login automático** ao reconectar
+- **Sincronização** de mensagens ao retornar
+- **Atualizações em tempo real** de status e mensagens
 
 ---
 
@@ -289,12 +290,13 @@ Para limpar todos os dados salvos:
 #### ❌ Mensagens Não Chegam
 **Possíveis Causas:**
 - Destinatário offline
-- Problemas de sincronização
-- Cache do navegador
+- Problemas de conexão MQTT
+- Atraso na sincronização
 
 **Soluções:**
 1. **Verifique status do destinatário** (deve estar 🟢 online)
-2. **Recarregue a página** (Ctrl+F5)
+2. **Aguarde a sincronização** (pode levar alguns segundos)
+3. **Verifique o status da conexão** (deve mostrar "🟢 Conectado")
 3. **Limpe o cache** do navegador
 
 ### Problemas com Grupos
@@ -350,7 +352,6 @@ Para limpar todos os dados salvos:
 - **Repositório:** [URL do repositório GitHub]
 
 ---
-
 ## Dicas e Truques
 
 ### 💡 Produtividade
@@ -358,10 +359,11 @@ Para limpar todos os dados salvos:
 - **Ctrl+F5** para recarregar completamente a página
 - **F12** para abrir ferramentas de desenvolvedor e ver logs
 
-### 💡 Organização
-- **Crie grupos temáticos** para diferentes projetos
-- **Use nomes descritivos** para grupos
-- **Mantenha conversas organizadas** por contexto
+### 💡 Dicas de Uso
+- **Mensagens são sincronizadas** automaticamente entre dispositivos
+- **Conexão automática** se a internet cair e voltar
+- **Status de entrega** mostrado ao lado das mensagens
+- **Notificações** para mensagens não lidas
 
 ### 💡 Etiqueta
 - **Seja respeitoso** nas conversas
