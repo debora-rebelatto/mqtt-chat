@@ -507,230 +507,33 @@ publish(topic: string, message: string): boolean {
 
 ---
 
-## 7. INSTRUÇÕES DE COMPILAÇÃO E UTILIZAÇÃO
+## 7. INSTALAÇÃO E USO
 
-### 7.1 Pré-requisitos do Sistema
-- **Node.js:** Versão 18.0 ou superior
-- **npm:** Versão 8.0 ou superior
-- **Angular CLI:** Versão 20.0 ou superior
-- **Broker MQTT:** Mosquitto com suporte WebSockets
-
-### 7.2 Configuração do Broker MQTT
-
-#### 7.2.1 Instalação do Mosquitto
-```bash
-# Ubuntu/Debian
-sudo apt-get update
-sudo apt-get install mosquitto mosquitto-clients
-
-# macOS
-brew install mosquitto
-
-# Windows
-# Baixar de https://mosquitto.org/download/
-```
-
-#### 7.2.2 Configuração WebSocket
-Criar arquivo `mosquitto.conf`:
-```
-# Porta WebSocket para clientes web
-listener 8081
-protocol websockets
-allow_anonymous true
-
-# Porta TCP padrão (opcional)
-listener 1883
-protocol mqtt
-allow_anonymous true
-
-# Logs para debug
-log_dest file /var/log/mosquitto/mosquitto.log
-log_type all
-```
-
-#### 7.2.3 Inicialização do Broker
-```bash
-# Iniciar com configuração personalizada
-mosquitto -c mosquitto.conf -v
-
-# Ou usar configuração padrão (se suportar WebSocket)
-mosquitto -p 8081
-```
-
-### 7.3 Instalação da Aplicação
-
-#### 7.3.1 Clonagem e Dependências
-```bash
-# Clonar repositório
-git clone [URL_DO_REPOSITORIO]
-cd mqtt-chat
-
-# Instalar dependências
-npm install
-
-# Verificar instalação
-ng version
-```
-
-#### 7.3.2 Configuração de Desenvolvimento
-```bash
-# Iniciar servidor de desenvolvimento
-ng serve
-
-# Ou com configurações específicas
-ng serve --host 0.0.0.0 --port 4200
-```
-
-#### 7.3.3 Build para Produção
-```bash
-# Build otimizado
-ng build --prod
-
-# Servir arquivos estáticos
-cd dist/mqtt-chat-app
-python -m http.server 8080
-```
-
-### 7.4 Utilização da Aplicação
-
-#### 7.4.1 Primeiro Acesso
-1. **Acessar:** http://localhost:4200
-2. **Login:** Inserir nome de usuário único
-3. **Aguardar:** Conexão com broker MQTT
-4. **Confirmar:** Status "Conectado" no cabeçalho
-
-#### 7.4.2 Chat Individual
-1. **Selecionar usuário** na lista lateral (seção "USUÁRIOS")
-2. **Verificar status** online (indicador verde)
-3. **Digitar mensagem** na caixa de texto inferior
-4. **Enviar** com Enter ou botão de envio
-5. **Visualizar** histórico de conversas
-
-#### 7.4.3 Criação de Grupo
-1. **Acessar** seção "GRUPOS" na sidebar
-2. **Clicar** em "Criar Grupo"
-3. **Preencher** nome do grupo
-4. **Confirmar** criação
-5. **Verificar** grupo na lista "MEUS GRUPOS"
-
-#### 7.4.4 Participação em Grupo
-1. **Acessar** seção "PROCURAR" na sidebar
-2. **Visualizar** grupos disponíveis
-3. **Clicar** "Solicitar Entrada"
-4. **Aguardar** aprovação do líder
-5. **Verificar** notificação de aceitação
-
-#### 7.4.5 Gerenciamento de Convites
-1. **Clicar** no ícone de sino (notificações)
-2. **Visualizar** convites pendentes
-3. **Aceitar/Rejeitar** solicitações
-4. **Confirmar** atualização da lista de grupos
-
-### 7.5 Troubleshooting
-
-#### 7.5.1 Problemas de Conexão
-```bash
-# Verificar se broker está rodando
-netstat -an | grep 8081
-
-# Testar conexão MQTT
-mosquitto_pub -h localhost -p 8081 -t test -m "hello"
-mosquitto_sub -h localhost -p 8081 -t test
-```
-
-#### 7.5.2 Problemas de Build
-```bash
-# Limpar cache
-npm cache clean --force
-rm -rf node_modules package-lock.json
-npm install
-
-# Verificar versões
-node --version
-npm --version
-ng version
-```
-
-#### 7.5.3 Debug da Aplicação
-- **Console do navegador:** F12 → Console
-- **Logs MQTT:** Verificar mensagens de conexão
-- **LocalStorage:** Application → Storage → Local Storage
-- **Network:** Verificar WebSocket connections
+**Ver `README.md` e `MANUAL_USUARIO.md` para instruções completas.**
 
 ---
 
 ## 8. CONCLUSÕES
 
 ### 8.1 Objetivos Alcançados
-O projeto implementou com sucesso todas as funcionalidades principais especificadas:
+- ✅ Comunicação um-a-um via MQTT
+- ✅ Comunicação em grupo
+- ✅ Sistema de convites
+- ✅ Interface responsiva
+- ✅ Sincronização em tempo real
 
-- ✅ **Comunicação um-a-um** funcional e confiável
-- ✅ **Comunicação em grupo** com sincronização perfeita
-- ✅ **Sistema de convites** robusto para grupos
-- ✅ **Persistência de dados** para usuários offline
-- ✅ **Interface moderna** e responsiva
-- ✅ **Protocolo MQTT exclusivo** para toda comunicação
+### 8.2 Aprendizados
+- Gerenciamento de estado em aplicações distribuídas
+- Sincronização entre múltiplos clientes via MQTT
+- Tratamento de reconexões e erros
+- Programação reativa com RxJS
 
-### 8.2 Contribuições Técnicas
-
-#### 8.2.1 Arquitetura Escalável
-- **Separação clara de responsabilidades** entre serviços
-- **Padrões de design** bem implementados (Observer, Publisher-Subscriber)
-- **Código modular** e facilmente extensível
-
-#### 8.2.2 Tratamento de Erros Robusto
-- **Reconexão automática** em caso de falha de rede
-- **Validação de dados** em todos os pontos críticos
-- **Logs detalhados** para debug e monitoramento
-
-#### 8.2.3 Experiência do Usuário
-- **Interface intuitiva** com feedback visual claro
-- **Responsividade** para diferentes dispositivos
-- **Performance otimizada** com lazy loading e virtual scrolling
-
-### 8.3 Lições Aprendidas
-
-#### 8.3.1 Desafios do MQTT
-- **Gerenciamento de estado** em aplicações distribuídas
-- **Sincronização** entre múltiplos clientes
-- **Tratamento de desconexões** e reconexões
-
-#### 8.3.2 Desenvolvimento Angular
-- **Programação reativa** com RxJS
-- **Gerenciamento de estado** complexo
-- **Otimizações de performance** em aplicações real-time
-
-### 8.4 Trabalhos Futuros
-
-#### 8.4.1 Melhorias Técnicas
-- **Implementação de QoS** níveis 1 e 2 para garantia de entrega
-- **Criptografia end-to-end** para segurança das mensagens
-- **Compressão de mensagens** para otimização de banda
-
-#### 8.4.2 Funcionalidades Adicionais
-- **Compartilhamento de arquivos** via MQTT
-- **Chamadas de voz/vídeo** integradas
-- **Bots e automações** para grupos
-
-#### 8.4.3 Escalabilidade
-- **Clustering de brokers** MQTT para alta disponibilidade
-- **Balanceamento de carga** para múltiplos clientes
-- **Métricas e monitoramento** em tempo real
-
-### 8.5 Considerações Finais
-
-O projeto demonstra compreensão sólida do protocolo MQTT e sua aplicação em sistemas de comunicação distribuída. A implementação atende aos requisitos acadêmicos propostos e apresenta qualidade técnica adequada para uso em ambiente de produção com as devidas adaptações de segurança e escalabilidade.
-
-A experiência de desenvolvimento proporcionou aprendizado valioso sobre:
-- **Protocolos de comunicação** assíncrona
-- **Arquiteturas distribuídas** e seus desafios
-- **Desenvolvimento frontend** moderno com Angular
-- **Debugging e troubleshooting** de sistemas complexos
-
-O código fonte está organizado, documentado e pronto para extensões futuras, cumprindo todos os objetivos educacionais da disciplina.
+### 8.3 Trabalhos Futuros
+- Criptografia end-to-end
+- Compartilhamento de arquivos
+- Melhorias de escalabilidade
 
 ---
 
-**Data de Conclusão:** 08 de Outubro de 2025  
-**Versão do Relatório:** 1.0  
+**Data:** 28 de Outubro de 2025  
 **Status:** Concluído ✅
