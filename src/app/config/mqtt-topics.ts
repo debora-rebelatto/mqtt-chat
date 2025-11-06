@@ -1,6 +1,7 @@
 const BASE_TOPIC = 'meu-chat-mqtt'
 
 export const MqttTopics = {
+  control: (userId: string) => `${userId}_Control`,
   privateMessage: (username: string) => `${BASE_TOPIC}/messages/${username}`,
 
   groupMessages: `${BASE_TOPIC}/messages/groups`,

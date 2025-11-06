@@ -101,6 +101,10 @@ export class ChatService {
     if (currentUser) {
       this.groupService.setCurrentUser(currentUser)
       this.groupService.initialize()
+      
+      this.privateChatRequestService.setSessionMessageCallback((message) => {
+        this.handleUserMessage(message)
+      })
       this.privateChatRequestService.initialize()
     }
 
@@ -251,6 +255,11 @@ export class ChatService {
       return
     }
 
+    const sessionTopic = this.privateChatRequestService.getSessionTopic(to.id)
+    if (!sessionTopic) {
+      return
+    }
+
     const messageId = this.idGeneratorService.generateId('msg_')
     const message: Message = new Message(messageId, from, content, new Date(), ChatType.User, to.id)
     this.addMessage(message)
@@ -268,7 +277,7 @@ export class ChatService {
 
     if (targetUser && targetUser.online) {
       const success = this.mqttService.publish(
-        MqttTopics.privateMessage(to.id),
+        sessionTopic,
         JSON.stringify(mqttPayload),
         false,
         1
