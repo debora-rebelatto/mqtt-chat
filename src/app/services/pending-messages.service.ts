@@ -2,6 +2,7 @@ import { Injectable } from '@angular/core'
 import { Message } from '../models'
 import { MqttService } from './mqtt.service'
 import { MqttTopics } from '../config/mqtt-topics'
+import { PrivateChatRequestService } from './private-chat.service'
 
 @Injectable({
   providedIn: 'root'
@@ -10,7 +11,10 @@ export class PendingMessagesService {
   private pendingMessages: Map<string, Message[]> = new Map()
   private sendingInProgress: Set<string> = new Set()
 
-  constructor(private mqttService: MqttService) {}
+  constructor(
+    private mqttService: MqttService,
+    private privateChatService: PrivateChatRequestService
+  ) {}
 
   addPendingMessage(toUserId: string, message: Message): void {
     if (!this.pendingMessages.has(toUserId)) {
@@ -75,6 +79,8 @@ export class PendingMessagesService {
   }
 
   private async sendSinglePendingMessage(userId: string, message: Message): Promise<boolean> {
+    const sessionTopic = this.privateChatService.getSessionTopic(userId)!
+
     const mqttPayload = {
       id: message.id,
       sender: message.sender.id,
@@ -86,11 +92,6 @@ export class PendingMessagesService {
       isOfflineMessage: true
     }
 
-    return this.mqttService.publish(
-      MqttTopics.privateMessage(userId),
-      JSON.stringify(mqttPayload),
-      false,
-      1
-    )
+    return this.mqttService.publish(sessionTopic, JSON.stringify(mqttPayload))
   }
 }

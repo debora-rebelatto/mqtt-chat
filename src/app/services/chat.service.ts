@@ -101,12 +101,12 @@ export class ChatService {
     if (currentUser) {
       this.groupService.setCurrentUser(currentUser)
       this.groupService.initialize()
+      
+      this.privateChatRequestService.setSessionMessageCallback((message) => {
+        this.handleUserMessage(message)
+      })
       this.privateChatRequestService.initialize()
     }
-
-    this.mqttService.subscribe(MqttTopics.privateMessage(currentUser.id), (message) => {
-      this.handleUserMessage(message)
-    })
 
     this.mqttService.subscribe(MqttTopics.groupMessages, (message) => {
       this.handleGroupMessage(message)
@@ -137,7 +137,7 @@ export class ChatService {
       lastSeen: this.getLastMessageTimestamp(username)
     }
 
-    this.mqttService.publish(MqttTopics.syncByUser(username), JSON.stringify(syncRequest), false, 1)
+    this.mqttService.publish(MqttTopics.syncByUser(username), JSON.stringify(syncRequest))
   }
 
   private getLastMessageTimestamp(username: string): string {
@@ -196,9 +196,7 @@ export class ChatService {
 
     this.mqttService.publish(
       MqttTopics.confirmation(senderId),
-      JSON.stringify(confirmation),
-      false,
-      1
+      JSON.stringify(confirmation)
     )
   }
 
@@ -251,6 +249,11 @@ export class ChatService {
       return
     }
 
+    const sessionTopic = this.privateChatRequestService.getSessionTopic(to.id)
+    if (!sessionTopic) {
+      return
+    }
+
     const messageId = this.idGeneratorService.generateId('msg_')
     const message: Message = new Message(messageId, from, content, new Date(), ChatType.User, to.id)
     this.addMessage(message)
@@ -267,12 +270,7 @@ export class ChatService {
     const targetUser = this.users.find((u) => u.id === to.id)
 
     if (targetUser && targetUser.online) {
-      const success = this.mqttService.publish(
-        MqttTopics.privateMessage(to.id),
-        JSON.stringify(mqttPayload),
-        false,
-        1
-      )
+      const success = this.mqttService.publish(sessionTopic, JSON.stringify(mqttPayload))
 
       if (!success) {
         this.pendingMessagesService.addPendingMessage(to.id, message)

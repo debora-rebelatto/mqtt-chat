@@ -28,6 +28,8 @@ export class PrivateChatRequestService {
 
   private currentUser!: User
   private processedRequestIds = new Set<string>()
+  private userSessionTopics = new Map<string, string>()
+  private sessionMessageCallback?: (message: string) => void
 
   constructor(
     private mqttService: MqttService,
@@ -40,19 +42,17 @@ export class PrivateChatRequestService {
 
     this.requestPendingNotifications()
 
-    this.mqttService.subscribe(MqttTopics.privateChat.request(this.currentUser.id), (message) => {
-      this.handleIncomingRequest(message)
-    })
-
-    this.mqttService.subscribe(MqttTopics.privateChat.response(this.currentUser.id), (message) => {
-      this.handleRequestResponse(message)
+    this.mqttService.subscribe(MqttTopics.control(this.currentUser.id), (message) => {
+      this.handleControlMessage(message)
     })
 
     this.mqttService.subscribe(MqttTopics.pendingSync(this.currentUser.id), (message) => {
       this.handlePendingNotifications(message)
     })
+  }
 
-    this.requestAllowedChats()
+  setSessionMessageCallback(callback: (message: string) => void) {
+    this.sessionMessageCallback = callback
   }
 
   private requestPendingNotifications() {
@@ -62,12 +62,7 @@ export class PrivateChatRequestService {
       timestamp: new Date().toISOString()
     }
 
-    this.mqttService.publish(
-      MqttTopics.pendingSync(this.currentUser.id),
-      JSON.stringify(request),
-      true,
-      1
-    )
+    this.mqttService.publish(MqttTopics.pendingSync(this.currentUser.id),JSON.stringify(request))
   }
 
   private handlePendingNotifications(message: string) {
@@ -94,6 +89,38 @@ export class PrivateChatRequestService {
     }
   }
 
+  private handleControlMessage(message: string) {
+    const data = JSON.parse(message)
+    
+    switch (data.type) {
+      case 'chat_request':
+        this.handleIncomingRequest(message)
+        break
+      case 'chat_response':
+        this.handleRequestResponse(message)
+        break
+      case 'session_created':
+        this.handleSessionCreated(data)
+        break
+    }
+  }
+
+  private handleSessionCreated(data: any) {
+    if (data.requestId && this.processedRequestIds.has(data.requestId)) {
+      const topicName = data.topicName
+      const userId = data.userId
+      
+      this.userSessionTopics.set(userId, topicName)
+      
+      const updatedChats = new Set([...this.allowedChatsSubject.value, topicName, userId])
+      this.allowedChatsSubject.next(updatedChats)
+      
+      if (this.sessionMessageCallback) {
+        this.mqttService.subscribe(topicName, this.sessionMessageCallback)
+      }
+    }
+  }
+
   sendChatRequest(targetUser: User): boolean {
     if (!this.canSendRequestTo(targetUser.id)) {
       return false
@@ -104,6 +131,8 @@ export class PrivateChatRequestService {
     }
 
     const requestId = this.idGenerator.generateId('chat_req_')
+    
+    this.processedRequestIds.add(requestId)
 
     const notification = {
       id: this.idGenerator.generateId('notif'),
@@ -125,15 +154,11 @@ export class PrivateChatRequestService {
       to: targetUser.id,
       timestamp: new Date().toISOString(),
       type: 'chat_request',
+      sessionId: `${this.currentUser.id}_${targetUser.id}_${Date.now()}`,
       notification: notification
     }
 
-    this.mqttService.publish(
-      MqttTopics.privateChat.request(targetUser.id),
-      JSON.stringify(payload),
-      false,
-      1
-    )
+    this.mqttService.publish(MqttTopics.control(targetUser.id),JSON.stringify(payload))
 
     return true
   }
@@ -146,27 +171,40 @@ export class PrivateChatRequestService {
 
     this.processedRequestIds.add(notification.requestId)
 
+    const sessionTopic = `${this.currentUser.id}_${notification.relatedUser.id}_${Date.now()}`
+
     const response = {
       requestId: notification.requestId,
       from: this.currentUser.id,
       to: notification.relatedUser.id,
       accepted: true,
       timestamp: new Date().toISOString(),
-      type: 'chat_response'
+      type: 'chat_response',
+      sessionTopic
     }
 
-    this.addAllowedChat(notification.relatedUser.id)
-
-    this.updateNotificationStatus(notificationId, NotificationStatus.accepted)
+    this.mqttService.publish(MqttTopics.control(notification.relatedUser.id),JSON.stringify(response))
 
     this.mqttService.publish(
-      MqttTopics.privateChat.response(notification.relatedUser.id),
-      JSON.stringify(response),
-      false,
-      1
+      MqttTopics.control(notification.relatedUser.id),
+      JSON.stringify({
+        type: 'session_created',
+        requestId: notification.requestId,
+        topicName: sessionTopic,
+        userId: this.currentUser.id
+      })
     )
 
-    this.publishAllowedChat(notification.relatedUser.id)
+    this.updateNotificationStatus(notificationId, NotificationStatus.accepted)
+    
+    this.userSessionTopics.set(notification.relatedUser.id, sessionTopic)
+    
+    if (this.sessionMessageCallback) {
+      this.mqttService.subscribe(sessionTopic, this.sessionMessageCallback)
+    }
+    
+    const updatedChats = new Set([...this.allowedChatsSubject.value, sessionTopic, notification.relatedUser.id])
+    this.allowedChatsSubject.next(updatedChats)
   }
 
   rejectRequest(notificationId: string) {
@@ -188,12 +226,7 @@ export class PrivateChatRequestService {
 
     this.updateNotificationStatus(notificationId, NotificationStatus.rejected)
 
-    this.mqttService.publish(
-      MqttTopics.privateChat.response(notification.relatedUser.id),
-      JSON.stringify(response),
-      false,
-      1
-    )
+    this.mqttService.publish(MqttTopics.control(notification.relatedUser.id),JSON.stringify(response))
   }
 
   getPendingReceivedCount(): number {
@@ -204,6 +237,10 @@ export class PrivateChatRequestService {
 
   isAllowedToChat(userId: string): boolean {
     return this.allowedChatsSubject.value.has(userId)
+  }
+
+  getSessionTopic(userId: string): string | undefined {
+    return this.userSessionTopics.get(userId)
   }
 
   hasPendingRequest(userId: string): boolean {
@@ -255,8 +292,17 @@ export class PrivateChatRequestService {
     }
 
     if (data.accepted) {
-      this.addAllowedChat(data.from)
-
+      if (data.sessionTopic) {
+        this.userSessionTopics.set(data.from, data.sessionTopic)
+        
+        const updatedChats = new Set([...this.allowedChatsSubject.value, data.sessionTopic, data.from])
+        this.allowedChatsSubject.next(updatedChats)
+        
+        if (this.sessionMessageCallback) {
+          this.mqttService.subscribe(data.sessionTopic, this.sessionMessageCallback)
+        }
+      }
+      
       this.updateNotificationByRequestId(data.requestId, NotificationStatus.accepted)
     } else {
       this.updateNotificationByRequestId(data.requestId, NotificationStatus.rejected)
@@ -288,36 +334,6 @@ export class PrivateChatRequestService {
         : notif
     )
     this.notificationsSubject.next(notifications)
-  }
-
-  private addAllowedChat(userId: string) {
-    const allowedChats = new Set(this.allowedChatsSubject.value)
-    allowedChats.add(userId)
-    this.allowedChatsSubject.next(allowedChats)
-  }
-
-  private publishAllowedChat(userId: string) {
-    const payload = {
-      user: this.currentUser.id,
-      allowedChat: userId,
-      timestamp: new Date().toISOString()
-    }
-
-    this.mqttService.publish(
-      MqttTopics.privateChat.allowed(this.currentUser.id),
-      JSON.stringify(payload),
-      true,
-      1
-    )
-  }
-
-  private requestAllowedChats() {
-    this.mqttService.subscribe(MqttTopics.privateChat.allowed(this.currentUser.id), (message) => {
-      const data = JSON.parse(message)
-      if (data.allowedChat) {
-        this.addAllowedChat(data.allowedChat)
-      }
-    })
   }
 
   private addNotification(notification: PrivateChatNotification) {

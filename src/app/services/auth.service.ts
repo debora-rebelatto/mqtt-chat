@@ -27,25 +27,12 @@ export class AuthService {
   ) {}
 
   initialize(): void {
-    this.initializeDefaultUsers()
 
     this.mqttService.subscribe(MqttTopics.authRegistry, (message) => {
       this.handleUserRegistry(message)
     })
 
     this.publishUsers()
-  }
-
-  private initializeDefaultUsers(): void {
-    this.users.set('debora', {
-      password: '123',
-      userId: 'user_debora'
-    })
-
-    this.users.set('bruno', {
-      password: '123',
-      userId: 'user_bruno'
-    })
   }
 
   private handleUserRegistry(message: string): void {
