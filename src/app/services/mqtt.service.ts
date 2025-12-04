@@ -82,11 +82,11 @@ export class MqttService {
     }
 
     try {
-      const mqttMessage = new Paho.Message(message)
-      mqttMessage.destinationName = topic
+      const mqttMessage = new Paho.Message(message) // Cria objeto de mensagem
+      mqttMessage.destinationName = topic // Define tópico destino
       mqttMessage.retained = retained
       mqttMessage.qos = qos
-      this.client.send(mqttMessage)
+      this.client.send(mqttMessage) // Envia mensagem ao broker
       return true
     } catch (error) {
       console.error('Failed to publish message:', error)

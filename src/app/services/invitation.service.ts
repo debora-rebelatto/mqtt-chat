@@ -41,15 +41,15 @@ export class InvitationService {
 
     this.requestPendingInvitations()
 
-    this.mqttService.subscribe(MqttTopics.sendInvitation(this.currentUser.id), (message) => {
+    this.mqttService.subscribe(MqttTopics.sendInvitation(this.currentUser.id), (message) => { // Assina tópico de convites recebidos
       this.handleInvitation(message)
     })
 
-    this.mqttService.subscribe(MqttTopics.invitationResponses, (message) => {
+    this.mqttService.subscribe(MqttTopics.invitationResponses, (message) => { // Assina tópico de respostas de convites
       this.handleInvitationResponse(message)
     })
 
-    this.mqttService.subscribe(MqttTopics.pendingSync(this.currentUser.id), (message) => {
+    this.mqttService.subscribe(MqttTopics.pendingSync(this.currentUser.id), (message) => { // Assina tópico de sincronização pendente
       this.handlePendingInvitations(message)
     })
   }
@@ -61,7 +61,7 @@ export class InvitationService {
       timestamp: new Date().toISOString()
     }
 
-    this.mqttService.publish(
+    this.mqttService.publish( // Publica solicitação de sincronização de convites
       MqttTopics.pendingSync(this.currentUser.id),
       JSON.stringify(request),
       true,

@@ -33,15 +33,15 @@ export class GroupService {
       return
     }
 
-    this.mqttService.subscribe(MqttTopics.groupList, (message) => {
+    this.mqttService.subscribe(MqttTopics.groupList, (message) => { // Assina lista global de grupos
       this.handleGroupMessage(message)
     })
 
-    this.mqttService.subscribe(MqttTopics.invitationResponses, (message) => {
+    this.mqttService.subscribe(MqttTopics.invitationResponses, (message) => { // Assina respostas de convites
       this.handleInvitationResponse(message)
     })
 
-    this.mqttService.subscribe(MqttTopics.groupUpdates, (message) => {
+    this.mqttService.subscribe(MqttTopics.groupUpdates, (message) => { // Assina atualizações de grupos
       this.handleGroupUpdate(message)
     })
 
@@ -72,7 +72,7 @@ export class GroupService {
       }))
     }
 
-    this.mqttService.publish(MqttTopics.groupList, JSON.stringify(groupForMqtt), true)
+    this.mqttService.publish(MqttTopics.groupList, JSON.stringify(groupForMqtt), true) // Publica atualização da lista de grupos
   }
 
   addMemberToGroup(groupId: string, user: User): boolean {

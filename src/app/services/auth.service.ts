@@ -28,7 +28,7 @@ export class AuthService {
 
   initialize(): void {
 
-    this.mqttService.subscribe(MqttTopics.authRegistry, (message) => {
+    this.mqttService.subscribe(MqttTopics.authRegistry, (message) => { // Assina registro de usuários
       this.handleUserRegistry(message)
     })
 
@@ -70,7 +70,7 @@ export class AuthService {
       timestamp: new Date().toISOString()
     }
 
-    this.mqttService.publish(MqttTopics.authRegistry, JSON.stringify(payload), true)
+    this.mqttService.publish(MqttTopics.authRegistry, JSON.stringify(payload), true) // Publica lista de usuários
   }
 
   async authenticate(username: string, password: string): Promise<AuthResponse> {

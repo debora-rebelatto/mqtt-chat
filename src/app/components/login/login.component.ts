@@ -56,7 +56,7 @@ export class LoginComponent {
 
   private async connectForAuth() {
     const authClientId = this.idGeneratorService.generateId('auth_temp')
-    await this.mqttService.connect(authClientId)
+    await this.mqttService.connect(authClientId) // Conecta com ID temporário para autenticação
     this.authService.initialize()
   }
 
@@ -92,7 +92,7 @@ export class LoginComponent {
 
     try {
       const tempClientId = this.idGeneratorService.generateId(`signup_${this._username}`)
-      await this.mqttService.connect(tempClientId)
+      await this.mqttService.connect(tempClientId) // Conecta com ID temporário para cadastro
 
       await new Promise((resolve) => setTimeout(resolve, 300))
 

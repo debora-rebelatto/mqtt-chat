@@ -112,7 +112,7 @@ export class ChatService {
       this.handleGroupMessage(message)
     })
 
-    this.mqttService.subscribe(MqttTopics.confirmation(currentUser.id), (message) => {
+    this.mqttService.subscribe(MqttTopics.confirmation(currentUser.id), (message) => { // Assina tópico de confirmação de leitura
       this.handleMessageConfirmation(message)
     })
 
@@ -194,7 +194,7 @@ export class ChatService {
       timestamp: new Date().toISOString()
     }
 
-    this.mqttService.publish(
+    this.mqttService.publish( // Publica confirmação de recebimento
       MqttTopics.confirmation(senderId),
       JSON.stringify(confirmation)
     )
@@ -270,7 +270,7 @@ export class ChatService {
     const targetUser = this.users.find((u) => u.id === to.id)
 
     if (targetUser && targetUser.online) {
-      const success = this.mqttService.publish(sessionTopic, JSON.stringify(mqttPayload))
+      const success = this.mqttService.publish(sessionTopic, JSON.stringify(mqttPayload)) // Publica mensagem privada
 
       if (!success) {
         this.pendingMessagesService.addPendingMessage(to.id, message)
@@ -296,7 +296,7 @@ export class ChatService {
       chatId: groupId
     }
 
-    this.mqttService.publish(MqttTopics.specificGroup(groupId), JSON.stringify(mqttPayload))
+    this.mqttService.publish(MqttTopics.specificGroup(groupId), JSON.stringify(mqttPayload)) 
   }
 
   subscribeToGroup(groupId: string): void {
@@ -455,7 +455,7 @@ export class ChatService {
     groups.forEach((group) => {
       const isMember = group.members.some((member) => member.id === currentUser.id)
       if (isMember) {
-        this.mqttService.subscribe(MqttTopics.specificGroup(group.id), (message) => {
+        this.mqttService.subscribe(MqttTopics.specificGroup(group.id), (message) => { // Assina tópicos dos grupos que o usuário participa
           this.handleGroupMessage(message)
         })
       }

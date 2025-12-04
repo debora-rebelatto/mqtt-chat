@@ -42,11 +42,11 @@ export class PrivateChatRequestService {
 
     this.requestPendingNotifications()
 
-    this.mqttService.subscribe(MqttTopics.control(this.currentUser.id), (message) => {
+    this.mqttService.subscribe(MqttTopics.control(this.currentUser.id), (message) => { // Assina mensagens de controle
       this.handleControlMessage(message)
     })
 
-    this.mqttService.subscribe(MqttTopics.pendingSync(this.currentUser.id), (message) => {
+    this.mqttService.subscribe(MqttTopics.pendingSync(this.currentUser.id), (message) => { // Assina sincronização pendente
       this.handlePendingNotifications(message)
     })
   }
@@ -62,7 +62,7 @@ export class PrivateChatRequestService {
       timestamp: new Date().toISOString()
     }
 
-    this.mqttService.publish(MqttTopics.pendingSync(this.currentUser.id),JSON.stringify(request))
+    this.mqttService.publish(MqttTopics.pendingSync(this.currentUser.id),JSON.stringify(request)) // Publica solicitação de sincronização de notificações
   }
 
   private handlePendingNotifications(message: string) {
